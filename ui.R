@@ -34,6 +34,7 @@ ui <- navbarPage(
     
       /* 禁止导航栏高度扩展 */
       .navbar {
+        background-color: #4b0363 !important; /* 设置背景颜色 */
         white-space: nowrap !important; /* 确保所有子元素在单行内 */
       }
     
@@ -114,11 +115,6 @@ ui <- navbarPage(
               break;
             }
           }
-        });
-        
-        $(document).on('click', 'table.dataTable tbody tr', function() {
-          $(this).siblings().css('border', '');  // 清除其他行样式
-          $(this).css('border', '2px solid blue');  // 当前行添加蓝色边框
         });")),
       
       tags$script('
