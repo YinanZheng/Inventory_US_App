@@ -1,0 +1,8 @@
+.secrets
+.Rhistory
+Inventory_App.Rproj
+/.Rproj.user
+/www
+tests/test-app/server.R
+tests/test-app/ui.R
+deploy on ubuntu.txt
