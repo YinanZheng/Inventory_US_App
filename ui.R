@@ -94,12 +94,6 @@ ui <- navbarPage(
       .custom-selectize .selectize-dropdown-content {
         font-size: 12px !important; /* 设置下拉菜单字体大小 */
       }
-      
-      /* 自定义 DataTable 选定高亮样式 */
-      table.dataTable tr.selected td{
-        background-color: transparent !important;
-        border: 2px solid blue !important;
-      }
     ")),
       
       tags$script(HTML("
@@ -120,6 +114,11 @@ ui <- navbarPage(
               break;
             }
           }
+        });
+        
+        $(document).on('click', 'table.dataTable tbody tr', function() {
+          $(this).siblings().css('border', '');  // 清除其他行样式
+          $(this).css('border', '2px solid blue');  // 当前行添加蓝色边框
         });")),
       
       tags$script('
