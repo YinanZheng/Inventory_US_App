@@ -1,6 +1,6 @@
 .secrets
 .Rhistory
-Inventory_App.Rproj
+Inventory_US_App.Rproj
 /.Rproj.user
 /www
 tests/test-app/server.R
