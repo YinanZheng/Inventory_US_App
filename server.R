@@ -200,7 +200,7 @@ server <- function(input, output, session) {
     data <- unique_items_data()
     
     # 默认过滤条件 Status 为 “国内出库” 或 “美国入库”
-    data <- data[data$Status %in% c("国内出库", "国内入库"), ]
+    data <- data[data$Status %in% c("国内出库", "美国入库"), ]
     
     filter_unique_items_data_by_inputs(
       data = data,
