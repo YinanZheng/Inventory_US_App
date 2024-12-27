@@ -620,7 +620,7 @@ server <- function(input, output, session) {
     tryCatch({
       # 从 unique_items_data 获取符合条件的货架物品
       all_shelf_items <- unique_items_data() %>%
-        filter(SKU == sku, Status == "国内入库", Defect != "瑕疵") %>%
+        filter(SKU == sku, Status == "美国入库", Defect != "瑕疵") %>%
         select(SKU, UniqueID, ItemName, ProductCost, ItemImagePath) %>%
         arrange(ProductCost)  # 按单价从低到高排序
       
