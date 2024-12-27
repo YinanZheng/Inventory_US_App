@@ -96,7 +96,7 @@ ui <- navbarPage(
       }
       
       /* 自定义 DataTable 选定高亮样式 */
-      table.dataTable tr.selected {
+      table.dataTable tr.selected td{
         background-color: transparent !important;
         border: 2px solid blue !important;
       }
