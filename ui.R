@@ -38,10 +38,14 @@ ui <- navbarPage(
         white-space: nowrap !important; /* 确保所有子元素在单行内 */
       }
       
+      /* 鼠标悬停时修改标题颜色 */
+      .navbar-brand:hover {
+        color: #FFD700 !important; /* 悬停时标题文字颜色 */
+      } 
       /* 鼠标悬停导航项时的颜色 */
       .navbar-nav > li > a:hover {
         color: #FFD700 !important;           /* 悬停文字颜色 */
-        background-color: #003366 !important;/* 悬停背景颜色 */
+        background-color: #4b0363 !important;/* 悬停背景颜色 */
       }
     
      /* 当屏幕宽度小于 1380px 时，隐藏标题 */
