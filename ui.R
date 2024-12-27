@@ -94,6 +94,12 @@ ui <- navbarPage(
       .custom-selectize .selectize-dropdown-content {
         font-size: 12px !important; /* 设置下拉菜单字体大小 */
       }
+      
+      /* 自定义 DataTable 选定高亮样式 */
+      table.dataTable tr.selected {
+        background-color: transparent !important;
+        border: 2px solid blue !important;
+      }
     ")),
       
       tags$script(HTML("
