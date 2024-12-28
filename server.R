@@ -996,12 +996,17 @@ server <- function(input, output, session) {
   
   # 动态渲染订单内物品
   observe({
-    req(input$shipping_bill_number)  # 确保运单号不为空
+    # 确保运单号不为空
+    if (is.null(input$shipping_bill_number) || input$shipping_bill_number == "") {
+      output$order_items_cards <- renderUI({ NULL })  # 清空物品卡片
+      return()
+    }
     
     # 获取订单信息
     order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
     if (nrow(order) == 0) {
       output$order_items_cards <- renderUI({ NULL })  # 清空物品卡片
+      showNotification("未找到与此运单号关联的订单！", type = "error")  # 打出提示
       return()
     }
     
