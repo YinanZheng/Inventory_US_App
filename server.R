@@ -1071,7 +1071,12 @@ server <- function(input, output, session) {
       # 检查所有物品是否状态为“美国发货”
       if (all(updated_items$Status == "美国发货")) {
         showModal(modalDialog(
-          title = "所有订单内物品均已扫描，请确认装箱",
+          title = "确认装箱",
+          easyClose = FALSE,  # 不允许点击背景关闭
+          div(
+            style = "padding: 10px; font-size: 16px;",
+            "所有订单内物品均已扫描，请确认是否装箱完成。"
+          ),
           footer = tagList(
             modalButton("取消"),
             actionButton(
@@ -1079,7 +1084,7 @@ server <- function(input, output, session) {
               "确认装箱",
               icon = icon("check"),
               class = "btn-primary",
-              style = "font-size: 16px;"
+              style = "font-size: 16px; margin-left: 10px;"
             )
           )
         ))
@@ -1131,6 +1136,9 @@ server <- function(input, output, session) {
       # 清空输入框
       updateTextInput(session, "shipping_bill_number", value = "")
       updateTextInput(session, "sku_input", value = "")
+      
+      # 关闭模态窗口
+      removeModal()
       
     }, error = function(e) {
       showNotification(paste("更新订单状态时发生错误：", e$message), type = "error")
