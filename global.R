@@ -74,6 +74,7 @@ status_columns <<- list(
   "美国入库" = "UsEntryTime",
   "美国售出" = "UsSoldTime",
   "美国调货" = "UsRelocationTime",
+  "美国发货" = "UsShippingTime",
   "退货" = "ReturnTime"
 )
 

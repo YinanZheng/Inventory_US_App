@@ -173,7 +173,7 @@ server <- function(input, output, session) {
       unique_items.DomesticExitTime,
       unique_items.DomesticSoldTime,
       unique_items.UsEntryTime,
-      unique_items.UsCheckTime,
+      unique_items.UsShippingTime,
       unique_items.UsRelocationTime,
       unique_items.UsSoldTime,
       unique_items.ReturnTime,
