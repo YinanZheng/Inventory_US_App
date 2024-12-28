@@ -441,35 +441,26 @@ ui <- navbarPage(
         )
       ),
       
-      # 右侧：订单信息和物品信息
+      # 右侧：主面板内容
       div(
         class = "main-panel",
-        
-        fluidRow(
-          column(
-            6,
-            div(
-              class = "card",
-              style = "padding: 20px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 10px;",
-              tags$h4(
-                HTML(paste0(as.character(icon("clipboard-list")), " 订单信息")),
-                style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"
-              ),
-              DTOutput("order_info_table")  # 显示订单信息
-            )
+        div(
+          style = "height: 300px; margin-bottom: 20px;",
+          class = "card",
+          tags$h4(
+            HTML(paste0(as.character(icon("clipboard-list")), " 订单信息")),
+            style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"
           ),
-          column(
-            6,
-            div(
-              class = "card",
-              style = "padding: 20px; margin-bottom: 20px; border: 1px solid #28A745; border-radius: 10px;",
-              tags$h4(
-                HTML(paste0(as.character(icon("box")), " 订单内物品")),
-                style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
-              ),
-              DTOutput("order_items_table")  # 显示订单内物品
-            )
-          )
+          uiOutput("order_info_card")  # 动态显示订单信息卡片
+        ),
+        div(
+          style = "flex-grow: 1; overflow-y: auto; padding: 10px;",  # 弹性布局，支持滚动
+          class = "card",
+          tags$h4(
+            HTML(paste0(as.character(icon("box")), " 订单内物品")),
+            style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+          ),
+          uiOutput("order_items_cards")  # 动态显示订单内物品卡片
         )
       )
     )
