@@ -363,27 +363,18 @@ update_status <- function(con, unique_id, new_status, defect_status = NULL, ship
     if (!is.null(shipping_method)) "IntlShippingMethod = ?" else NULL
   )
   
-  # 拼接 SET 子句
   set_clause <- paste(set_clauses[!is.null(set_clauses)], collapse = ", ")
   
-  # 完整 SQL 查询
-  query <- paste0(
-    "UPDATE unique_items SET ", set_clause, " WHERE UniqueID = ?"
-  )
-  
-  # 构建参数列表
+  # 构建参数列表（移除多余参数）
   params <- c(
-    list(new_status),
-    if (!is.null(timestamp_update)) list() else NULL,
-    if (!is.null(defect_status)) list(defect_status) else NULL,
-    if (!is.null(shipping_method)) list(shipping_method) else NULL,
-    list(unique_id)
+    new_status,
+    if (!is.null(defect_status)) defect_status else NULL,
+    if (!is.null(shipping_method)) shipping_method else NULL,
+    unique_id
   )
   
-  # 展平参数列表
-  params <- unlist(params)
-  
-  # 执行 SQL 更新
+  # 执行SQL更新
+  query <- paste0("UPDATE unique_items SET ", set_clause, " WHERE UniqueID = ?")
   dbExecute(con, query, params = params)
   
   # 触发刷新
@@ -391,6 +382,7 @@ update_status <- function(con, unique_id, new_status, defect_status = NULL, ship
     refresh_trigger(!refresh_trigger())
   }
 }
+
 
 
 update_order_id <- function(con, unique_id, order_id) {
