@@ -1240,7 +1240,7 @@ server <- function(input, output, session) {
                )),
                data = associated_items,
                options = list(
-                 scrollY = "280px",  # 根据内容动态调整滚动高度
+                 scrollY = "250px",  # 根据内容动态调整滚动高度
                  scrollX = TRUE,  # 支持水平滚动
                  fixedHeader = TRUE,  # 启用表头固定
                  paging = TRUE,  # 支持分页
