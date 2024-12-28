@@ -1054,7 +1054,7 @@ server <- function(input, output, session) {
         
         div(
           class = "card",
-          style = "display: inline-block; margin: 10px; padding: 10px; width: 230px; text-align: center; 
+          style = "display: inline-block; margin: 10px; padding: 10px; width: 250px; text-align: center; 
                  border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
           div(
             style = "margin-bottom: 10px;",
