@@ -26,12 +26,12 @@ uniqueItemsTableServer <- function(input, output, session, column_mapping, selec
         formatStyle(
           "库存状态",
           backgroundColor = styleEqual(
-            c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国售出", "退货"),
-            c("lightgray", "#c7e89b", "darkgray", "#46a80d", "#173b02", "darkgray", "red")
+            c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国调货", "美国售出", "美国发货", "退货"),
+            c("lightgray", "#c7e89b", "#9ca695", "#46a80d", "#6f52ff", "#529aff", "#869bb8", "#faf0d4", "red")
           ),
           color = styleEqual(
-            c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国售出", "退货"),
-            c("black", "black", "black", "white", "white", "black", "white")
+            c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国调货", "美国售出", "美国发货", "退货"),
+            c("black", "black", "black", "white", "white", "black", "black", "black", "white")
           )
         )
     }
@@ -68,32 +68,6 @@ uniqueItemsTableServer <- function(input, output, session, column_mapping, selec
     
     table
   })
-  
-  # # 监听用户点击图片列
-  # observeEvent(input$unique_items_table_cell_clicked, {
-  #   info <- input$unique_items_table_cell_clicked
-  #   
-  #   # 检查是否点击了图片列
-  #   if (!is.null(info) && !is.null(info$col) && !is.null(info$row)) {
-  #     column_index <- which(names(data()) == "ItemImagePath")  # 图片列的索引
-  #     if (info$col == column_index) {
-  #       # 获取点击的图片路径
-  #       img_path <- data()[info$row, "ItemImagePath"]
-  #       req(img_path)  # 确保图片路径存在
-  #       
-  #       img_host_path <- paste0(host_url, "/images/", basename(img_path))
-  #       
-  #       # 弹出窗口显示大图
-  #       showModal(modalDialog(
-  #         title = "物品图片预览",
-  #         img(src = img_host_path, height = "400px", style = "display: block; margin: 0 auto;"),
-  #         size = "l",
-  #         easyClose = TRUE,
-  #         footer = modalButton("关闭")
-  #       ))
-  #     }
-  #   }
-  # })
   
   # 返回选中行的索引
   reactive({

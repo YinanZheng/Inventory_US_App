@@ -367,7 +367,7 @@ server <- function(input, output, session) {
                                                          ), data = filtered_unique_items_data_download)
   
 
-  # 订单管理
+  # 订单管理分页订单表
   selected_order_row <- callModule(orderTableServer, "orders_table_module",
                                    column_mapping = list(
                                      OrderID = "订单号",
@@ -386,11 +386,10 @@ server <- function(input, output, session) {
                                      scrollY = "400px",  # 根据内容动态调整滚动高度
                                      scrollX = TRUE,  # 支持水平滚动
                                      fixedHeader = TRUE,  # 启用表头固定
-                                     paging = TRUE,  # 支持分页
                                      dom = 't',  # 隐藏搜索框和分页等控件
                                      paging = FALSE,  # 禁用分页
                                      searching = FALSE  # 禁用搜索
-                                   )# 单选模式
+                                   )
   )
   
   ####################################################################################################################################
@@ -1243,7 +1242,6 @@ server <- function(input, output, session) {
                  scrollY = "235px",  # 根据内容动态调整滚动高度
                  scrollX = TRUE,  # 支持水平滚动
                  fixedHeader = TRUE,  # 启用表头固定
-                 paging = TRUE,  # 支持分页
                  dom = 't',  # 隐藏搜索框和分页等控件
                  paging = FALSE,  # 禁用分页
                  searching = FALSE  # 禁用搜索
