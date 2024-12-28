@@ -970,6 +970,66 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  renderOrderInfo <- function(output, output_name, order_info, img_path) {
+    # 如果 order_info 为空或没有数据，构造一个默认空数据框
+    if (is.null(order_info) || nrow(order_info) == 0) {
+      order_info <- data.frame(
+        OrderID = "",
+        CustomerName = "",
+        Platform = "",
+        OrderNotes = "",
+        stringsAsFactors = FALSE
+      )
+    }
+    
+    # 动态渲染 UI
+    output[[output_name]] <- renderUI({
+      fluidRow(
+        column(
+          4,
+          div(
+            style = "text-align: center;",
+            img(
+              src = img_path,
+              height = "300px",
+              style = "border: 2px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);"
+            )
+          )
+        ),
+        column(
+          8,
+          div(
+            style = "padding: 20px; background-color: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 8px;
+                             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); height: 300px;",
+            tags$h4(
+              "订单信息",
+              style = "border-bottom: 3px solid #007BFF; margin-bottom: 15px; padding-bottom: 8px; font-weight: bold; color: #333;"
+            ),
+            tags$table(
+              style = "width: 100%; font-size: 16px; color: #444;",
+              tags$tr(
+                tags$td(tags$strong("订单号:"), style = "padding: 8px 10px; width: 120px; vertical-align: top;"),
+                tags$td(tags$span(order_info$OrderID[1], style = "color: #007BFF; font-weight: bold;"))
+              ),
+              tags$tr(
+                tags$td(tags$strong("顾客姓名:"), style = "padding: 8px 10px; vertical-align: top;"),
+                tags$td(tags$span(order_info$CustomerName[1], style = "color: #007BFF;"))
+              ),
+              tags$tr(
+                tags$td(tags$strong("平台:"), style = "padding: 8px 10px; vertical-align: top;"),
+                tags$td(tags$span(order_info$Platform[1], style = "color: #007BFF;"))
+              ),
+              tags$tr(
+                tags$td(tags$strong("备注:"), style = "padding: 8px 10px; vertical-align: top;"),
+                tags$td(tags$span(order_info$OrderNotes[1], style = "color: #007BFF;"))
+              )
+            )
+          )
+        )
+      )
+    })
+  }
+  
   observeEvent(input$shipping_bill_number, {
     req(input$shipping_bill_number)  # 确保运单号输入不为空
     
@@ -993,46 +1053,18 @@ server <- function(input, output, session) {
       )
       
       # 渲染订单信息（图片 + 文本）
-      output$order_info_card <- renderUI({
-        div(
-          style = "display: flex; flex-direction: column; align-items: center; padding: 10px;",
-          div(
-            style = "margin-bottom: 10px;",
-            tags$img(
-              src = img_path,
-              style = "max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);"
-            )
-          ),
-          div(
-            style = "padding: 10px;",
-            tags$table(
-              style = "width: 100%; font-size: 14px; color: #333;",
-              tags$tr(
-                tags$td(tags$strong("订单号:"), style = "padding: 8px 10px; width: 100px; vertical-align: top;"),
-                tags$td(order_data$OrderID[1])
-              ),
-              tags$tr(
-                tags$td(tags$strong("顾客姓名:"), style = "padding: 8px 10px; vertical-align: top;"),
-                tags$td(order_data$CustomerName[1])
-              ),
-              tags$tr(
-                tags$td(tags$strong("平台:"), style = "padding: 8px 10px; vertical-align: top;"),
-                tags$td(order_data$Platform[1])
-              ),
-              tags$tr(
-                tags$td(tags$strong("备注:"), style = "padding: 8px 10px; vertical-align: top;"),
-                tags$td(order_data$OrderNotes[1])
-              )
-            )
-          )
-        )
-      })
+      renderOrderInfo(
+        output = output,
+        output_name = "order_info_card",
+        order_info = order_data,
+        img_path = img_path
+      )
       
       # 查询订单内物品
       order_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE OrderID = ?", 
                                 params = list(order_data$OrderID[1]))
       
-      # 渲染订单内物品卡片
+      # 渲染订单内物品卡片（保持原有逻辑）
       output$order_items_cards <- renderUI({
         if (nrow(order_items) == 0) {
           return(div("没有找到该订单内的物品。"))
@@ -1084,6 +1116,7 @@ server <- function(input, output, session) {
       output$order_items_cards <- renderUI({ NULL })  # 清空UI
     })
   })
+  
   
   observeEvent(input$sku_input, {
     req(input$sku_input, input$shipping_bill_number)  # 确保SKU和运单号输入不为空
