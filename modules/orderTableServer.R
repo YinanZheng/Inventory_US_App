@@ -28,6 +28,21 @@ orderTableServer <- function(input, output, session, column_mapping, selection =
         )
     }
     
+    # 状态字段高亮
+    if ("状态" %in% column_names) {
+      table <- table %>%
+        formatStyle(
+          "状态",
+          backgroundColor = styleEqual(
+            c('备货','装箱','发出','在途','送达'),
+            c("#bfa6ff", "#a6beff", "#a6ffde", "#fae589", "#65d463")  # 不同平台的背景颜色
+          ),
+          color = styleEqual(
+            c('备货','装箱','发出','在途','送达'),
+            c("black", "black", "black", "black", "black", "black")  # 字体颜色
+          )
+        )
+    }
     table
   })
   
