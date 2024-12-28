@@ -1046,19 +1046,30 @@ server <- function(input, output, session) {
         refresh_trigger = unique_items_data_refresh_trigger
       )
       
-      # # 检查是否所有物品都完成操作
-      # updated_items <- unique_items_data()
-      # if (all(updated_items %>% filter(OrderID == order_id)$Status == "美国发货")) {
-      #   showModal(modalDialog(
-      #     title = "订单已装箱完毕",
-      #     "所有订单内物品均已扫描并完成操作！",
-      #     easyClose = TRUE
-      #   ))
-      #   
-      #   # 自动关闭模态窗口
-      #   invalidateLater(3000, session)
-      #   removeModal()
-      # }
+      # 检查是否所有物品都完成操作
+      updated_items <- unique_items_data()
+      
+      # 过滤对应订单的物品
+      filtered_items <- updated_items %>% filter(OrderID == order_id)
+      
+      # 检查是否存在对应数据
+      if (nrow(filtered_items) == 0) {
+        showNotification("未找到订单对应的物品，请检查订单信息！", type = "error")
+        return()
+      }
+      
+      # 检查所有物品是否状态为“美国发货”
+      if (all(filtered_items$Status == "美国发货")) {
+        showModal(modalDialog(
+          title = "订单已装箱完毕",
+          "所有订单内物品均已扫描并完成操作！",
+          easyClose = TRUE
+        ))
+        
+        # 自动关闭模态窗口
+        invalidateLater(3000, session)
+        removeModal()
+      }
     }, error = function(e) {
       showNotification(paste("更新状态时发生错误：", e$message), type = "error")
     })
