@@ -938,5 +938,151 @@ adjust_inventory <- function(con, sku, adjustment, maker = NULL, major_type = NU
   })
 }
 
+# 渲染订单信息（图片在左，文字在右）
+renderOrderInfo <- function(output, output_name, order_id, img_path, orders_data) {
+  # 提取订单数据
+  order_info <- orders_data %>% filter(OrderID == order_id)
+  
+  # 如果订单不存在，返回空UI
+  if (nrow(order_info) == 0) {
+    output[[output_name]] <- renderUI({ NULL })
+    return()
+  }
+  
+  # 动态渲染订单信息
+  output[[output_name]] <- renderUI({
+    fluidRow(
+      column(
+        4,
+        div(
+          style = "text-align: center;",
+          img(
+            src = img_path,
+            height = "300px",
+            style = "border: 2px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);"
+          )
+        )
+      ),
+      column(
+        8,
+        div(
+          style = "padding: 20px; background-color: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 8px;
+                             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); height: 300px;",
+          tags$h4(
+            "订单信息",
+            style = "border-bottom: 3px solid #007BFF; margin-bottom: 15px; padding-bottom: 8px; font-weight: bold; color: #333;"
+          ),
+          tags$table(
+            style = "width: 100%; font-size: 16px; color: #444;",
+            tags$tr(
+              tags$td(tags$strong("订单号:"), style = "padding: 8px 10px; width: 120px; vertical-align: top;"),
+              tags$td(tags$span(order_info$OrderID[1], style = "color: #007BFF; font-weight: bold;"))
+            ),
+            tags$tr(
+              tags$td(tags$strong("顾客姓名:"), style = "padding: 8px 10px; vertical-align: top;"),
+              tags$td(tags$span(order_info$CustomerName[1], style = "color: #007BFF;"))
+            ),
+            tags$tr(
+              tags$td(tags$strong("平台:"), style = "padding: 8px 10px; vertical-align: top;"),
+              tags$td(tags$span(order_info$Platform[1], style = "color: #007BFF;"))
+            ),
+            tags$tr(
+              tags$td(tags$strong("备注:"), style = "padding: 8px 10px; vertical-align: top;"),
+              tags$td(tags$span(order_info$OrderNotes[1], style = "color: #007BFF;"))
+            ),
+            tags$tr(
+              tags$td(tags$strong("状态:"), style = "padding: 8px 10px; vertical-align: top;"),
+              tags$td(tags$span(order_info$OrderStatus[1], style = "color: #007BFF;"))
+            )
+          )
+        )
+      )
+    )
+  })
+}
+
+# 动态渲染物品卡片
+renderOrderItems <- function(output, output_name, order_id, items_data) {
+  # 提取订单内物品数据
+  order_items <- items_data %>% filter(OrderID == order_id)
+  
+  # 如果没有物品，返回提示信息
+  if (nrow(order_items) == 0) {
+    output[[output_name]] <- renderUI({
+      div("没有找到该订单内的物品。")
+    })
+    return()
+  }
+  
+  # 动态渲染物品卡片
+  output[[output_name]] <- renderUI({
+    item_cards <- lapply(1:nrow(order_items), function(i) {
+      item <- order_items[i, ]
+      
+      # 图片路径
+      item_img_path <- ifelse(
+        is.na(item$ItemImagePath) || item$ItemImagePath == "",
+        placeholder_150px_path,
+        paste0(host_url, "/images/", basename(item$ItemImagePath))
+      )
+      
+      # 动态添加蒙版和打勾图标
+      mask_overlay <- if (item$Status == "美国发货") {
+        div(
+          style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+                  background: rgba(128, 128, 128, 0.6); display: flex; justify-content: center; align-items: center;
+                  border-radius: 8px;",
+          tags$div(
+            style = "width: 50px; height: 50px; background: #28a745; border-radius: 50%; display: flex; 
+                     justify-content: center; align-items: center;",
+            tags$i(class = "fas fa-check", style = "color: white; font-size: 24px;")  # 绿色勾
+          )
+        )
+      } else {
+        NULL
+      }
+      
+      # 渲染卡片
+      div(
+        class = "card",
+        style = "position: relative; display: inline-block; margin: 10px; padding: 10px; width: 230px; text-align: center; 
+                 border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
+        mask_overlay,  # 动态显示蒙版
+        div(
+          style = "margin-bottom: 10px;",
+          tags$img(
+            src = item_img_path,
+            style = "height: 150px; object-fit: cover; border-radius: 8px;"  # 图片高度固定为150px
+          )
+        ),
+        tags$table(
+          style = "width: 100%; font-size: 12px; color: #333;",
+          tags$tr(
+            tags$td(tags$strong("SKU:"), style = "padding: 5px; width: 60px;"),
+            tags$td(item$SKU)
+          ),
+          tags$tr(
+            tags$td(tags$strong("商品名:"), style = "padding: 5px;"),
+            tags$td(item$ItemName)
+          ),
+          tags$tr(
+            tags$td(tags$strong("状态:"), style = "padding: 5px;"),
+            tags$td(item$Status)
+          ),
+          tags$tr(
+            tags$td(tags$strong("瑕疵状态:"), style = "padding: 5px;"),
+            tags$td(ifelse(is.na(item$Defect), "无", item$Defect))  # 显示瑕疵状态
+          ),
+          tags$tr(
+            tags$td(tags$strong("瑕疵备注:"), style = "padding: 5px;"),
+            tags$td(ifelse(is.na(item$DefectNotes) || item$DefectNotes == "", "无备注", item$DefectNotes))  # 显示瑕疵备注
+          )
+        )
+      )
+    })
+    
+    do.call(tagList, item_cards)  # 返回卡片列表
+  })
+}
 
 
