@@ -435,8 +435,11 @@ ui <- navbarPage(
       # 右侧：主面板内容
       div(
         class = "main-panel",
+        
+        # 订单信息区域
         div(
-          style = "height: 300px; margin-bottom: 20px;",
+          style = "height: 300px; margin-bottom: 20px; border: 2px solid #007BFF; border-radius: 8px; 
+             padding: 15px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
           class = "card",
           tags$h4(
             HTML(paste0(as.character(icon("clipboard-list")), " 订单信息")),
@@ -444,8 +447,11 @@ ui <- navbarPage(
           ),
           uiOutput("order_info_card")  # 动态显示订单信息卡片
         ),
+        
+        # 订单内物品区域
         div(
-          style = "flex-grow: 1; overflow-y: auto; padding: 10px;",  # 弹性布局，支持滚动
+          style = "flex-grow: 1; overflow-y: auto; padding: 15px; border: 2px solid #28A745; 
+             border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
           class = "card",
           tags$h4(
             HTML(paste0(as.character(icon("box")), " 订单内物品")),
