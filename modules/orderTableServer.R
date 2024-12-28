@@ -39,7 +39,7 @@ orderTableServer <- function(input, output, session, column_mapping, selection =
           ),
           color = styleEqual(
             c('备货','装箱','发出','在途','送达'),
-            c("black", "black", "black", "black", "black", "black")  # 字体颜色
+            c("black", "black", "black", "black", "black")  # 字体颜色
           )
         )
     }
