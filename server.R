@@ -1054,7 +1054,7 @@ server <- function(input, output, session) {
         
         div(
           class = "card",
-          style = "display: inline-block; margin: 10px; padding: 10px; width: 250px; text-align: center; 
+          style = "display: inline-block; margin: 5px; padding: 5px; width: 250px; text-align: center; 
                  border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
           div(
             style = "margin-bottom: 10px;",
@@ -1066,23 +1066,23 @@ server <- function(input, output, session) {
           tags$table(
             style = "width: 100%; font-size: 12px; color: #333;",
             tags$tr(
-              tags$td(tags$strong("SKU:"), style = "padding: 5px; width: 60px;"),
+              tags$td(tags$strong("SKU:"), style = "padding: 2px; width: 60px;"),
               tags$td(item$SKU)
             ),
             tags$tr(
-              tags$td(tags$strong("商品名:"), style = "padding: 5px;"),
+              tags$td(tags$strong("商品名:"), style = "padding: 2px;"),
               tags$td(item$ItemName)
             ),
             tags$tr(
-              tags$td(tags$strong("状态:"), style = "padding: 5px;"),
+              tags$td(tags$strong("状态:"), style = "padding: 2px;"),
               tags$td(item$Status)
             ),
             tags$tr(
-              tags$td(tags$strong("瑕疵状态:"), style = "padding: 5px;"),
+              tags$td(tags$strong("瑕疵状态:"), style = "padding: 2px;"),
               tags$td(ifelse(is.na(item$Defect), "无", item$Defect))  # 显示瑕疵状态
             ),
             tags$tr(
-              tags$td(tags$strong("瑕疵备注:"), style = "padding: 5px;"),
+              tags$td(tags$strong("瑕疵备注:"), style = "padding: 2px;"),
               tags$td(ifelse(is.na(item$DefectNotes) || item$DefectNotes == "", "无备注", item$DefectNotes))  # 显示瑕疵备注
             )
           )
