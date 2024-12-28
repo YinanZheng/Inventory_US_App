@@ -970,19 +970,17 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  renderOrderInfo <- function(output, output_name, order_info, img_path) {
-    # 如果 order_info 为空或没有数据，构造一个默认空数据框
-    if (is.null(order_info) || nrow(order_info) == 0) {
-      order_info <- data.frame(
-        OrderID = "",
-        CustomerName = "",
-        Platform = "",
-        OrderNotes = "",
-        stringsAsFactors = FALSE
-      )
+  renderOrderInfo <- function(output, output_name, order_id, img_path, orders_data) {
+    # 提取订单数据
+    order_info <- orders_data %>% filter(OrderID == order_id)
+    
+    # 如果订单不存在，返回空UI
+    if (nrow(order_info) == 0) {
+      output[[output_name]] <- renderUI({ NULL })
+      return()
     }
     
-    # 动态渲染 UI
+    # 动态渲染订单信息
     output[[output_name]] <- renderUI({
       fluidRow(
         column(
@@ -1030,92 +1028,90 @@ server <- function(input, output, session) {
     })
   }
   
-  observeEvent(input$shipping_bill_number, {
-    req(input$shipping_bill_number)  # 确保运单号输入不为空
+  renderOrderItems <- function(output, output_name, order_id, items_data) {
+    # 提取订单内物品数据
+    order_items <- items_data %>% filter(OrderID == order_id)
     
-    tryCatch({
-      # 查询订单信息
-      order_data <- dbGetQuery(con, "SELECT * FROM orders WHERE UsTrackingNumber1 = ?", 
-                               params = list(input$shipping_bill_number))
-      
-      if (nrow(order_data) == 0) {
-        showNotification("未找到对应订单，请检查运单号！", type = "error")
-        output$order_info_card <- renderUI({ NULL })  # 清空UI
-        output$order_items_cards <- renderUI({ NULL })  # 清空UI
-        return()
-      }
-      
-      # 获取订单图片路径
-      img_path <- ifelse(
-        is.na(order_data$OrderImagePath[1]) || order_data$OrderImagePath[1] == "",
-        placeholder_300px_path,
-        paste0(host_url, "/images/", basename(order_data$OrderImagePath[1]))
-      )
-      
-      # 渲染订单信息（图片 + 文本）
-      renderOrderInfo(
-        output = output,
-        output_name = "order_info_card",
-        order_info = order_data,
-        img_path = img_path
-      )
-      
-      # 查询订单内物品
-      order_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE OrderID = ?", 
-                                params = list(order_data$OrderID[1]))
-      
-      # 渲染订单内物品卡片（保持原有逻辑）
-      output$order_items_cards <- renderUI({
-        if (nrow(order_items) == 0) {
-          return(div("没有找到该订单内的物品。"))
-        }
+    # 如果没有物品，返回提示信息
+    if (nrow(order_items) == 0) {
+      output[[output_name]] <- renderUI({
+        div("没有找到该订单内的物品。")
+      })
+      return()
+    }
+    
+    # 动态渲染物品卡片
+    output[[output_name]] <- renderUI({
+      item_cards <- lapply(1:nrow(order_items), function(i) {
+        item <- order_items[i, ]
         
-        item_cards <- lapply(1:nrow(order_items), function(i) {
-          item <- order_items[i, ]
-          
-          item_img_path <- ifelse(
-            is.na(item$ItemImagePath) || item$ItemImagePath == "",
-            placeholder_150px_path,
-            paste0(host_url, "/images/", basename(item$ItemImagePath))
-          )
-          
+        item_img_path <- ifelse(
+          is.na(item$ItemImagePath) || item$ItemImagePath == "",
+          placeholder_150px_path,
+          paste0(host_url, "/images/", basename(item$ItemImagePath))
+        )
+        
+        div(
+          class = "card",
+          style = "display: inline-block; margin: 10px; padding: 10px; width: 200px; text-align: center; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
           div(
-            class = "card",
-            style = "display: inline-block; margin: 10px; padding: 10px; width: 200px; text-align: center; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
-            div(
-              style = "margin-bottom: 10px;",
-              tags$img(
-                src = item_img_path,
-                style = "max-width: 100%; height: auto; border-radius: 8px;"
-              )
+            style = "margin-bottom: 10px;",
+            tags$img(
+              src = item_img_path,
+              style = "max-width: 100%; height: auto; border-radius: 8px;"
+            )
+          ),
+          tags$table(
+            style = "width: 100%; font-size: 12px; color: #333;",
+            tags$tr(
+              tags$td(tags$strong("SKU:"), style = "padding: 5px; width: 60px;"),
+              tags$td(item$SKU)
             ),
-            tags$table(
-              style = "width: 100%; font-size: 12px; color: #333;",
-              tags$tr(
-                tags$td(tags$strong("SKU:"), style = "padding: 5px; width: 60px;"),
-                tags$td(item$SKU)
-              ),
-              tags$tr(
-                tags$td(tags$strong("商品名:"), style = "padding: 5px;"),
-                tags$td(item$ItemName)
-              ),
-              tags$tr(
-                tags$td(tags$strong("状态:"), style = "padding: 5px;"),
-                tags$td(item$Status)
-              )
+            tags$tr(
+              tags$td(tags$strong("商品名:"), style = "padding: 5px;"),
+              tags$td(item$ItemName)
+            ),
+            tags$tr(
+              tags$td(tags$strong("状态:"), style = "padding: 5px;"),
+              tags$td(item$Status)
             )
           )
-        })
-        
-        do.call(tagList, item_cards)  # 返回卡片列表
+        )
       })
       
-    }, error = function(e) {
-      showNotification(paste("加载订单信息时出错：", e$message), type = "error")
-      output$order_info_card <- renderUI({ NULL })  # 清空UI
-      output$order_items_cards <- renderUI({ NULL })  # 清空UI
+      do.call(tagList, item_cards)  # 返回卡片列表
     })
+  }
+  
+  
+  observeEvent(input$shipping_bill_number, {
+    req(input$shipping_bill_number)  # 确保输入不为空
+    
+    # 查询订单号
+    order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+    
+    if (nrow(order) == 0) {
+      showNotification("未找到对应订单，请检查运单号！", type = "error")
+      output$order_info_card <- renderUI({ NULL })  # 清空订单信息
+      output$order_items_cards <- renderUI({ NULL })  # 清空物品卡片
+      return()
+    }
+    
+    # 获取订单信息
+    order_id <- order$OrderID[1]
+    img_path <- ifelse(
+      is.na(order$OrderImagePath[1]) || order$OrderImagePath[1] == "",
+      placeholder_300px_path,
+      paste0(host_url, "/images/", basename(order$OrderImagePath[1]))
+    )
+    
+    # 渲染订单信息
+    renderOrderInfo(output, "order_info_card", order_id, img_path, orders())
+    
+    # 渲染订单内物品
+    renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
   })
+  
   
   
   observeEvent(input$sku_input, {
