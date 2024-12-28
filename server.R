@@ -925,7 +925,6 @@ server <- function(input, output, session) {
           con = con,
           unique_id = item$UniqueID,
           new_status = "国内售出",
-          shipping_method = input$sold_shipping_method,
           refresh_trigger = unique_items_data_refresh_trigger
         )
         
