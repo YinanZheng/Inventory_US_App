@@ -963,6 +963,84 @@ server <- function(input, output, session) {
   
   
   
+  ################################################################
+  ##                                                            ##
+  ## 发货分页                                                   ##
+  ##                                                            ##
+  ################################################################
+  
+  observeEvent(input$shipping_bill_number, {
+    req(input$shipping_bill_number)  # 确保运单号输入不为空
+    tryCatch({
+      # 查询订单信息
+      order_data <- dbGetQuery(con, "SELECT * FROM orders WHERE UsTrackingNumber1 = ?", params = list(input$shipping_bill_number))
+      
+      if (nrow(order_data) == 0) {
+        showNotification("未找到对应订单，请检查运单号！", type = "error")
+        return()
+      }
+      
+      # 显示订单信息
+      output$order_info_table <- renderDT({
+        datatable(order_data, options = list(pageLength = 5, scrollX = TRUE))
+      })
+      
+      # 加载订单内物品
+      order_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE OrderID = ?", params = list(order_data$OrderID[1]))
+      output$order_items_table <- renderDT({
+        datatable(order_items, options = list(pageLength = 5, scrollX = TRUE))
+      })
+    }, error = function(e) {
+      showNotification(paste("加载订单信息时出错：", e$message), type = "error")
+    })
+  })
+  
+  observeEvent(input$sku_input, {
+    req(input$sku_input, input$shipping_bill_number)  # 确保SKU和运单号输入不为空
+    tryCatch({
+      # 查询订单内物品
+      order_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE SKU = ? AND OrderID = (SELECT OrderID FROM orders WHERE UsTrackingNumber1 = ?)",
+                                params = list(input$sku_input, input$shipping_bill_number))
+      
+      if (nrow(order_items) == 0) {
+        showNotification("该SKU不在订单内，请检查！", type = "error")
+        return()
+      }
+      
+      # 更新物品状态为“装箱”
+      dbExecute(con, "UPDATE unique_items SET Status = '装箱' WHERE UniqueID = ?", params = list(order_items$UniqueID[1]))
+      showNotification("物品已成功装箱！", type = "message")
+      
+      # 刷新订单内物品显示
+      updated_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE OrderID = ?", params = list(order_items$OrderID[1]))
+      output$order_items_table <- renderDT({
+        datatable(updated_items, options = list(pageLength = 5, scrollX = TRUE))
+      })
+    }, error = function(e) {
+      showNotification(paste("处理SKU时出错：", e$message), type = "error")
+    })
+  })
+  
+  observeEvent(input$confirm_shipping_btn, {
+    req(input$shipping_bill_number)  # 确保运单号输入不为空
+    tryCatch({
+      # 检查是否所有物品已装箱
+      unboxed_items <- dbGetQuery(con, "SELECT COUNT(*) AS Unboxed FROM unique_items WHERE Status != '装箱' AND OrderID = (SELECT OrderID FROM orders WHERE UsTrackingNumber1 = ?)",
+                                  params = list(input$shipping_bill_number))
+      
+      if (unboxed_items$Unboxed > 0) {
+        showNotification("还有未装箱的物品，请检查！", type = "error")
+        return()
+      }
+      
+      # 更新订单状态为“在途”
+      dbExecute(con, "UPDATE orders SET OrderStatus = '在途' WHERE UsTrackingNumber1 = ?", params = list(input$shipping_bill_number))
+      showNotification("订单已成功发货！", type = "message")
+    }, error = function(e) {
+      showNotification(paste("发货时出错：", e$message), type = "error")
+    })
+  })
+  
   ###################################################################################################################
   ###################################################################################################################
   ###################################################################################################################
