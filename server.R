@@ -1012,13 +1012,13 @@ server <- function(input, output, session) {
     # 调用渲染函数
     renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
     
-    # 激活 SKU 输入框，准备接收扫码
-    runjs("document.getElementById('sku_input').focus();")
-    
     # 检查订单状态是否为“装箱”
     if (order_status == "装箱") {
       showNotification("该订单已装箱，无需重复操作！", type = "warning")
     } else {
+      
+      # 激活 SKU 输入框，准备接收扫码
+      runjs("document.getElementById('sku_input').focus();")
       showNotification("请扫描或输入SKU条码！", type = "message")
     }
   })
