@@ -1045,6 +1045,7 @@ server <- function(input, output, session) {
       item_cards <- lapply(1:nrow(order_items), function(i) {
         item <- order_items[i, ]
         
+        # 图片路径
         item_img_path <- ifelse(
           is.na(item$ItemImagePath) || item$ItemImagePath == "",
           placeholder_150px_path,
@@ -1053,12 +1054,13 @@ server <- function(input, output, session) {
         
         div(
           class = "card",
-          style = "display: inline-block; margin: 10px; padding: 10px; width: 200px; text-align: center; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
+          style = "display: inline-block; margin: 10px; padding: 10px; width: 230px; text-align: center; 
+                 border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
           div(
             style = "margin-bottom: 10px;",
             tags$img(
               src = item_img_path,
-              style = "max-width: 100%; height: auto; border-radius: 8px;"
+              style = "height: 150px; object-fit: cover; border-radius: 8px;"  # 图片高度固定为150px
             )
           ),
           tags$table(
@@ -1074,6 +1076,14 @@ server <- function(input, output, session) {
             tags$tr(
               tags$td(tags$strong("状态:"), style = "padding: 5px;"),
               tags$td(item$Status)
+            ),
+            tags$tr(
+              tags$td(tags$strong("瑕疵状态:"), style = "padding: 5px;"),
+              tags$td(ifelse(is.na(item$Defect), "无", item$Defect))  # 显示瑕疵状态
+            ),
+            tags$tr(
+              tags$td(tags$strong("瑕疵备注:"), style = "padding: 5px;"),
+              tags$td(ifelse(is.na(item$DefectNotes) || item$DefectNotes == "", "无备注", item$DefectNotes))  # 显示瑕疵备注
             )
           )
         )
@@ -1082,6 +1092,7 @@ server <- function(input, output, session) {
       do.call(tagList, item_cards)  # 返回卡片列表
     })
   }
+  
   
   
   observeEvent(input$shipping_bill_number, {
