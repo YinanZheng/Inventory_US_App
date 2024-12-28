@@ -428,15 +428,6 @@ ui <- navbarPage(
             "SKU:",
             placeholder = "请扫描或输入SKU条形码",
             width = "100%"
-          ),
-          
-          # 确认发货按钮
-          actionButton(
-            "confirm_shipping_btn",
-            "确认发货",
-            icon = icon("check"),
-            class = "btn-primary",
-            style = "font-size: 16px; width: 100%; margin-top: 10px;"
           )
         )
       ),

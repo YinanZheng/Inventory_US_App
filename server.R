@@ -1010,8 +1010,13 @@ server <- function(input, output, session) {
     
     # 调用渲染函数
     renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
+    
+    # 激活 SKU 输入框，准备接收扫码
+    updateTextInput(session, "sku_input", value = "")
+    
+    # 提示用户可以输入 SKU
+    showNotification("请扫描或输入SKU条码！", type = "message")
   })
-  
   
   # 定义 order_items 为 reactive 对象
   order_items <- reactive({
@@ -1020,6 +1025,7 @@ server <- function(input, output, session) {
     # 获取订单信息
     order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
     if (nrow(order) == 0) {
+      showNotification("未找到对应订单，请检查运单号！", type = "error")
       return(data.frame())  # 如果找不到对应订单，返回空数据框
     }
     
@@ -1027,7 +1033,6 @@ server <- function(input, output, session) {
     order_id <- order$OrderID[1]
     unique_items_data() %>% filter(OrderID == order_id)
   })
-  
   
   # SKU 输入监听逻辑
   observeEvent(input$sku_input, {
@@ -1066,16 +1071,27 @@ server <- function(input, output, session) {
       # 检查所有物品是否状态为“美国发货”
       if (all(updated_items$Status == "美国发货")) {
         showModal(modalDialog(
-          title = "订单已装箱完毕",
-          "所有订单内物品均已扫描并完成操作！",
-          easyClose = TRUE
+          title = "所有订单内物品均已扫描，请确认装箱",
+          footer = tagList(
+            modalButton("取消"),
+            actionButton(
+              "confirm_shipping_btn",
+              "确认装箱",
+              icon = icon("check"),
+              class = "btn-primary",
+              style = "font-size: 16px;"
+            )
+          )
         ))
       }
+      
+      # 清空输入框
+      updateTextInput(session, "sku_input", value = "")
+      
     }, error = function(e) {
       showNotification(paste("更新状态时发生错误：", e$message), type = "error")
     })
   })
-  
   
   # 确认发货按钮监听逻辑
   observeEvent(input$confirm_shipping_btn, {
@@ -1112,12 +1128,10 @@ server <- function(input, output, session) {
       # 显示成功提示
       showNotification("订单已成功标记为‘装箱’！", type = "message")
       
-      # 弹出完成提示
-      showModal(modalDialog(
-        title = "发货完成",
-        "订单已成功装箱，可以进行下一步操作！",
-        easyClose = TRUE
-      ))
+      # 清空输入框
+      updateTextInput(session, "shipping_bill_number", value = "")
+      updateTextInput(session, "sku_input", value = "")
+      
     }, error = function(e) {
       showNotification(paste("更新订单状态时发生错误：", e$message), type = "error")
     })
