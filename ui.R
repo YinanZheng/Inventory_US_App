@@ -93,7 +93,7 @@ ui <- navbarPage(
       /* 主面板 */
       .main-panel {
         flex-grow: 1; /* 占据剩余空间 */
-        padding: 20px;
+        padding: 10px;
         padding-top: 0px;
         background-color: #ffffff;
       }
