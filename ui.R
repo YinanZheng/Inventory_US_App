@@ -534,7 +534,7 @@ ui <- navbarPage(
         # 订单表
         div(
           class = "card",
-          style = "height: 450px; padding: 15px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
+          style = "height: 480px; padding: 15px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
           tags$h4("订单表", style = "color: #007BFF; font-weight: bold;"),
           orderTableUI("orders_table_module")  # 订单表模块
         ),
@@ -542,7 +542,7 @@ ui <- navbarPage(
         # 关联物品表
         div(
           class = "card",
-          style = "height: 450px; padding: 15px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
+          style = "height: 480px; padding: 15px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
           uiOutput("associated_items_title"),  # 动态标题
           uniqueItemsTableUI("associated_items_table_module")  # 关联物品表模块
         )
