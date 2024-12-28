@@ -377,6 +377,7 @@ server <- function(input, output, session) {
                                      UsTrackingNumber1 = "运单",
                                      UsTrackingNumber2 = "运单2",
                                      UsTrackingNumber3 = "运单3",
+                                     OrderStatus = "状态",
                                      OrderNotes = "备注"
                                    ),
                                    data = filtered_orders,  # 数据源
