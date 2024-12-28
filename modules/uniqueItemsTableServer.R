@@ -12,7 +12,7 @@ uniqueItemsTableServer <- function(input, output, session, column_mapping, selec
       column_mapping = column_mapping, # 映射用户友好的列名
       selection = selection, 
       image_column = "ItemImagePath",
-      options = options,
+      options = options
     )
     
     # 获取数据列名
