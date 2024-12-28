@@ -1070,12 +1070,6 @@ server <- function(input, output, session) {
           "所有订单内物品均已扫描并完成操作！",
           easyClose = TRUE
         ))
-        
-        # 延迟5秒后关闭模态窗口
-        observe({
-          invalidateLater(5000, session)  # 设置5秒延迟
-          removeModal()
-        })
       }
     }, error = function(e) {
       showNotification(paste("更新状态时发生错误：", e$message), type = "error")
@@ -1124,12 +1118,6 @@ server <- function(input, output, session) {
         "订单已成功装箱，可以进行下一步操作！",
         easyClose = TRUE
       ))
-      
-      # 自动关闭模态窗口
-      observe({
-        invalidateLater(5000, session)
-        removeModal()
-      })
     }, error = function(e) {
       showNotification(paste("更新订单状态时发生错误：", e$message), type = "error")
     })
