@@ -387,7 +387,9 @@ server <- function(input, output, session) {
                                      scrollX = TRUE,  # 支持水平滚动
                                      fixedHeader = TRUE,  # 启用表头固定
                                      paging = TRUE,  # 支持分页
-                                     searching = TRUE  # 支持搜索
+                                     dom = 't',  # 隐藏搜索框和分页等控件
+                                     paging = FALSE,  # 禁用分页
+                                     searching = FALSE  # 禁用搜索
                                    )# 单选模式
   )
   
@@ -1596,7 +1598,9 @@ server <- function(input, output, session) {
                  scrollX = TRUE,  # 支持水平滚动
                  fixedHeader = TRUE,  # 启用表头固定
                  paging = TRUE,  # 支持分页
-                 searching = TRUE  # 支持搜索
+                 dom = 't',  # 隐藏搜索框和分页等控件
+                 paging = FALSE,  # 禁用分页
+                 searching = FALSE  # 禁用搜索
                ))
   })
   
