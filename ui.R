@@ -529,7 +529,7 @@ ui <- navbarPage(
       # 右侧：主面板
       div(
         class = "main-panel",
-        style = "display: flex; flex-direction: column; gap: 20px;", # 修改为纵向排列
+        style = "display: flex; flex-direction: column; gap: 10px;", # 修改为纵向排列
         
         # 订单表
         div(
@@ -542,7 +542,7 @@ ui <- navbarPage(
         # 关联物品表
         div(
           class = "card",
-          style = "height: 350px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
+          style = "height: 320px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
           uiOutput("associated_items_title"),  # 动态标题
           uniqueItemsTableUI("associated_items_table_module")  # 关联物品表模块
         )
