@@ -383,7 +383,7 @@ server <- function(input, output, session) {
                                    data = filtered_orders,  # 数据源
                                    selection = "single",
                                    options = list(
-                                     scrollY = "350px",  # 根据内容动态调整滚动高度
+                                     scrollY = "300px",  # 根据内容动态调整滚动高度
                                      scrollX = TRUE,  # 支持水平滚动
                                      fixedHeader = TRUE,  # 启用表头固定
                                      paging = TRUE,  # 支持分页
@@ -1592,7 +1592,7 @@ server <- function(input, output, session) {
                )),
                data = associated_items,
                options = list(
-                 scrollY = "350px",  # 根据内容动态调整滚动高度
+                 scrollY = "300px",  # 根据内容动态调整滚动高度
                  scrollX = TRUE,  # 支持水平滚动
                  fixedHeader = TRUE,  # 启用表头固定
                  paging = TRUE,  # 支持分页
