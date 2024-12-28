@@ -438,7 +438,7 @@ ui <- navbarPage(
         
         # 订单信息区域
         div(
-          style = "height: 300px; margin-bottom: 20px; border: 2px solid #007BFF; border-radius: 8px; 
+          style = "height: 400px; margin-bottom: 20px; border: 2px solid #007BFF; border-radius: 8px; 
              padding: 15px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
           class = "card",
           tags$h4(
