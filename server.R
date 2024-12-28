@@ -970,6 +970,110 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # SKU 输入监听逻辑
+  observeEvent(input$sku_input, {
+    req(input$sku_input, input$shipping_bill_number)  # 确保输入不为空
+    
+    sku <- trimws(input$sku_input)  # 清理多余空格
+    
+    # 获取订单信息
+    order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+    if (nrow(order) == 0) {
+      showNotification("未找到对应订单，请检查运单号！", type = "error")
+      return()
+    }
+    
+    # 提取订单ID
+    order_id <- order$OrderID[1]
+    
+    # 获取订单内物品
+    order_items <- unique_items_data() %>% filter(OrderID == order_id)
+    
+    # 查找SKU匹配的物品
+    matching_item <- order_items %>% filter(SKU == sku, Status != "美国发货")
+    if (nrow(matching_item) == 0) {
+      showNotification("未找到对应SKU或该SKU已完成操作！", type = "error")
+      return()
+    }
+    
+    # 更新数据库状态为“美国发货”
+    tryCatch({
+      update_status(
+        con = con,
+        unique_id = matching_item$UniqueID[1],
+        new_status = "美国发货",
+        refresh_trigger = unique_items_data_refresh_trigger
+      )
+      
+      # 检查是否所有物品都完成操作
+      updated_items <- unique_items_data()
+      if (all(updated_items %>% filter(OrderID == order_id)$Status == "美国发货")) {
+        showModal(modalDialog(
+          title = "订单已装箱完毕",
+          "所有订单内物品均已扫描并完成操作！",
+          easyClose = TRUE
+        ))
+        
+        # 自动关闭模态窗口
+        invalidateLater(3000, session)
+        removeModal()
+      }
+    }, error = function(e) {
+      showNotification(paste("更新状态时发生错误：", e$message), type = "error")
+    })
+  })
+  
+  # 确认发货按钮监听逻辑
+  observeEvent(input$confirm_shipping_btn, {
+    req(input$shipping_bill_number)  # 确保运单号不为空
+    
+    # 获取订单信息
+    order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+    if (nrow(order) == 0) {
+      showNotification("未找到对应订单，请检查运单号！", type = "error")
+      return()
+    }
+    
+    # 提取订单ID
+    order_id <- order$OrderID[1]
+    
+    # 获取订单内物品
+    order_items <- unique_items_data() %>% filter(OrderID == order_id)
+    
+    # 检查是否所有物品状态均为“美国发货”
+    if (!all(order_items$Status == "美国发货")) {
+      showNotification("还有未完成拣货的物品，请核对！", type = "warning")
+      return()
+    }
+    
+    # 更新数据库中订单的状态为“已装箱”
+    tryCatch({
+      dbExecute(con, "UPDATE orders SET OrderStatus = '已装箱' WHERE OrderID = ?", params = list(order_id))
+      
+      # 更新前端订单数据
+      orders(orders() %>% mutate(
+        OrderStatus = ifelse(OrderID == order_id, "已装箱", OrderStatus)
+      ))
+      
+      # 显示成功提示
+      showNotification("订单已成功标记为‘已装箱’！", type = "message")
+      
+      # 弹出完成提示
+      showModal(modalDialog(
+        title = "发货完成",
+        "订单已成功装箱，可以进行下一步操作！",
+        easyClose = TRUE
+      ))
+      
+      # 自动关闭模态窗口
+      invalidateLater(3000, session)
+      removeModal()
+    }, error = function(e) {
+      showNotification(paste("更新订单状态时发生错误：", e$message), type = "error")
+    })
+  })
+  
+  # 渲染订单信息（图片在左，文字在右）
   renderOrderInfo <- function(output, output_name, order_id, img_path, orders_data) {
     # 提取订单数据
     order_info <- orders_data %>% filter(OrderID == order_id)
@@ -1028,6 +1132,7 @@ server <- function(input, output, session) {
     })
   }
   
+  # 渲染订单内物品
   renderOrderItems <- function(output, output_name, order_id, items_data) {
     # 提取订单内物品数据
     order_items <- items_data %>% filter(OrderID == order_id)
@@ -1052,10 +1157,28 @@ server <- function(input, output, session) {
           paste0(host_url, "/images/", basename(item$ItemImagePath))
         )
         
+        # 动态添加蒙版效果
+        mask_overlay <- if (item$Status == "美国发货") {
+          div(
+            style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+                  background: rgba(128, 128, 128, 0.6); display: flex; justify-content: center; align-items: center;
+                  border-radius: 8px;",
+            tags$div(
+              style = "width: 50px; height: 50px; background: #28a745; border-radius: 50%; display: flex; 
+                     justify-content: center; align-items: center;",
+              tags$i(class = "fas fa-check", style = "color: white; font-size: 24px;")  # 绿色勾
+            )
+          )
+        } else {
+          NULL
+        }
+        
+        # 渲染卡片
         div(
           class = "card",
-          style = "display: inline-block; margin: 5px; padding: 5px; width: 250px; text-align: center; 
+          style = "position: relative; display: inline-block; margin: 10px; padding: 10px; width: 230px; text-align: center; 
                  border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
+          mask_overlay,  # 动态显示蒙版
           div(
             style = "margin-bottom: 10px;",
             tags$img(
@@ -1066,23 +1189,23 @@ server <- function(input, output, session) {
           tags$table(
             style = "width: 100%; font-size: 12px; color: #333;",
             tags$tr(
-              tags$td(tags$strong("SKU:"), style = "padding: 2px; width: 60px;"),
+              tags$td(tags$strong("SKU:"), style = "padding: 5px; width: 60px;"),
               tags$td(item$SKU)
             ),
             tags$tr(
-              tags$td(tags$strong("商品名:"), style = "padding: 2px;"),
+              tags$td(tags$strong("商品名:"), style = "padding: 5px;"),
               tags$td(item$ItemName)
             ),
             tags$tr(
-              tags$td(tags$strong("状态:"), style = "padding: 2px;"),
+              tags$td(tags$strong("状态:"), style = "padding: 5px;"),
               tags$td(item$Status)
             ),
             tags$tr(
-              tags$td(tags$strong("瑕疵状态:"), style = "padding: 2px;"),
+              tags$td(tags$strong("瑕疵状态:"), style = "padding: 5px;"),
               tags$td(ifelse(is.na(item$Defect), "无", item$Defect))  # 显示瑕疵状态
             ),
             tags$tr(
-              tags$td(tags$strong("瑕疵备注:"), style = "padding: 2px;"),
+              tags$td(tags$strong("瑕疵备注:"), style = "padding: 5px;"),
               tags$td(ifelse(is.na(item$DefectNotes) || item$DefectNotes == "", "无备注", item$DefectNotes))  # 显示瑕疵备注
             )
           )
@@ -1093,83 +1216,6 @@ server <- function(input, output, session) {
     })
   }
   
-  
-  
-  observeEvent(input$shipping_bill_number, {
-    req(input$shipping_bill_number)  # 确保输入不为空
-    
-    # 查询订单号
-    order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
-    
-    if (nrow(order) == 0) {
-      showNotification("未找到对应订单，请检查运单号！", type = "error")
-      output$order_info_card <- renderUI({ NULL })  # 清空订单信息
-      output$order_items_cards <- renderUI({ NULL })  # 清空物品卡片
-      return()
-    }
-    
-    # 获取订单信息
-    order_id <- order$OrderID[1]
-    img_path <- ifelse(
-      is.na(order$OrderImagePath[1]) || order$OrderImagePath[1] == "",
-      placeholder_300px_path,
-      paste0(host_url, "/images/", basename(order$OrderImagePath[1]))
-    )
-    
-    # 渲染订单信息
-    renderOrderInfo(output, "order_info_card", order_id, img_path, orders())
-    
-    # 渲染订单内物品
-    renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
-  })
-  
-  
-  
-  observeEvent(input$sku_input, {
-    req(input$sku_input, input$shipping_bill_number)  # 确保SKU和运单号输入不为空
-    tryCatch({
-      # 查询订单内物品
-      order_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE SKU = ? AND OrderID = (SELECT OrderID FROM orders WHERE UsTrackingNumber1 = ?)",
-                                params = list(input$sku_input, input$shipping_bill_number))
-      
-      if (nrow(order_items) == 0) {
-        showNotification("该SKU不在订单内，请检查！", type = "error")
-        return()
-      }
-      
-      # 更新物品状态为“装箱”
-      dbExecute(con, "UPDATE unique_items SET Status = '装箱' WHERE UniqueID = ?", params = list(order_items$UniqueID[1]))
-      showNotification("物品已成功装箱！", type = "message")
-      
-      # 刷新订单内物品显示
-      updated_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE OrderID = ?", params = list(order_items$OrderID[1]))
-      output$order_items_table <- renderDT({
-        datatable(updated_items, options = list(pageLength = 5, scrollX = TRUE))
-      })
-    }, error = function(e) {
-      showNotification(paste("处理SKU时出错：", e$message), type = "error")
-    })
-  })
-  
-  observeEvent(input$confirm_shipping_btn, {
-    req(input$shipping_bill_number)  # 确保运单号输入不为空
-    tryCatch({
-      # 检查是否所有物品已装箱
-      unboxed_items <- dbGetQuery(con, "SELECT COUNT(*) AS Unboxed FROM unique_items WHERE Status != '装箱' AND OrderID = (SELECT OrderID FROM orders WHERE UsTrackingNumber1 = ?)",
-                                  params = list(input$shipping_bill_number))
-      
-      if (unboxed_items$Unboxed > 0) {
-        showNotification("还有未装箱的物品，请检查！", type = "error")
-        return()
-      }
-      
-      # 更新订单状态为“在途”
-      dbExecute(con, "UPDATE orders SET OrderStatus = '在途' WHERE UsTrackingNumber1 = ?", params = list(input$shipping_bill_number))
-      showNotification("订单已成功发货！", type = "message")
-    }, error = function(e) {
-      showNotification(paste("发货时出错：", e$message), type = "error")
-    })
-  })
   
   ###################################################################################################################
   ###################################################################################################################
