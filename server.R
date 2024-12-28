@@ -1046,19 +1046,19 @@ server <- function(input, output, session) {
         refresh_trigger = unique_items_data_refresh_trigger
       )
       
-      # 检查是否所有物品都完成操作
-      updated_items <- unique_items_data()
-      if (all(updated_items %>% filter(OrderID == order_id)$Status == "美国发货")) {
-        showModal(modalDialog(
-          title = "订单已装箱完毕",
-          "所有订单内物品均已扫描并完成操作！",
-          easyClose = TRUE
-        ))
-        
-        # 自动关闭模态窗口
-        invalidateLater(3000, session)
-        removeModal()
-      }
+      # # 检查是否所有物品都完成操作
+      # updated_items <- unique_items_data()
+      # if (all(updated_items %>% filter(OrderID == order_id)$Status == "美国发货")) {
+      #   showModal(modalDialog(
+      #     title = "订单已装箱完毕",
+      #     "所有订单内物品均已扫描并完成操作！",
+      #     easyClose = TRUE
+      #   ))
+      #   
+      #   # 自动关闭模态窗口
+      #   invalidateLater(3000, session)
+      #   removeModal()
+      # }
     }, error = function(e) {
       showNotification(paste("更新状态时发生错误：", e$message), type = "error")
     })
