@@ -1070,14 +1070,17 @@ server <- function(input, output, session) {
           easyClose = TRUE
         ))
         
-        # 自动关闭模态窗口
-        invalidateLater(5000, session)
-        removeModal()
+        # 延迟5秒后关闭模态窗口
+        observe({
+          invalidateLater(5000, session)  # 设置5秒延迟
+          removeModal()
+        })
       }
     }, error = function(e) {
       showNotification(paste("更新状态时发生错误：", e$message), type = "error")
     })
   })
+  
   
   # 确认发货按钮监听逻辑
   observeEvent(input$confirm_shipping_btn, {
@@ -1104,15 +1107,15 @@ server <- function(input, output, session) {
     
     # 更新数据库中订单的状态为“已装箱”
     tryCatch({
-      dbExecute(con, "UPDATE orders SET OrderStatus = '已装箱' WHERE OrderID = ?", params = list(order_id))
+      dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(order_id))
       
       # 更新前端订单数据
       orders(orders() %>% mutate(
-        OrderStatus = ifelse(OrderID == order_id, "已装箱", OrderStatus)
+        OrderStatus = ifelse(OrderID == order_id, "装箱", OrderStatus)
       ))
       
       # 显示成功提示
-      showNotification("订单已成功标记为‘已装箱’！", type = "message")
+      showNotification("订单已成功标记为‘装箱’！", type = "message")
       
       # 弹出完成提示
       showModal(modalDialog(
@@ -1122,8 +1125,10 @@ server <- function(input, output, session) {
       ))
       
       # 自动关闭模态窗口
-      invalidateLater(3000, session)
-      removeModal()
+      observe({
+        invalidateLater(5000, session)
+        removeModal()
+      })
     }, error = function(e) {
       showNotification(paste("更新订单状态时发生错误：", e$message), type = "error")
     })
