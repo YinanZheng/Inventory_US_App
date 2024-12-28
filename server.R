@@ -1009,15 +1009,15 @@ server <- function(input, output, session) {
     order_id <- order$OrderID[1]
     order_status <- order$OrderStatus[1]
     
+    # 调用渲染函数
+    renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
+    
     # 检查订单状态是否为“装箱”
     if (order_status == "装箱") {
       showNotification("该订单已装箱，无需重复操作！", type = "warning")
       output$order_items_cards <- renderUI({ NULL })  # 清空物品卡片
       return()
     }
-    
-    # 调用渲染函数
-    renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
     
     # 激活 SKU 输入框，准备接收扫码
     runjs("document.getElementById('sku_input').focus();")
