@@ -1011,27 +1011,40 @@ server <- function(input, output, session) {
     renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
   })
   
-  # SKU 输入监听逻辑
-  observeEvent(input$sku_input, {
-    req(input$sku_input, input$shipping_bill_number)  # 确保输入不为空
-    
-    sku <- trimws(input$sku_input)  # 清理多余空格
+  
+  # 定义 order_items 为 reactive 对象
+  order_items <- reactive({
+    req(input$shipping_bill_number)  # 确保运单号不为空
     
     # 获取订单信息
     order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
     if (nrow(order) == 0) {
-      showNotification("未找到对应订单，请检查运单号！", type = "error")
+      return(data.frame())  # 如果找不到对应订单，返回空数据框
+    }
+    
+    # 提取订单ID并过滤物品数据
+    order_id <- order$OrderID[1]
+    unique_items_data() %>% filter(OrderID == order_id)
+  })
+  
+  
+  # SKU 输入监听逻辑
+  observeEvent(input$sku_input, {
+    req(input$sku_input)  # 确保 SKU 输入不为空
+    
+    sku <- trimws(input$sku_input)  # 清理多余空格
+    
+    # 获取当前订单的物品数据
+    items <- order_items()
+    
+    # 如果订单为空
+    if (nrow(items) == 0) {
+      showNotification("未找到订单对应的物品，请检查订单信息！", type = "error")
       return()
     }
     
-    # 提取订单ID
-    order_id <- order$OrderID[1]
-    
-    # 获取订单内物品
-    order_items <- unique_items_data() %>% filter(OrderID == order_id)
-    
     # 查找SKU匹配的物品
-    matching_item <- order_items %>% filter(SKU == sku, Status != "美国发货")
+    matching_item <- items %>% filter(SKU == sku, Status != "美国发货")
     if (nrow(matching_item) == 0) {
       showNotification("未找到对应SKU或该SKU已完成操作！", type = "error")
       return()
@@ -1046,20 +1059,11 @@ server <- function(input, output, session) {
         refresh_trigger = unique_items_data_refresh_trigger
       )
       
-      # 检查是否所有物品都完成操作
-      updated_items <- unique_items_data()
-      
-      # 过滤对应订单的物品
-      filtered_items <- updated_items %>% filter(OrderID == order_id)
-      
-      # 检查是否存在对应数据
-      if (nrow(filtered_items) == 0) {
-        showNotification("未找到订单对应的物品，请检查订单信息！", type = "error")
-        return()
-      }
+      # 获取更新后的物品数据
+      updated_items <- order_items()
       
       # 检查所有物品是否状态为“美国发货”
-      if (all(filtered_items$Status == "美国发货")) {
+      if (all(updated_items$Status == "美国发货")) {
         showModal(modalDialog(
           title = "订单已装箱完毕",
           "所有订单内物品均已扫描并完成操作！",
@@ -1067,7 +1071,7 @@ server <- function(input, output, session) {
         ))
         
         # 自动关闭模态窗口
-        invalidateLater(3000, session)
+        invalidateLater(5000, session)
         removeModal()
       }
     }, error = function(e) {
