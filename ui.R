@@ -400,6 +400,81 @@ ui <- navbarPage(
     )
   ), # end of 售出 tab
   
+  tabPanel(
+    "发货", icon = icon("truck"),
+    div(
+      class = "layout-container",  # Flexbox 容器
+      
+      # 左侧：发货条形码输入区域
+      div(
+        class = "sticky-sidebar",
+        style = "width: 400px;",  # 左侧固定宽度
+        
+        div(
+          class = "card",
+          style = "padding: 20px; border: 1px solid #007BFF; border-radius: 8px; margin-bottom: 20px;",
+          
+          # 运单号输入框
+          textInput(
+            "shipping_bill_number",
+            "运单号:",
+            placeholder = "请扫描或输入运单号",
+            width = "100%"
+          ),
+          
+          # SKU 输入框
+          textInput(
+            "sku_input",
+            "SKU:",
+            placeholder = "请扫描或输入SKU条形码",
+            width = "100%"
+          ),
+          
+          # 确认发货按钮
+          actionButton(
+            "confirm_shipping_btn",
+            "确认发货",
+            icon = icon("check"),
+            class = "btn-primary",
+            style = "font-size: 16px; width: 100%; margin-top: 10px;"
+          )
+        )
+      ),
+      
+      # 右侧：订单信息和物品信息
+      div(
+        class = "main-panel",
+        
+        fluidRow(
+          column(
+            6,
+            div(
+              class = "card",
+              style = "padding: 20px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 10px;",
+              tags$h4(
+                HTML(paste0(as.character(icon("clipboard-list")), " 订单信息")),
+                style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"
+              ),
+              DTOutput("order_info_table")  # 显示订单信息
+            )
+          ),
+          column(
+            6,
+            div(
+              class = "card",
+              style = "padding: 20px; margin-bottom: 20px; border: 1px solid #28A745; border-radius: 10px;",
+              tags$h4(
+                HTML(paste0(as.character(icon("box")), " 订单内物品")),
+                style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+              ),
+              DTOutput("order_items_table")  # 显示订单内物品
+            )
+          )
+        )
+      )
+    )
+  ), # End of "发货"
+  
   
   tabPanel(
     "物品管理", icon = icon("list-check"),
