@@ -1174,6 +1174,223 @@ server <- function(input, output, session) {
   
   ################################################################
   ##                                                            ##
+  ## 订单管理分页                                               ##
+  ##                                                            ##
+  ################################################################
+  
+  # 监听筛选条件变化
+  observe({
+    input$filter_order_id
+    input$filter_customer_name
+    input$filter_platform
+    filtered_orders()  # 自动触发数据刷新
+  })
+  
+  # 订单图片处理模块
+  image_order_manage <- imageModuleServer("image_order_manage")
+  
+  # 选择某个订单后，渲染关联物品表
+  observeEvent(selected_order_row(), {
+    selected_row <- selected_order_row()
+    req(selected_row)  # 确保用户选择了一行
+    
+    # 获取选中的订单数据
+    selected_order <- filtered_orders()[selected_row, ]  
+    order_id <- selected_order$OrderID
+    customer_name <- selected_order$CustomerName
+    
+    # 填充左侧订单信息栏
+    updateTextInput(session, "update_customer_name", value = customer_name)
+    updateSelectInput(session, "update_platform", selected = selected_order$Platform)
+    updateTextInput(session, "update_tracking_number1", value = selected_order$UsTrackingNumber1)
+    updateTextInput(session, "update_tracking_number2", value = selected_order$UsTrackingNumber2)
+    updateTextInput(session, "update_tracking_number3", value = selected_order$UsTrackingNumber3)
+    updateTextAreaInput(session, "update_order_notes", value = selected_order$OrderNotes)
+    
+    # 动态更新标题
+    output$associated_items_title <- renderUI({
+      tags$h4(
+        sprintf("#%s - %s 的订单物品", order_id, customer_name),
+        style = "color: #007BFF; font-weight: bold;"
+      )
+    })
+    
+    # 渲染关联物品表
+    associated_items <- reactive({
+      # 根据订单号筛选关联物品
+      items <- unique_items_data() %>% filter(OrderID == order_id)
+      
+      # 动态移除列
+      if (all(items$IntlShippingMethod == "空运" | is.na(items$IntlShippingMethod))) {
+        items <- items %>% select(-IntlSeaTracking)  # 移除海运单号列
+      } else if (all(items$IntlShippingMethod == "海运" | is.na(items$IntlShippingMethod))) {
+        items <- items %>% select(-IntlAirTracking)  # 移除空运单号列
+      }
+      
+      items
+    })
+    
+    # 使用 uniqueItemsTableServer 渲染关联物品表
+    callModule(uniqueItemsTableServer, "associated_items_table_module",
+               column_mapping = c(common_columns, list(
+                 PurchaseTime = "采购日期",
+                 IntlShippingMethod = "国际运输",
+                 IntlAirTracking = "国际空运单号",
+                 IntlSeaTracking = "国际海运单号"
+               )),
+               data = associated_items,
+               options = list(
+                 scrollY = "300px",  # 根据内容动态调整滚动高度
+                 scrollX = TRUE,  # 支持水平滚动
+                 fixedHeader = TRUE,  # 启用表头固定
+                 paging = TRUE,  # 支持分页
+                 dom = 't',  # 隐藏搜索框和分页等控件
+                 paging = FALSE,  # 禁用分页
+                 searching = FALSE  # 禁用搜索
+               ))
+  })
+  
+  # 更新订单逻辑
+  observeEvent(input$update_order_btn, {
+    req(selected_order_row())  # 确保用户选择了一行订单
+    selected_row <- selected_order_row()
+    
+    # 获取选中的订单数据
+    selected_order <- filtered_orders()[selected_row, ]
+    order_id <- selected_order$OrderID
+    
+    # 获取当前订单的图片路径
+    existing_image_path <- selected_order$OrderImagePath
+    
+    # 处理图片上传或粘贴
+    updated_image_path <- process_image_upload(
+      sku = order_id,  # 使用订单号作为 SKU
+      file_data = image_order_manage$uploaded_file(),
+      pasted_data = image_order_manage$pasted_file(),
+      inventory_path = existing_image_path
+    )
+    
+    tryCatch({
+      # 更新订单信息
+      dbExecute(con, "
+      UPDATE orders 
+      SET CustomerName = ?, 
+          Platform = ?, 
+          UsTrackingNumber1 = ?, 
+          UsTrackingNumber2 = ?, 
+          UsTrackingNumber3 = ?, 
+          OrderNotes = ?, 
+          OrderImagePath = ?
+      WHERE OrderID = ?",
+                params = list(
+                  input$update_customer_name,   # 更新的顾客姓名
+                  input$update_platform,        # 更新的电商平台
+                  input$update_tracking_number1, # 更新的运单号1
+                  input$update_tracking_number2, # 更新的运单号2
+                  input$update_tracking_number3, # 更新的运单号3
+                  input$update_order_notes,      # 更新的备注
+                  updated_image_path,           # 更新的图片路径
+                  order_id                      # 更新的订单号
+                )
+      )
+      showNotification("订单信息已成功更新！", type = "message")
+      
+      # 更新orders，触发表格刷新
+      orders(dbGetQuery(con, "SELECT * FROM orders"))
+      
+      # 清空左侧输入栏
+      updateTextInput(session, "update_customer_name", value = "")
+      updateSelectInput(session, "update_platform", selected = "")
+      updateTextInput(session, "update_tracking_number1", value = "")
+      updateTextInput(session, "update_tracking_number2", value = "")
+      updateTextInput(session, "update_tracking_number3", value = "")
+      updateTextAreaInput(session, "update_order_notes", value = "")
+      image_order_manage$reset()  # 重置图片模块
+    }, error = function(e) {
+      showNotification(paste("更新订单时发生错误：", e$message), type = "error")
+    })
+  })
+  
+  # 删除订单逻辑
+  observeEvent(input$delete_order_btn, {
+    req(selected_order_row())  # 确保用户选择了一行订单
+    selected_row <- selected_order_row()
+    
+    # 获取选中的订单数据
+    selected_order <- filtered_orders()[selected_row, ]
+    order_id <- selected_order$OrderID
+    
+    tryCatch({
+      # 获取与订单关联的物品
+      associated_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE OrderID = ?", params = list(order_id))
+      
+      if (nrow(associated_items) > 0) {
+        # 遍历关联物品进行逆向操作
+        lapply(1:nrow(associated_items), function(i) {
+          item <- associated_items[i, ]
+          
+          # 逆向调整库存
+          adjust_inventory(
+            con = con,
+            sku = item$SKU,
+            adjustment = 1  # 增加库存数量
+          )
+          
+          # 恢复物品状态到“国内入库”
+          update_status(
+            con = con,
+            unique_id = item$UniqueID,
+            new_status = "国内入库"
+          )
+          
+          # 清空物品的 OrderID
+          update_order_id(
+            con = con,
+            unique_id = item$UniqueID,
+            order_id = NULL  # 清空订单号
+          )
+        })
+      }
+      
+      # 删除订单记录
+      dbExecute(con, "DELETE FROM orders WHERE OrderID = ?", params = list(order_id))
+      
+      # 通知用户操作结果
+      message <- if (nrow(associated_items) > 0) {
+        paste("订单", order_id, "已成功删除，订单内物品已返回库存！")
+      } else {
+        paste("订单", order_id, "已成功删除，没有关联的物品需要处理！")
+      }
+      showNotification(message, type = "message")
+      
+      # 刷新数据
+      inventory(dbGetQuery(con, "SELECT * FROM inventory"))
+      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
+      orders(dbGetQuery(con, "SELECT * FROM orders"))
+      
+      # 清空左侧输入栏
+      updateTextInput(session, "update_customer_name", value = "")
+      updateSelectInput(session, "update_platform", selected = "")
+      updateTextInput(session, "update_tracking_number1", value = "")
+      updateTextInput(session, "update_tracking_number2", value = "")
+      updateTextInput(session, "update_tracking_number3", value = "")
+      updateTextAreaInput(session, "update_order_notes", value = "")
+      image_order_manage$reset()  # 重置图片模块
+      
+      # 清空关联物品表
+      output$associated_items_table <- renderDT({ NULL })
+    }, error = function(e) {
+      showNotification(paste("删除订单时发生错误：", e$message), type = "error")
+    })
+  })
+  
+  
+  
+  
+  
+  
+  ################################################################
+  ##                                                            ##
   ## 物品管理分页                                               ##
   ##                                                            ##
   ################################################################
@@ -1521,220 +1738,6 @@ server <- function(input, output, session) {
       
     }, error = function(e) {
       showNotification(paste("删除运单号失败：", e$message), type = "error")
-    })
-  })
-  
-  
-  
-  ################################################################
-  ##                                                            ##
-  ## 订单管理分页                                               ##
-  ##                                                            ##
-  ################################################################
-  
-  # 监听筛选条件变化
-  observe({
-    input$filter_order_id
-    input$filter_customer_name
-    input$filter_platform
-    filtered_orders()  # 自动触发数据刷新
-  })
-  
-  # 订单图片处理模块
-  image_order_manage <- imageModuleServer("image_order_manage")
-  
-  # 选择某个订单后，渲染关联物品表
-  observeEvent(selected_order_row(), {
-    selected_row <- selected_order_row()
-    req(selected_row)  # 确保用户选择了一行
-    
-    # 获取选中的订单数据
-    selected_order <- filtered_orders()[selected_row, ]  
-    order_id <- selected_order$OrderID
-    customer_name <- selected_order$CustomerName
-    
-    # 填充左侧订单信息栏
-    updateTextInput(session, "update_customer_name", value = customer_name)
-    updateSelectInput(session, "update_platform", selected = selected_order$Platform)
-    updateTextInput(session, "update_tracking_number1", value = selected_order$UsTrackingNumber1)
-    updateTextInput(session, "update_tracking_number2", value = selected_order$UsTrackingNumber2)
-    updateTextInput(session, "update_tracking_number3", value = selected_order$UsTrackingNumber3)
-    updateTextAreaInput(session, "update_order_notes", value = selected_order$OrderNotes)
-    
-    # 动态更新标题
-    output$associated_items_title <- renderUI({
-      tags$h4(
-        sprintf("#%s - %s 的订单物品", order_id, customer_name),
-        style = "color: #007BFF; font-weight: bold;"
-      )
-    })
-    
-    # 渲染关联物品表
-    associated_items <- reactive({
-      # 根据订单号筛选关联物品
-      items <- unique_items_data() %>% filter(OrderID == order_id)
-      
-      # 动态移除列
-      if (all(items$IntlShippingMethod == "空运" | is.na(items$IntlShippingMethod))) {
-        items <- items %>% select(-IntlSeaTracking)  # 移除海运单号列
-      } else if (all(items$IntlShippingMethod == "海运" | is.na(items$IntlShippingMethod))) {
-        items <- items %>% select(-IntlAirTracking)  # 移除空运单号列
-      }
-      
-      items
-    })
-    
-    # 使用 uniqueItemsTableServer 渲染关联物品表
-    callModule(uniqueItemsTableServer, "associated_items_table_module",
-               column_mapping = c(common_columns, list(
-                 PurchaseTime = "采购日期",
-                 IntlShippingMethod = "国际运输",
-                 IntlAirTracking = "国际空运单号",
-                 IntlSeaTracking = "国际海运单号"
-               )),
-               data = associated_items,
-               options = list(
-                 scrollY = "420px",  # 根据内容动态调整滚动高度
-                 scrollX = TRUE,  # 支持水平滚动
-                 fixedHeader = TRUE,  # 启用表头固定
-                 paging = TRUE,  # 支持分页
-                 dom = 't',  # 隐藏搜索框和分页等控件
-                 paging = FALSE,  # 禁用分页
-                 searching = FALSE  # 禁用搜索
-               ))
-  })
-  
-  # 更新订单逻辑
-  observeEvent(input$update_order_btn, {
-    req(selected_order_row())  # 确保用户选择了一行订单
-    selected_row <- selected_order_row()
-    
-    # 获取选中的订单数据
-    selected_order <- filtered_orders()[selected_row, ]
-    order_id <- selected_order$OrderID
-    
-    # 获取当前订单的图片路径
-    existing_image_path <- selected_order$OrderImagePath
-    
-    # 处理图片上传或粘贴
-    updated_image_path <- process_image_upload(
-      sku = order_id,  # 使用订单号作为 SKU
-      file_data = image_order_manage$uploaded_file(),
-      pasted_data = image_order_manage$pasted_file(),
-      inventory_path = existing_image_path
-    )
-    
-    tryCatch({
-      # 更新订单信息
-      dbExecute(con, "
-      UPDATE orders 
-      SET CustomerName = ?, 
-          Platform = ?, 
-          UsTrackingNumber1 = ?, 
-          UsTrackingNumber2 = ?, 
-          UsTrackingNumber3 = ?, 
-          OrderNotes = ?, 
-          OrderImagePath = ?
-      WHERE OrderID = ?",
-                params = list(
-                  input$update_customer_name,   # 更新的顾客姓名
-                  input$update_platform,        # 更新的电商平台
-                  input$update_tracking_number1, # 更新的运单号1
-                  input$update_tracking_number2, # 更新的运单号2
-                  input$update_tracking_number3, # 更新的运单号3
-                  input$update_order_notes,      # 更新的备注
-                  updated_image_path,           # 更新的图片路径
-                  order_id                      # 更新的订单号
-                )
-      )
-      showNotification("订单信息已成功更新！", type = "message")
-      
-      # 更新orders，触发表格刷新
-      orders(dbGetQuery(con, "SELECT * FROM orders"))
-      
-      # 清空左侧输入栏
-      updateTextInput(session, "update_customer_name", value = "")
-      updateSelectInput(session, "update_platform", selected = "")
-      updateTextInput(session, "update_tracking_number1", value = "")
-      updateTextInput(session, "update_tracking_number2", value = "")
-      updateTextInput(session, "update_tracking_number3", value = "")
-      updateTextAreaInput(session, "update_order_notes", value = "")
-      image_order_manage$reset()  # 重置图片模块
-    }, error = function(e) {
-      showNotification(paste("更新订单时发生错误：", e$message), type = "error")
-    })
-  })
-  
-  # 删除订单逻辑
-  observeEvent(input$delete_order_btn, {
-    req(selected_order_row())  # 确保用户选择了一行订单
-    selected_row <- selected_order_row()
-    
-    # 获取选中的订单数据
-    selected_order <- filtered_orders()[selected_row, ]
-    order_id <- selected_order$OrderID
-    
-    tryCatch({
-      # 获取与订单关联的物品
-      associated_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE OrderID = ?", params = list(order_id))
-      
-      if (nrow(associated_items) > 0) {
-        # 遍历关联物品进行逆向操作
-        lapply(1:nrow(associated_items), function(i) {
-          item <- associated_items[i, ]
-          
-          # 逆向调整库存
-          adjust_inventory(
-            con = con,
-            sku = item$SKU,
-            adjustment = 1  # 增加库存数量
-          )
-          
-          # 恢复物品状态到“国内入库”
-          update_status(
-            con = con,
-            unique_id = item$UniqueID,
-            new_status = "国内入库"
-          )
-          
-          # 清空物品的 OrderID
-          update_order_id(
-            con = con,
-            unique_id = item$UniqueID,
-            order_id = NULL  # 清空订单号
-          )
-        })
-      }
-      
-      # 删除订单记录
-      dbExecute(con, "DELETE FROM orders WHERE OrderID = ?", params = list(order_id))
-      
-      # 通知用户操作结果
-      message <- if (nrow(associated_items) > 0) {
-        paste("订单", order_id, "已成功删除，订单内物品已返回库存！")
-      } else {
-        paste("订单", order_id, "已成功删除，没有关联的物品需要处理！")
-      }
-      showNotification(message, type = "message")
-      
-      # 刷新数据
-      inventory(dbGetQuery(con, "SELECT * FROM inventory"))
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-      orders(dbGetQuery(con, "SELECT * FROM orders"))
-      
-      # 清空左侧输入栏
-      updateTextInput(session, "update_customer_name", value = "")
-      updateSelectInput(session, "update_platform", selected = "")
-      updateTextInput(session, "update_tracking_number1", value = "")
-      updateTextInput(session, "update_tracking_number2", value = "")
-      updateTextInput(session, "update_tracking_number3", value = "")
-      updateTextAreaInput(session, "update_order_notes", value = "")
-      image_order_manage$reset()  # 重置图片模块
-      
-      # 清空关联物品表
-      output$associated_items_table <- renderDT({ NULL })
-    }, error = function(e) {
-      showNotification(paste("删除订单时发生错误：", e$message), type = "error")
     })
   })
   
