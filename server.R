@@ -969,6 +969,47 @@ server <- function(input, output, session) {
   ## 发货分页                                                   ##
   ##                                                            ##
   ################################################################
+    
+  # 动态渲染订单信息
+  observe({
+    req(input$shipping_bill_number)  # 确保运单号不为空
+    
+    # 获取订单信息
+    order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+    if (nrow(order) == 0) {
+      output$order_info_card <- renderUI({ NULL })  # 清空订单信息
+      return()
+    }
+    
+    # 提取订单ID和图片路径
+    order_id <- order$OrderID[1]
+    img_path <- ifelse(
+      is.na(order$OrderImagePath[1]) || order$OrderImagePath[1] == "",
+      placeholder_300px_path,
+      paste0(host_url, "/images/", basename(order$OrderImagePath[1]))
+    )
+    
+    # 调用渲染函数
+    renderOrderInfo(output, "order_info_card", order_id, img_path, orders())
+  })
+  
+  # 动态渲染订单内物品
+  observe({
+    req(input$shipping_bill_number)  # 确保运单号不为空
+    
+    # 获取订单信息
+    order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+    if (nrow(order) == 0) {
+      output$order_items_cards <- renderUI({ NULL })  # 清空物品卡片
+      return()
+    }
+    
+    # 提取订单ID
+    order_id <- order$OrderID[1]
+    
+    # 调用渲染函数
+    renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
+  })
   
   # SKU 输入监听逻辑
   observeEvent(input$sku_input, {
@@ -1132,7 +1173,7 @@ server <- function(input, output, session) {
     })
   }
   
-  # 渲染订单内物品
+  # 动态渲染物品卡片
   renderOrderItems <- function(output, output_name, order_id, items_data) {
     # 提取订单内物品数据
     order_items <- items_data %>% filter(OrderID == order_id)
@@ -1157,7 +1198,7 @@ server <- function(input, output, session) {
           paste0(host_url, "/images/", basename(item$ItemImagePath))
         )
         
-        # 动态添加蒙版效果
+        # 动态添加蒙版和打勾图标
         mask_overlay <- if (item$Status == "美国发货") {
           div(
             style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
