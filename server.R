@@ -1012,7 +1012,7 @@ server <- function(input, output, session) {
     renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
     
     # 激活 SKU 输入框，准备接收扫码
-    updateTextInput(session, "sku_input", value = "")
+    runjs("document.getElementById('sku_input').focus();")
     
     # 提示用户可以输入 SKU
     showNotification("请扫描或输入SKU条码！", type = "message")
