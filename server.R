@@ -924,7 +924,7 @@ server <- function(input, output, session) {
         update_status(
           con = con,
           unique_id = item$UniqueID,
-          new_status = "国内售出",
+          new_status = "美国售出",
           refresh_trigger = unique_items_data_refresh_trigger
         )
         
