@@ -534,7 +534,7 @@ ui <- navbarPage(
         # 订单表
         div(
           class = "card",
-          style = "height: 420px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
+          style = "height: 450px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
           tags$h4("订单表", style = "color: #007BFF; font-weight: bold;"),
           orderTableUI("orders_table_module")  # 订单表模块
         ),
