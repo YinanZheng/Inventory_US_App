@@ -370,7 +370,7 @@ ui <- navbarPage(
                    
                    fluidRow(
                      column(
-                       width = 7, # 左侧按钮宽度
+                       width = 12, # 左侧按钮宽度
                        actionButton(
                          "confirm_order_btn",
                          "确认售出",
@@ -378,51 +378,6 @@ ui <- navbarPage(
                          class = "btn-primary", 
                          style = "font-size: 16px; width: 100%; height: 50px; margin-top: 10px;"
                        )
-                     ),
-                     column(
-                       width = 5, # 右侧选择框宽度
-                       tags$div(
-                         style = "
-    display: flex; 
-    align-items: center; 
-    justify-content: flex-start; 
-    border: 1px solid #007BFF; 
-    border-radius: 8px; 
-    height: 50px; 
-    padding: 0 10px; 
-    margin-top: 10px;
-  ",
-                         tags$span(
-                           "国际运输:", 
-                           style = "font-size: 16px; font-weight: bold; margin-right: 15px; line-height: 1;"
-                         ),
-                         tags$div(
-                           style = "
-      display: flex; 
-      align-items: center; 
-      height: 100%; 
-      margin-bottom: 0; /* 移除底部间距 */
-    ",
-                           tags$style(HTML("
-      #sold_shipping_method .radio {
-        margin-bottom: 0 !important; /* 移除默认的 margin */
-      }
-      #sold_shipping_method {
-        margin-bottom: 0 !important; /* 避免容器本身多余间距 */
-      }
-    ")),
-                           radioButtons(
-                             inputId = "sold_shipping_method",
-                             label = NULL, # 去掉默认 label
-                             choices = list("空运" = "空运", "海运" = "海运"),
-                             selected = "空运",  # 默认选择空运
-                             inline = TRUE       # 设置为横向排布
-                           )
-                         )
-                       )
-                       
-                       
-                       
                      )
                    )
                  )
