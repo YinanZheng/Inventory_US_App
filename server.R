@@ -972,27 +972,116 @@ server <- function(input, output, session) {
   
   observeEvent(input$shipping_bill_number, {
     req(input$shipping_bill_number)  # 确保运单号输入不为空
+    
     tryCatch({
       # 查询订单信息
-      order_data <- dbGetQuery(con, "SELECT * FROM orders WHERE UsTrackingNumber1 = ?", params = list(input$shipping_bill_number))
+      order_data <- dbGetQuery(con, "SELECT * FROM orders WHERE UsTrackingNumber1 = ?", 
+                               params = list(input$shipping_bill_number))
       
       if (nrow(order_data) == 0) {
         showNotification("未找到对应订单，请检查运单号！", type = "error")
+        output$order_info_card <- renderUI({ NULL })  # 清空UI
+        output$order_items_cards <- renderUI({ NULL })  # 清空UI
         return()
       }
       
-      # 显示订单信息
-      output$order_info_table <- renderDT({
-        datatable(order_data, options = list(pageLength = 5, scrollX = TRUE))
+      # 获取订单图片路径
+      img_path <- ifelse(
+        is.na(order_data$OrderImagePath[1]) || order_data$OrderImagePath[1] == "",
+        placeholder_300px_path,
+        paste0(host_url, "/images/", basename(order_data$OrderImagePath[1]))
+      )
+      
+      # 渲染订单信息（图片 + 文本）
+      output$order_info_card <- renderUI({
+        div(
+          style = "display: flex; flex-direction: column; align-items: center; padding: 10px;",
+          div(
+            style = "margin-bottom: 10px;",
+            tags$img(
+              src = img_path,
+              style = "max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);"
+            )
+          ),
+          div(
+            style = "padding: 10px;",
+            tags$table(
+              style = "width: 100%; font-size: 14px; color: #333;",
+              tags$tr(
+                tags$td(tags$strong("订单号:"), style = "padding: 8px 10px; width: 100px; vertical-align: top;"),
+                tags$td(order_data$OrderID[1])
+              ),
+              tags$tr(
+                tags$td(tags$strong("顾客姓名:"), style = "padding: 8px 10px; vertical-align: top;"),
+                tags$td(order_data$CustomerName[1])
+              ),
+              tags$tr(
+                tags$td(tags$strong("平台:"), style = "padding: 8px 10px; vertical-align: top;"),
+                tags$td(order_data$Platform[1])
+              ),
+              tags$tr(
+                tags$td(tags$strong("备注:"), style = "padding: 8px 10px; vertical-align: top;"),
+                tags$td(order_data$OrderNotes[1])
+              )
+            )
+          )
+        )
       })
       
-      # 加载订单内物品
-      order_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE OrderID = ?", params = list(order_data$OrderID[1]))
-      output$order_items_table <- renderDT({
-        datatable(order_items, options = list(pageLength = 5, scrollX = TRUE))
+      # 查询订单内物品
+      order_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE OrderID = ?", 
+                                params = list(order_data$OrderID[1]))
+      
+      # 渲染订单内物品卡片
+      output$order_items_cards <- renderUI({
+        if (nrow(order_items) == 0) {
+          return(div("没有找到该订单内的物品。"))
+        }
+        
+        item_cards <- lapply(1:nrow(order_items), function(i) {
+          item <- order_items[i, ]
+          
+          item_img_path <- ifelse(
+            is.na(item$ItemImagePath) || item$ItemImagePath == "",
+            placeholder_150px_path,
+            paste0(host_url, "/images/", basename(item$ItemImagePath))
+          )
+          
+          div(
+            class = "card",
+            style = "display: inline-block; margin: 10px; padding: 10px; width: 200px; text-align: center; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
+            div(
+              style = "margin-bottom: 10px;",
+              tags$img(
+                src = item_img_path,
+                style = "max-width: 100%; height: auto; border-radius: 8px;"
+              )
+            ),
+            tags$table(
+              style = "width: 100%; font-size: 12px; color: #333;",
+              tags$tr(
+                tags$td(tags$strong("SKU:"), style = "padding: 5px; width: 60px;"),
+                tags$td(item$SKU)
+              ),
+              tags$tr(
+                tags$td(tags$strong("商品名:"), style = "padding: 5px;"),
+                tags$td(item$ItemName)
+              ),
+              tags$tr(
+                tags$td(tags$strong("状态:"), style = "padding: 5px;"),
+                tags$td(item$Status)
+              )
+            )
+          )
+        })
+        
+        do.call(tagList, item_cards)  # 返回卡片列表
       })
+      
     }, error = function(e) {
       showNotification(paste("加载订单信息时出错：", e$message), type = "error")
+      output$order_info_card <- renderUI({ NULL })  # 清空UI
+      output$order_items_cards <- renderUI({ NULL })  # 清空UI
     })
   })
   
