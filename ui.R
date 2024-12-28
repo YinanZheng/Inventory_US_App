@@ -684,7 +684,7 @@ ui <- navbarPage(
       # 左侧：筛选条件和订单信息
       div(
         class = "sticky-sidebar",
-        style = "width: 280px;",  # 缩窄侧边栏宽度
+        style = "width: 400px;",  # 缩窄侧边栏宽度
         
         # 筛选条件 Card
         div(
@@ -735,12 +735,12 @@ ui <- navbarPage(
       # 右侧：主面板
       div(
         class = "main-panel",
-        style = "display: flex; gap: 20px;",
+        style = "display: flex; flex-direction: column; gap: 20px;", # 修改为纵向排列
         
         # 订单表
         div(
           class = "card",
-          style = "flex: 1 0 40%; padding: 15px; border: 1px solid #ccc; border-radius: 8px;",  # 窄一些
+          style = "flex: 1 0 auto; padding: 15px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
           tags$h4("订单表", style = "color: #007BFF; font-weight: bold;"),
           orderTableUI("orders_table_module")  # 订单表模块
         ),
@@ -748,7 +748,7 @@ ui <- navbarPage(
         # 关联物品表
         div(
           class = "card",
-          style = "flex: 1 0 60%; padding: 15px; border: 1px solid #ccc; border-radius: 8px;",  # 宽一些
+          style = "flex: 1 0 auto; padding: 15px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
           uiOutput("associated_items_title"),  # 动态标题
           uniqueItemsTableUI("associated_items_table_module")  # 关联物品表模块
         )

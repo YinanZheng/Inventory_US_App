@@ -1,4 +1,10 @@
-uniqueItemsTableServer <- function(input, output, session, column_mapping, selection = "single", data) {
+uniqueItemsTableServer <- function(input, output, session, column_mapping, selection = "single", data, options = list(
+  scrollY = "700px",  # 根据内容动态调整滚动高度
+  scrollX = TRUE,  # 支持水平滚动
+  fixedHeader = TRUE,  # 启用表头固定
+  paging = TRUE,  # 支持分页
+  searching = TRUE  # 支持搜索
+)) {
   output$unique_items_table <- renderDT({
     # 初始化渲染表
     datatable_and_names <- render_table_with_images(
@@ -6,13 +12,7 @@ uniqueItemsTableServer <- function(input, output, session, column_mapping, selec
       column_mapping = column_mapping, # 映射用户友好的列名
       selection = selection, 
       image_column = "ItemImagePath",
-      options = list(
-        scrollY = "700px",  # 根据内容动态调整滚动高度
-        scrollX = TRUE,  # 支持水平滚动
-        fixedHeader = TRUE,  # 启用表头固定
-        paging = TRUE,  # 支持分页
-        searching = TRUE  # 支持搜索
-      )
+      options = options,
     )
     
     # 获取数据列名

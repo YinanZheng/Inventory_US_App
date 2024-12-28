@@ -381,7 +381,14 @@ server <- function(input, output, session) {
                                      OrderNotes = "备注"
                                    ),
                                    data = filtered_orders,  # 数据源
-                                   selection = "single"  # 单选模式
+                                   selection = "single",
+                                   options = list(
+                                     scrollY = "350px",  # 根据内容动态调整滚动高度
+                                     scrollX = TRUE,  # 支持水平滚动
+                                     fixedHeader = TRUE,  # 启用表头固定
+                                     paging = TRUE,  # 支持分页
+                                     searching = TRUE  # 支持搜索
+                                   )# 单选模式
   )
   
   ####################################################################################################################################
@@ -1583,7 +1590,14 @@ server <- function(input, output, session) {
                  IntlAirTracking = "国际空运单号",
                  IntlSeaTracking = "国际海运单号"
                )),
-               data = associated_items)
+               data = associated_items,
+               options = list(
+                 scrollY = "350px",  # 根据内容动态调整滚动高度
+                 scrollX = TRUE,  # 支持水平滚动
+                 fixedHeader = TRUE,  # 启用表头固定
+                 paging = TRUE,  # 支持分页
+                 searching = TRUE  # 支持搜索
+               ))
   })
   
   # 更新订单逻辑
