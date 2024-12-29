@@ -105,19 +105,6 @@ ui <- navbarPage(
       .custom-selectize .selectize-dropdown-content {
         font-size: 12px !important; /* 设置下拉菜单字体大小 */
       }
-      
-      /* 确保 DataTables 的表头与表身对齐 */
-      table.dataTable {
-        table-layout: auto;  /* 自动调整列宽 */
-      }
-      table.dataTable th {
-        white-space: nowrap; /* 防止表头换行 */
-        overflow: hidden;    /* 隐藏超出内容 */
-        text-overflow: ellipsis;
-      }
-      table.dataTable td {
-        white-space: normal; /* 表身允许换行 */
-      }
     ")),
       
       tags$script(HTML("

@@ -388,15 +388,7 @@ server <- function(input, output, session) {
                                      fixedHeader = TRUE,  # 启用表头固定
                                      dom = 't',  # 隐藏搜索框和分页等控件
                                      paging = FALSE,  # 禁用分页
-                                     searching = FALSE, # 禁用搜索
-                                     autoWidth = TRUE,
-                                     columnDefs = list(
-                                       list(
-                                         targets = which(names(filtered_orders) == "备注"),  # 替换为备注栏的列索引或名称
-                                         width = "200px",  # 设置宽度
-                                         className = "dt-wrap"  # 添加换行的样式
-                                       )
-                                     )
+                                     searching = FALSE # 禁用搜索
                                    )
   )
   
