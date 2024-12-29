@@ -105,6 +105,11 @@ ui <- navbarPage(
       .custom-selectize .selectize-dropdown-content {
         font-size: 12px !important; /* 设置下拉菜单字体大小 */
       }
+      
+      table.dataTable td.dt-wrap {
+        white-space: normal !important;  /* 自动换行 */
+        word-wrap: break-word;          /* 支持长单词断行 */
+      }
     ")),
       
       tags$script(HTML("

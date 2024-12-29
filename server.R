@@ -392,8 +392,9 @@ server <- function(input, output, session) {
                                      autoWidth = TRUE,
                                      columnDefs = list(
                                        list(
-                                         targets = which(names(filtered_orders()) == "备注"),  # 替换为备注栏的列索引或名称
-                                         width = "200px"  # 设置宽度
+                                         targets = which(names(filtered_orders) == "备注"),  # 替换为备注栏的列索引或名称
+                                         width = "200px",  # 设置宽度
+                                         className = "dt-wrap"  # 添加换行的样式
                                        )
                                      )
                                    )
