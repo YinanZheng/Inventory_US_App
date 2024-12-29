@@ -106,9 +106,17 @@ ui <- navbarPage(
         font-size: 12px !important; /* 设置下拉菜单字体大小 */
       }
       
+      /* 表格内容换行设置 */
       table.dataTable td.dt-wrap {
-        white-space: normal !important;  /* 自动换行 */
-        word-wrap: break-word;          /* 支持长单词断行 */
+        white-space: normal !important;  /* 强制启用自动换行 */
+        word-wrap: break-word;           /* 允许长单词断行 */
+        word-break: break-all;           /* 针对长单词直接换行 */
+      }
+      
+      /* 限制列宽 */
+      table.dataTable th, table.dataTable td {
+        max-width: 200px;                /* 替换为所需的列宽 */
+        overflow: hidden;                /* 隐藏超出内容 */
       }
     ")),
       
