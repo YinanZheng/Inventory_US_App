@@ -978,103 +978,94 @@ server <- function(input, output, session) {
   ## 发货分页                                                   ##
   ##                                                            ##
   ################################################################
+  
+  # ReactiveVal 用于存储当前处理的订单队列
+  order_queue <- reactiveVal(NULL)
+  
+  observe({
+    req(input$shipping_bill_number)
     
-  # 动态渲染订单信息
-  observe({ 
-    # 确保运单号不为空
-    if (is.null(input$shipping_bill_number) || input$shipping_bill_number == "") {
-      output$order_info_card <- renderUI({ NULL })  # 清空订单卡片
+    # 获取匹配的订单
+    matching_orders <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+    
+    if (nrow(matching_orders) == 0) {
+      output$order_info_card <- renderUI({ NULL })
+      showNotification("未找到与此运单号关联的订单！", type = "error")
       return()
     }
     
-    # 获取订单信息
-    order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
-    if (nrow(order) == 0) {
-      output$order_info_card <- renderUI({ NULL })  # 清空订单卡片
-      showNotification("未找到与此运单号关联的订单！", type = "error")  # 打出提示
-      return()
+    if (nrow(matching_orders) > 1) {
+      # 如果匹配到多个订单，提示用户并初始化订单队列
+      showNotification(
+        "这个运单匹配了多个订单，接下来我们会逐一操作匹配订单。",
+        type = "warning",
+        duration = 5
+      )
+      order_queue(matching_orders$OrderID)  # 初始化订单队列
+    } else {
+      # 如果只有一个订单，直接初始化订单队列
+      order_queue(matching_orders$OrderID)
     }
     
-    # 提取订单ID和图片路径
-    order_id <- order$OrderID[1]
+    # 处理第一个订单
+    current_order_id <- order_queue()[1]
+    current_order <- matching_orders %>% filter(OrderID == current_order_id)
+    
+    # 提取订单信息
     img_path <- ifelse(
-      is.na(order$OrderImagePath[1]) || order$OrderImagePath[1] == "",
+      is.na(current_order$OrderImagePath[1]) || current_order$OrderImagePath[1] == "",
       placeholder_300px_path,
-      paste0(host_url, "/images/", basename(order$OrderImagePath[1]))
+      paste0(host_url, "/images/", basename(current_order$OrderImagePath[1]))
     )
     
     # 调用渲染函数
-    renderOrderInfo(output, "order_info_card", order_id, img_path, orders())
-  })
-  
-  # 动态渲染订单内物品
-  observe({
-    req(input$shipping_bill_number)  # 确保运单号不为空
+    renderOrderInfo(output, "order_info_card", current_order_id, img_path, orders())
     
-    # 获取订单信息
-    order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
-    if (nrow(order) == 0) {
-      output$order_items_cards <- renderUI({ NULL })  # 清空物品卡片
+    # 提取物品信息
+    order_items <- unique_items_data() %>% filter(OrderID == current_order_id)
+    
+    # 检查物品是否存在
+    if (nrow(order_items) == 0) {
+      output$order_items_cards <- renderUI({ NULL })
+      showNotification("当前订单没有匹配到物品！", type = "error")
       return()
     }
     
-    # 提取订单ID和状态
-    order_id <- order$OrderID[1]
-    order_status <- order$OrderStatus[1]
+    # 渲染物品信息
+    renderOrderItems(output, "order_items_cards", current_order_id, order_items)
     
-    # 调用渲染函数
-    renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
-    
-    # 检查订单状态是否为“装箱”
-    if (order_status == "装箱") {
-      showNotification("该订单已装箱，无需重复操作！", type = "warning")
+    # 检查订单状态
+    if (current_order$OrderStatus[1] == "装箱") {
+      showNotification(paste0("订单 ", current_order_id, " 已装箱，无需操作！"), type = "warning")
     } else {
-      
-      # 激活 SKU 输入框，准备接收扫码
       runjs("document.getElementById('sku_input').focus();")
-      showNotification("请扫描或输入SKU条码！", type = "message")
+      showNotification(paste0("请为订单 ", current_order_id, " 扫描或输入SKU条码！"), type = "message")
     }
   })
   
-  # 定义 order_items 为 reactive 对象
-  order_items <- reactive({
-    req(input$shipping_bill_number)  # 确保运单号不为空
-    
-    # 获取订单信息
-    order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
-    if (nrow(order) == 0) {
-      showNotification("未找到对应订单，请检查运单号！", type = "error")
-      return(data.frame())  # 如果找不到对应订单，返回空数据框
-    }
-    
-    # 提取订单ID并过滤物品数据
-    order_id <- order$OrderID[1]
-    unique_items_data() %>% filter(OrderID == order_id)
-  })
-  
-  # SKU 输入监听逻辑
+  # SKU 输入逻辑
   observeEvent(input$sku_input, {
-    req(input$sku_input)  # 确保 SKU 输入不为空
+    req(input$sku_input, order_queue())
     
-    sku <- trimws(input$sku_input)  # 清理多余空格
+    current_order_id <- order_queue()[1]
+    sku <- trimws(input$sku_input)
     
-    # 获取当前订单的物品数据
-    items <- order_items()
+    # 获取当前订单的物品
+    order_items <- unique_items_data() %>% filter(OrderID == current_order_id)
     
-    # 如果订单为空
-    if (nrow(items) == 0) {
+    if (nrow(order_items) == 0) {
       showNotification("未找到订单对应的物品，请检查订单信息！", type = "error")
       return()
     }
     
-    # 查找SKU匹配的物品
-    matching_item <- items %>% filter(SKU == sku, Status != "美国发货")
+    # 查找SKU对应的物品
+    matching_item <- order_items %>% filter(SKU == sku, Status != "美国发货")
     if (nrow(matching_item) == 0) {
       showNotification("未找到对应SKU或该SKU已完成操作！", type = "error")
       return()
     }
     
-    # 更新数据库状态为“美国发货”
+    # 更新状态为“美国发货”
     tryCatch({
       update_status(
         con = con,
@@ -1082,86 +1073,266 @@ server <- function(input, output, session) {
         new_status = "美国发货",
         refresh_trigger = unique_items_data_refresh_trigger
       )
+      showNotification(paste0("SKU ", sku, " 已成功操作完成！"), type = "message")
       
-      # 获取更新后的物品数据
-      updated_items <- order_items()
+      # 更新后的物品数据
+      updated_items <- unique_items_data() %>% filter(OrderID == current_order_id)
       
-      # 检查所有物品是否状态为“美国发货”
+      # 检查是否所有物品状态均为“美国发货”
       if (all(updated_items$Status == "美国发货")) {
         showModal(modalDialog(
           title = "确认装箱",
-          easyClose = FALSE,  # 不允许点击背景关闭
+          easyClose = FALSE,
           div(
             style = "padding: 10px; font-size: 16px;",
-            "所有订单内物品均已扫描，请确认是否装箱完成。"
+            paste0("订单 ", current_order_id, " 的所有物品已完成扫描，是否确认装箱？")
           ),
           footer = tagList(
             modalButton("取消"),
-            actionButton(
-              "confirm_shipping_btn",
-              "确认装箱",
-              icon = icon("check"),
-              class = "btn-primary",
-              style = "font-size: 16px; margin-left: 10px;"
-            )
+            actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
           )
         ))
       }
       
       # 清空输入框
       updateTextInput(session, "sku_input", value = "")
-      
     }, error = function(e) {
       showNotification(paste("更新状态时发生错误：", e$message), type = "error")
     })
   })
   
-  # 确认发货按钮监听逻辑
+  # 确认装箱逻辑
   observeEvent(input$confirm_shipping_btn, {
-    req(input$shipping_bill_number)  # 确保运单号不为空
+    req(order_queue())
     
-    # 获取订单信息
-    order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
-    if (nrow(order) == 0) {
-      showNotification("未找到对应订单，请检查运单号！", type = "error")
-      return()
-    }
+    # 获取当前订单
+    current_order_id <- order_queue()[1]
+    order_items <- unique_items_data() %>% filter(OrderID == current_order_id)
     
-    # 提取订单ID
-    order_id <- order$OrderID[1]
-    
-    # 获取订单内物品
-    order_items <- unique_items_data() %>% filter(OrderID == order_id)
-    
-    # 检查是否所有物品状态均为“美国发货”
     if (!all(order_items$Status == "美国发货")) {
-      showNotification("还有未完成拣货的物品，请核对！", type = "warning")
+      showNotification("还有未完成操作的物品，请核对！", type = "warning")
       return()
     }
     
-    # 更新数据库中订单的状态为“已装箱”
+    # 更新当前订单状态
     tryCatch({
-      dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(order_id))
-      
-      # 更新前端订单数据
+      dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(current_order_id))
       orders(orders() %>% mutate(
-        OrderStatus = ifelse(OrderID == order_id, "装箱", OrderStatus)
+        OrderStatus = ifelse(OrderID == current_order_id, "装箱", OrderStatus)
       ))
       
-      # 显示成功提示
-      showNotification("订单已成功标记为‘装箱’！", type = "message")
+      showNotification(paste0("订单 ", current_order_id, " 已成功装箱！"), type = "message")
       
-      # 清空输入框
-      updateTextInput(session, "shipping_bill_number", value = "")
-      updateTextInput(session, "sku_input", value = "")
+      # 从队列中移除已完成的订单
+      remaining_queue <- order_queue()[-1]
+      order_queue(remaining_queue)
       
-      # 关闭模态窗口
+      if (length(remaining_queue) == 0) {
+        # 如果队列为空，提示操作完成
+        showNotification("所有匹配订单已完成操作！", type = "success")
+        updateTextInput(session, "shipping_bill_number", value = "")
+      } else {
+        # 处理下一个订单
+        next_order_id <- remaining_queue[1]
+        next_order <- orders() %>% filter(OrderID == next_order_id)
+        
+        # 渲染下一个订单的信息和物品
+        renderOrderInfo(output, "order_info_card", next_order_id, img_path, orders())
+        renderOrderItems(output, "order_items_cards", next_order_id, unique_items_data() %>% filter(OrderID == next_order_id))
+        
+        showNotification(paste0("开始处理订单 ", next_order_id), type = "message")
+      }
+      
       removeModal()
-      
     }, error = function(e) {
       showNotification(paste("更新订单状态时发生错误：", e$message), type = "error")
     })
   })
+  
+  
+  # # 动态渲染订单信息
+  # observe({ 
+  #   # 确保运单号不为空
+  #   if (is.null(input$shipping_bill_number) || input$shipping_bill_number == "") {
+  #     output$order_info_card <- renderUI({ NULL })  # 清空订单卡片
+  #     return()
+  #   }
+  #   
+  #   # 获取订单信息
+  #   order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+  #   if (nrow(order) == 0) {
+  #     output$order_info_card <- renderUI({ NULL })  # 清空订单卡片
+  #     showNotification("未找到与此运单号关联的订单！", type = "error")  # 打出提示
+  #     return()
+  #   }
+  #   
+  #   # 提取订单ID和图片路径
+  #   order_id <- order$OrderID[1]
+  #   img_path <- ifelse(
+  #     is.na(order$OrderImagePath[1]) || order$OrderImagePath[1] == "",
+  #     placeholder_300px_path,
+  #     paste0(host_url, "/images/", basename(order$OrderImagePath[1]))
+  #   )
+  #   
+  #   # 调用渲染函数
+  #   renderOrderInfo(output, "order_info_card", order_id, img_path, orders())
+  # })
+  # 
+  # # 动态渲染订单内物品
+  # observe({
+  #   req(input$shipping_bill_number)  # 确保运单号不为空
+  #   
+  #   # 获取订单信息
+  #   order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+  #   if (nrow(order) == 0) {
+  #     output$order_items_cards <- renderUI({ NULL })  # 清空物品卡片
+  #     return()
+  #   }
+  #   
+  #   # 提取订单ID和状态
+  #   order_id <- order$OrderID[1]
+  #   order_status <- order$OrderStatus[1]
+  #   
+  #   # 调用渲染函数
+  #   renderOrderItems(output, "order_items_cards", order_id, unique_items_data())
+  #   
+  #   # 检查订单状态是否为“装箱”
+  #   if (order_status == "装箱") {
+  #     showNotification("该订单已装箱，无需重复操作！", type = "warning")
+  #   } else {
+  #     
+  #     # 激活 SKU 输入框，准备接收扫码
+  #     runjs("document.getElementById('sku_input').focus();")
+  #     showNotification("请扫描或输入SKU条码！", type = "message")
+  #   }
+  # })
+  # 
+  # # 定义 order_items 为 reactive 对象
+  # order_items <- reactive({
+  #   req(input$shipping_bill_number)  # 确保运单号不为空
+  #   
+  #   # 获取订单信息
+  #   order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+  #   if (nrow(order) == 0) {
+  #     showNotification("未找到对应订单，请检查运单号！", type = "error")
+  #     return(data.frame())  # 如果找不到对应订单，返回空数据框
+  #   }
+  #   
+  #   # 提取订单ID并过滤物品数据
+  #   order_id <- order$OrderID[1]
+  #   unique_items_data() %>% filter(OrderID == order_id)
+  # })
+  # 
+  # # SKU 输入监听逻辑
+  # observeEvent(input$sku_input, {
+  #   req(input$sku_input)  # 确保 SKU 输入不为空
+  #   
+  #   sku <- trimws(input$sku_input)  # 清理多余空格
+  #   
+  #   # 获取当前订单的物品数据
+  #   items <- order_items()
+  #   
+  #   # 如果订单为空
+  #   if (nrow(items) == 0) {
+  #     showNotification("未找到订单对应的物品，请检查订单信息！", type = "error")
+  #     return()
+  #   }
+  #   
+  #   # 查找SKU匹配的物品
+  #   matching_item <- items %>% filter(SKU == sku, Status != "美国发货")
+  #   if (nrow(matching_item) == 0) {
+  #     showNotification("未找到对应SKU或该SKU已完成操作！", type = "error")
+  #     return()
+  #   }
+  #   
+  #   # 更新数据库状态为“美国发货”
+  #   tryCatch({
+  #     update_status(
+  #       con = con,
+  #       unique_id = matching_item$UniqueID[1],
+  #       new_status = "美国发货",
+  #       refresh_trigger = unique_items_data_refresh_trigger
+  #     )
+  #     
+  #     # 获取更新后的物品数据
+  #     updated_items <- order_items()
+  #     
+  #     # 检查所有物品是否状态为“美国发货”
+  #     if (all(updated_items$Status == "美国发货")) {
+  #       showModal(modalDialog(
+  #         title = "确认装箱",
+  #         easyClose = FALSE,  # 不允许点击背景关闭
+  #         div(
+  #           style = "padding: 10px; font-size: 16px;",
+  #           "所有订单内物品均已扫描，请确认是否装箱完成。"
+  #         ),
+  #         footer = tagList(
+  #           modalButton("取消"),
+  #           actionButton(
+  #             "confirm_shipping_btn",
+  #             "确认装箱",
+  #             icon = icon("check"),
+  #             class = "btn-primary",
+  #             style = "font-size: 16px; margin-left: 10px;"
+  #           )
+  #         )
+  #       ))
+  #     }
+  #     
+  #     # 清空输入框
+  #     updateTextInput(session, "sku_input", value = "")
+  #     
+  #   }, error = function(e) {
+  #     showNotification(paste("更新状态时发生错误：", e$message), type = "error")
+  #   })
+  # })
+  # 
+  # # 确认发货按钮监听逻辑
+  # observeEvent(input$confirm_shipping_btn, {
+  #   req(input$shipping_bill_number)  # 确保运单号不为空
+  #   
+  #   # 获取订单信息
+  #   order <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+  #   if (nrow(order) == 0) {
+  #     showNotification("未找到对应订单，请检查运单号！", type = "error")
+  #     return()
+  #   }
+  #   
+  #   # 提取订单ID
+  #   order_id <- order$OrderID[1]
+  #   
+  #   # 获取订单内物品
+  #   order_items <- unique_items_data() %>% filter(OrderID == order_id)
+  #   
+  #   # 检查是否所有物品状态均为“美国发货”
+  #   if (!all(order_items$Status == "美国发货")) {
+  #     showNotification("还有未完成拣货的物品，请核对！", type = "warning")
+  #     return()
+  #   }
+  #   
+  #   # 更新数据库中订单的状态为“已装箱”
+  #   tryCatch({
+  #     dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(order_id))
+  #     
+  #     # 更新前端订单数据
+  #     orders(orders() %>% mutate(
+  #       OrderStatus = ifelse(OrderID == order_id, "装箱", OrderStatus)
+  #     ))
+  #     
+  #     # 显示成功提示
+  #     showNotification("订单已成功标记为‘装箱’！", type = "message")
+  #     
+  #     # 清空输入框
+  #     updateTextInput(session, "shipping_bill_number", value = "")
+  #     updateTextInput(session, "sku_input", value = "")
+  #     
+  #     # 关闭模态窗口
+  #     removeModal()
+  #     
+  #   }, error = function(e) {
+  #     showNotification(paste("更新订单状态时发生错误：", e$message), type = "error")
+  #   })
+  # })
   
 
   
