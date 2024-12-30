@@ -1,6 +1,6 @@
 # 定义供应商模块
 supplierModuleServer <- function(input, output, session, con, maker_data) {
-
+  
   # 初始化供应商选择器
   observe({
     update_maker_choices(session, "new_maker", maker_data())

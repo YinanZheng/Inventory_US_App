@@ -20,18 +20,6 @@ itemFilterServer <- function(id, makers_df, unique_items_data, filtered_unique_i
       updateSelectizeInput(session, "name", choices = item_names, selected = "")
     })
     
-    # 监听选中行并更新控件
-    observeEvent(unique_items_table_selected_row(), {
-      if (!is.null(unique_items_table_selected_row()) && length(unique_items_table_selected_row()) > 0) {
-        selected_data <- filtered_unique_items_data()[unique_items_table_selected_row(), ]
-        updateSelectizeInput(session, "maker", selected = selected_data$Maker)
-        shinyjs::delay(100, {
-          updateTextInput(session, "name", value = selected_data$ItemName)
-        })
-        updateTextInput(session, "sku", value = selected_data$SKU)
-      }
-    })
-    
     # 清空输入
     observeEvent(input$reset_btn, {
       tryCatch({
@@ -39,7 +27,7 @@ itemFilterServer <- function(id, makers_df, unique_items_data, filtered_unique_i
                              choices = c("", setNames(makers_df()$Maker, paste0(makers_df()$Maker, "(", makers_df()$Pinyin, ")"))), 
                              selected = "", server = TRUE)        
         updateSelectizeInput(session, "name", choices = c(""), selected = "")
-        updateTextInput(session, "sku", value = "")
+        updateDateRangeInput(session, "purchase_date_range", start = Sys.Date() - 30, end = Sys.Date())
         showNotification("筛选条件已重置！", type = "message")
       }, error = function(e) {
         showNotification("重置输入时发生错误，请重试！", type = "error")

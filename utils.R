@@ -317,7 +317,10 @@ render_table_with_images <- function(data,
                                      column_mapping, 
                                      selection = "single",
                                      image_column = NULL,
-                                     options = list()) {
+                                     options = list(fixedHeader = TRUE,  # 启用表头固定
+                                                    dom = 't',  # 隐藏搜索框和分页等控件
+                                                    paging = FALSE,  # 禁用分页
+                                                    searching = FALSE)) {
   if (!is.null(image_column) && nrow(data) > 0) {
     # Render the image column
     data[[image_column]] <- render_image_column(data[[image_column]], host_url)
@@ -363,18 +366,27 @@ update_status <- function(con, unique_id, new_status, defect_status = NULL, ship
     if (!is.null(shipping_method)) "IntlShippingMethod = ?" else NULL
   )
   
+  # 拼接 SET 子句
   set_clause <- paste(set_clauses[!is.null(set_clauses)], collapse = ", ")
   
-  # 构建参数列表（移除多余参数）
-  params <- c(
-    new_status,
-    if (!is.null(defect_status)) defect_status else NULL,
-    if (!is.null(shipping_method)) shipping_method else NULL,
-    unique_id
+  # 完整 SQL 查询
+  query <- paste0(
+    "UPDATE unique_items SET ", set_clause, " WHERE UniqueID = ?"
   )
   
-  # 执行SQL更新
-  query <- paste0("UPDATE unique_items SET ", set_clause, " WHERE UniqueID = ?")
+  # 构建参数列表
+  params <- c(
+    list(new_status),
+    if (!is.null(timestamp_update)) list() else NULL,
+    if (!is.null(defect_status)) list(defect_status) else NULL,
+    if (!is.null(shipping_method)) list(shipping_method) else NULL,
+    list(unique_id)
+  )
+  
+  # 展平参数列表
+  params <- unlist(params)
+  
+  # 执行 SQL 更新
   dbExecute(con, query, params = params)
   
   # 触发刷新
@@ -382,7 +394,6 @@ update_status <- function(con, unique_id, new_status, defect_status = NULL, ship
     refresh_trigger(!refresh_trigger())
   }
 }
-
 
 
 update_order_id <- function(con, unique_id, order_id) {
@@ -468,8 +479,9 @@ fetchSkuOperationData <- function(sku, con) {
       inv.MajorType,
       inv.MinorType,
       inv.Quantity AS TotalQuantity, -- 总库存数量
-      SUM(CASE WHEN u.Status = '国内出库' THEN 1 ELSE 0 END) AS PendingQuantity, -- 待入库数
-      SUM(CASE WHEN u.Status = '美国入库' AND u.Defect != '瑕疵' THEN 1 ELSE 0 END) AS AvailableForSold -- 可售出数
+      SUM(CASE WHEN u.Status = '采购' THEN 1 ELSE 0 END) AS PendingQuantity, -- 待入库数
+      SUM(CASE WHEN u.Status = '国内入库' AND u.Defect != '瑕疵' THEN 1 ELSE 0 END) AS AvailableForOutbound, -- 可出库数
+      SUM(CASE WHEN u.Status = '国内入库' AND u.Defect != '瑕疵' THEN 1 ELSE 0 END) AS AvailableForSold -- 可售出数
     FROM inventory AS inv
     LEFT JOIN unique_items AS u
       ON inv.SKU = u.SKU
@@ -785,46 +797,171 @@ add_defective_note <- function(con, unique_id, note_content, status_label = "瑕
 }
 
 
-# 清理未被记录的图片 (每天运行一次)
-clean_untracked_images <- function() {
-  # 数据库连接信息
-  con <- db_connection()
-  
+register_order <- function(order_id, customer_name, customer_netname, platform, order_notes, tracking_number, 
+                           image_data, con, orders, box_items, unique_items_data, 
+                           is_transfer_order, is_preorder, preorder_supplier = NULL) {
   tryCatch({
-    # 1. 获取数据库中记录的图片路径（包括 inventory 和 orders 表）
-    inventory_query <- "SELECT ItemImagePath FROM inventory WHERE ItemImagePath IS NOT NULL"
-    orders_query <- "SELECT OrderImagePath FROM orders WHERE OrderImagePath IS NOT NULL"
+    # 查询是否已有相同订单号的记录
+    existing_order <- orders() %>% filter(OrderID == order_id)
     
-    inventory_paths <- normalizePath(dbGetQuery(con, inventory_query)$ItemImagePath, mustWork = FALSE)
-    orders_paths <- normalizePath(dbGetQuery(con, orders_query)$OrderImagePath, mustWork = FALSE)
+    # 初始化订单图片路径
+    order_image_path <- NULL
     
-    # 合并所有记录路径
-    recorded_paths <- unique(c(inventory_paths, orders_paths))
-    
-    # 2. 列出目录中所有图片文件，并规范化路径
-    all_files <- normalizePath(list.files("/var/www/images/", full.names = TRUE), mustWork = FALSE)
-    
-    # 3. 检查哪些文件未被记录
-    untracked_files <- setdiff(all_files, recorded_paths)
-    
-    # 4. 删除未被记录的文件
-    if (length(untracked_files) > 0) {
-      sapply(untracked_files, file.remove)
-      message("以下文件已被删除：")
-      print(untracked_files)
-    } else {
-      message("没有未被记录的文件需要清理。")
+    # 确定订单状态
+    order_status <- "备货"  # 默认状态
+    if (is_transfer_order && !is_preorder) {
+      order_status <- "调货"
+    } else if (is_preorder && !is_transfer_order) {
+      order_status <- "预定"
     }
+    
+    # 如果为预订单，生成或更新供应商备注
+    if (is_preorder && !is.null(preorder_supplier)) {
+      supplier_prefix <- "【供应商】"
+      new_supplier_note <- paste0(supplier_prefix, preorder_supplier, "；")
+      
+      # 更新备注逻辑
+      if (nrow(existing_order) > 0) {
+        # 检查现有备注是否包含供应商信息
+        if (grepl(supplier_prefix, existing_order$OrderNotes[1])) {
+          # 更新供应商名字
+          order_notes <- gsub(paste0(supplier_prefix, ".*?；"), new_supplier_note, existing_order$OrderNotes[1])
+        } else {
+          # 添加供应商备注到最前面
+          order_notes <- paste0(new_supplier_note, existing_order$OrderNotes[1])
+        }
+      } else {
+        # 对于新订单，直接生成备注
+        order_notes <- paste0(new_supplier_note, order_notes %||% "")
+      }
+    }
+    
+    # 获取发货箱中的物品图片路径
+    box_data <- box_items()
+    box_image_paths <- box_data$ItemImagePath[!is.na(box_data$ItemImagePath)]
+    
+    # 获取订单内关联物品的图片路径
+    order_items <- unique_items_data() %>% filter(OrderID == order_id)
+    order_image_paths <- order_items$ItemImagePath[!is.na(order_items$ItemImagePath)]
+    
+    # 合并订单关联物品和发货箱的图片路径
+    combined_image_paths <- unique(c(order_image_paths, box_image_paths))
+    
+    if(length(combined_image_paths) > 0) showNotification(paste0("正在拼贴 ", length(combined_image_paths), " 张物品图"), type = "message")
+    
+    if (nrow(existing_order) > 0) {
+      # 如果订单已存在
+      existing_orders_path <- existing_order$OrderImagePath[1]
+      is_montage <- grepl("_montage\\.jpg$", basename(existing_orders_path))
+      
+      if (is.null(existing_orders_path)) {
+        # 情况 1：订单没有订单图且没有上传订单图片
+        if (is.null(image_data$uploaded_file()) && is.null(image_data$pasted_file())) {
+          if (length(combined_image_paths) > 0) {
+            montage_path <- paste0("/var/www/images/", order_id,"_montage_", format(Sys.time(), "%Y%m%d%H%M%S"), ".jpg") 
+            order_image_path <- generate_montage(combined_image_paths, montage_path)
+          }
+        } else {
+          # 使用上传的图片
+          order_image_path <- process_image_upload(
+            sku = order_id,
+            file_data = image_data$uploaded_file(),
+            pasted_data = image_data$pasted_file(),
+            inventory_path = NULL
+          )
+        }
+      } else if (is_montage) {
+        # 情况 2：订单有拼贴图，更新为新拼贴图
+        if (length(combined_image_paths) > 0) {
+          montage_path <- paste0("/var/www/images/", order_id, "_montage.jpg")
+          order_image_path <- generate_montage(combined_image_paths, montage_path)
+        } else {
+          order_image_path <- existing_orders_path
+        }
+      } else {
+        # 情况 3：订单有非拼贴图，保持现有图片
+        order_image_path <- existing_orders_path
+      }
+    } else {
+      # 如果订单不存在
+      if (is.null(image_data$uploaded_file()) && is.null(image_data$pasted_file())) {
+        # 没有上传图片，根据订单内关联的物品生成拼贴图
+        if (length(combined_image_paths) > 0) {
+          montage_path <- paste0("/var/www/images/", order_id, "_montage.jpg")
+          order_image_path <- generate_montage(combined_image_paths, montage_path)
+        } else {
+          # 没有关联物品，设为空，渲染时会使用占位图
+          order_image_path <- NA
+          showNotification("未找到上传图片或关联物品，使用默认占位图片！", type = "warning")
+        }
+      } else {
+        # 使用上传的图片
+        order_image_path <- process_image_upload(
+          sku = order_id,
+          file_data = image_data$uploaded_file(),
+          pasted_data = image_data$pasted_file(),
+          inventory_path = NULL
+        )
+      }
+    }
+    
+    # 使用 %||% 确保所有参数为长度为 1 的值
+    tracking_number <- tracking_number %||% NA
+    order_notes <- order_notes %||% NA
+    customer_name <- customer_name %||% NA
+    customer_netname <- customer_netname %||% NA
+    platform <- platform  # 此时 platform 已验证非空，无需使用 %||%
+    
+    if (nrow(existing_order) > 0) {
+      # 如果订单号已存在，更新图片和其他信息
+      dbExecute(con, "
+        UPDATE orders 
+        SET OrderImagePath = COALESCE(?, OrderImagePath), 
+            UsTrackingNumber = COALESCE(?, UsTrackingNumber), 
+            OrderNotes = COALESCE(?, OrderNotes),
+            CustomerName = COALESCE(?, CustomerName),
+            CustomerNetName = COALESCE(?, CustomerNetName),
+            Platform = COALESCE(?, Platform),
+            OrderStatus = ?
+        WHERE OrderID = ?",
+                params = list(
+                  order_image_path, 
+                  tracking_number,
+                  order_notes,
+                  customer_name,
+                  customer_netname,
+                  platform,
+                  order_status,  # 更新订单状态
+                  order_id
+                )
+      )
+      showNotification("订单信息已更新！", type = "message")
+    } else {
+      # 如果订单号不存在，插入新订单记录
+      dbExecute(con, "
+        INSERT INTO orders (OrderID, UsTrackingNumber, OrderNotes, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderStatus)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                params = list(
+                  order_id,
+                  tracking_number,
+                  order_notes,
+                  customer_name,
+                  customer_netname,
+                  platform,
+                  order_image_path,
+                  order_status  # 插入订单状态
+                )
+      )
+      showNotification("订单已成功登记！", type = "message")
+    }
+    
+    # 更新订单表格
+    orders(dbGetQuery(con, "SELECT * FROM orders"))
   }, error = function(e) {
-    message("清理过程中出现错误：", e$message)
+    # 错误处理
+    showNotification(paste("登记订单时发生错误：", e$message), type = "error")
   })
-  
-  # 断开数据库连接
-  dbDisconnect(con)
 }
-
-
-
 
 
 # 从输入数据中筛选数据
@@ -938,151 +1075,74 @@ adjust_inventory <- function(con, sku, adjustment, maker = NULL, major_type = NU
   })
 }
 
-# 渲染订单信息（图片在左，文字在右）
-renderOrderInfo <- function(output, output_name, order_id, img_path, orders_data) {
-  # 提取订单数据
-  order_info <- orders_data %>% filter(OrderID == order_id)
-  
-  # 如果订单不存在，返回空UI
-  if (nrow(order_info) == 0) {
-    output[[output_name]] <- renderUI({ NULL })
-    return()
+
+# 动态拼接图片函数（接近正方形布局）
+generate_montage <- function(image_paths, output_path, geometry = "+5+5") {
+  if (length(image_paths) == 0) {
+    showNotification("无图片可供拼贴！", type = "error")
   }
   
-  # 动态渲染订单信息
-  output[[output_name]] <- renderUI({
-    fluidRow(
-      column(
-        4,
-        div(
-          style = "text-align: center;",
-          img(
-            src = img_path,
-            height = "300px",
-            style = "border: 2px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);"
-          )
-        )
-      ),
-      column(
-        8,
-        div(
-          style = "padding: 20px; background-color: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 8px;
-                             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); height: 300px;",
-          tags$h4(
-            "订单信息",
-            style = "border-bottom: 3px solid #007BFF; margin-bottom: 15px; padding-bottom: 8px; font-weight: bold; color: #333;"
-          ),
-          tags$table(
-            style = "width: 100%; font-size: 16px; color: #444;",
-            tags$tr(
-              tags$td(tags$strong("订单号:"), style = "padding: 8px 10px; width: 120px; vertical-align: top;"),
-              tags$td(tags$span(order_info$OrderID[1], style = "color: #007BFF; font-weight: bold;"))
-            ),
-            tags$tr(
-              tags$td(tags$strong("顾客姓名:"), style = "padding: 8px 10px; vertical-align: top;"),
-              tags$td(tags$span(order_info$CustomerName[1], style = "color: #007BFF;"))
-            ),
-            tags$tr(
-              tags$td(tags$strong("平台:"), style = "padding: 8px 10px; vertical-align: top;"),
-              tags$td(tags$span(order_info$Platform[1], style = "color: #007BFF;"))
-            ),
-            tags$tr(
-              tags$td(tags$strong("备注:"), style = "padding: 8px 10px; vertical-align: top;"),
-              tags$td(tags$span(order_info$OrderNotes[1], style = "color: #007BFF;"))
-            ),
-            tags$tr(
-              tags$td(tags$strong("状态:"), style = "padding: 8px 10px; vertical-align: top;"),
-              tags$td(tags$span(order_info$OrderStatus[1], style = "color: #007BFF;"))
-            )
-          )
-        )
-      )
-    )
-  })
+  # 计算行列数，保持接近正方形
+  n_images <- length(image_paths)
+  n_cols <- ceiling(sqrt(n_images))
+  n_rows <- ceiling(n_images / n_cols)
+  tile <- paste0(n_rows, "x", n_cols)  # 拼接行列数，例如 "3x3"
+  
+  # 加载所有图片
+  images <- lapply(image_paths, magick::image_read)
+  
+  # 拼接图片
+  montage <- magick::image_montage(
+    do.call(c, images),
+    tile = tile,      # 动态行列布局
+    geometry = geometry # 图片间距
+  )
+  
+  montage <- magick::image_convert(montage, format = "jpeg")
+  
+  # 保存拼接图片
+  magick::image_write(montage, path = output_path)
+  
+  return(output_path)
 }
 
-# 动态渲染物品卡片
-renderOrderItems <- function(output, output_name, order_id, items_data) {
-  # 提取订单内物品数据
-  order_items <- items_data %>% filter(OrderID == order_id)
+
+
+# 清理未被记录的图片 (每天运行一次)
+clean_untracked_images <- function() {
+  # 数据库连接信息
+  con <- db_connection()
   
-  # 如果没有物品，返回提示信息
-  if (nrow(order_items) == 0) {
-    output[[output_name]] <- renderUI({
-      div("没有找到该订单内的物品。")
-    })
-    return()
-  }
-  
-  # 动态渲染物品卡片
-  output[[output_name]] <- renderUI({
-    item_cards <- lapply(1:nrow(order_items), function(i) {
-      item <- order_items[i, ]
-      
-      # 图片路径
-      item_img_path <- ifelse(
-        is.na(item$ItemImagePath) || item$ItemImagePath == "",
-        placeholder_150px_path,
-        paste0(host_url, "/images/", basename(item$ItemImagePath))
-      )
-      
-      # 动态添加蒙版和打勾图标
-      mask_overlay <- if (item$Status == "美国发货") {
-        div(
-          style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-                  background: rgba(128, 128, 128, 0.6); display: flex; justify-content: center; align-items: center;
-                  border-radius: 8px;",
-          tags$div(
-            style = "width: 50px; height: 50px; background: #28a745; border-radius: 50%; display: flex; 
-                     justify-content: center; align-items: center;",
-            tags$i(class = "fas fa-check", style = "color: white; font-size: 24px;")  # 绿色勾
-          )
-        )
-      } else {
-        NULL
-      }
-      
-      # 渲染卡片
-      div(
-        class = "card",
-        style = "position: relative; display: inline-block; padding: 10px; width: 230px; text-align: center; 
-                 border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
-        mask_overlay,  # 动态显示蒙版
-        div(
-          style = "margin-bottom: 10px;",
-          tags$img(
-            src = item_img_path,
-            style = "height: 150px; object-fit: cover; border-radius: 8px;"  # 图片高度固定为150px
-          )
-        ),
-        tags$table(
-          style = "width: 100%; font-size: 12px; color: #333;",
-          tags$tr(
-            tags$td(tags$strong("SKU:"), style = "padding: 0px; width: 60px;"),
-            tags$td(item$SKU)
-          ),
-          tags$tr(
-            tags$td(tags$strong("商品名:"), style = "padding: 0px;"),
-            tags$td(item$ItemName)
-          ),
-          tags$tr(
-            tags$td(tags$strong("状态:"), style = "padding: 0px;"),
-            tags$td(item$Status)
-          ),
-          tags$tr(
-            tags$td(tags$strong("瑕疵状态:"), style = "padding: 0px;"),
-            tags$td(ifelse(is.na(item$Defect), "无", item$Defect))  # 显示瑕疵状态
-          ),
-          tags$tr(
-            tags$td(tags$strong("瑕疵备注:"), style = "padding: 0px;"),
-            tags$td(ifelse(is.na(item$DefectNotes) || item$DefectNotes == "", "无备注", item$DefectNotes))  # 显示瑕疵备注
-          )
-        )
-      )
-    })
+  tryCatch({
+    # 1. 获取数据库中记录的图片路径（包括 inventory 和 orders 表）
+    inventory_query <- "SELECT ItemImagePath FROM inventory WHERE ItemImagePath IS NOT NULL"
+    orders_query <- "SELECT OrderImagePath FROM orders WHERE OrderImagePath IS NOT NULL"
     
-    do.call(tagList, item_cards)  # 返回卡片列表
+    inventory_paths <- normalizePath(dbGetQuery(con, inventory_query)$ItemImagePath, mustWork = FALSE)
+    orders_paths <- normalizePath(dbGetQuery(con, orders_query)$OrderImagePath, mustWork = FALSE)
+    
+    # 合并所有记录路径
+    recorded_paths <- unique(c(inventory_paths, orders_paths))
+    
+    # 2. 列出目录中所有图片文件，并规范化路径
+    all_files <- normalizePath(list.files("/var/www/images/", full.names = TRUE), mustWork = FALSE)
+    
+    # 3. 检查哪些文件未被记录
+    untracked_files <- setdiff(all_files, recorded_paths)
+    
+    # 4. 删除未被记录的文件
+    if (length(untracked_files) > 0) {
+      sapply(untracked_files, file.remove)
+      message("以下文件已被删除：")
+      print(untracked_files)
+    } else {
+      message("没有未被记录的文件需要清理。")
+    }
+  }, error = function(e) {
+    message("清理过程中出现错误：", e$message)
   })
+  
+  # 断开数据库连接
+  dbDisconnect(con)
 }
-
 
