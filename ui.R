@@ -298,17 +298,8 @@ ui <- navbarPage(
           # 顾客姓名
           textInput("customer_name", "顾客姓名", placeholder = "请输入顾客姓名", width = "100%"),
           
-          # 运单号1
-          textInput("tracking_number1", "运单号", placeholder = "请输入运单号", width = "100%"),
-          
-          # 运单号动态添加部分
-          uiOutput("additional_tracking_numbers"),
-          actionButton(
-            "add_tracking_btn",
-            label = "点击增加一行运单号输入栏",
-            icon = icon("plus"),
-            style = "background-color: #28A745; color: white; border: none; margin-top: 10px; width: 100%; font-size: 14px;"
-          ),
+          # 运单号
+          textInput("tracking_number", "运单号", placeholder = "请输入运单号", width = "100%"),
           
           tags$div(style = "margin-top: 20px;"),  # 增加20px垂直间距
           
