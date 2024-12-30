@@ -105,6 +105,10 @@ ui <- navbarPage(
       .custom-selectize .selectize-dropdown-content {
         font-size: 12px !important; /* 设置下拉菜单字体大小 */
       }
+      
+      table.dataTable thead th {
+        white-space: nowrap; /* 表头内容强制不换行 */
+      }
     ")),
       
       tags$script(HTML("
