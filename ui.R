@@ -274,19 +274,19 @@ ui <- navbarPage(
           
           fluidRow(
             column(
-              7,  # 占页面宽度的 6/12，即 50%
+              7,
               textInput("order_id", "订单号", placeholder = "请输入订单号", width = "100%")
             ),
             column(
-              5,  # 占页面宽度的 6/12，即 50%
+              5,
               selectInput(
                 inputId = "platform",
                 label = "电商平台",
                 choices = c(
-                  "请选择" = "", 
-                  "Etsy" = "Etsy", 
-                  "Shopify" = "Shopify", 
-                  "TikTok" = "TikTok", 
+                  "请选择" = "",
+                  "Etsy" = "Etsy",
+                  "Shopify" = "Shopify",
+                  "TikTok" = "TikTok",
                   "其他" = "其他"
                 ),
                 selected = "",
@@ -295,8 +295,22 @@ ui <- navbarPage(
             )
           ),
           
-          # 顾客姓名
-          textInput("customer_name", "顾客姓名", placeholder = "请输入顾客姓名", width = "100%"),
+          fluidRow(
+            column(6, textInput("customer_name", "顾客姓名", placeholder = "请输入", width = "100%")),
+            column(6, textInput("customer_netname", "顾客网名", placeholder = "请输入", width = "100%"))
+          ),
+          
+          fluidRow(
+            column(3, checkboxInput("is_transfer_order", "调货", value = FALSE)),
+            column(3, checkboxInput("is_preorder", "预订", value = FALSE)),
+            column(6, selectizeInput(
+              "preorder_supplier",
+              "预订单供应商:",
+              choices = NULL,
+              width = "100%",
+              options = list(placeholder = '填选供应商...', maxOptions = 500)
+            ))
+          ),
           
           # 运单号
           textInput("tracking_number", "运单号", placeholder = "请输入运单号", width = "100%"),
@@ -341,7 +355,7 @@ ui <- navbarPage(
                    class = "card",
                    style = "padding: 20px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);",
                    tags$h4(
-                     HTML(paste0(as.character(icon("warehouse")), "  货架")), 
+                     HTML(paste0(as.character(icon("warehouse")), "  货架")),
                      style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"
                    ),
                    DTOutput("shelf_table")  # 显示货架上的物品
@@ -354,21 +368,66 @@ ui <- navbarPage(
                    class = "card",
                    style = "padding: 20px; margin-bottom: 20px; border: 1px solid #28A745; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);",
                    tags$h4(
-                     HTML(paste0(as.character(icon("box")), "  发货箱")), 
+                     HTML(paste0(as.character(icon("box")), "  发货箱")),
                      style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
                    ),
                    DTOutput("box_table"),  # 显示已放入箱子的物品
                    
                    fluidRow(
                      column(
-                       width = 12, # 左侧按钮宽度
+                       width = 7, # 左侧按钮宽度
                        actionButton(
                          "confirm_order_btn",
                          "确认售出",
                          icon = icon("check"),
-                         class = "btn-primary", 
+                         class = "btn-primary",
                          style = "font-size: 16px; width: 100%; height: 50px; margin-top: 10px;"
                        )
+                     ),
+                     column(
+                       width = 5, # 右侧选择框宽度
+                       tags$div(
+                         style = "
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    border: 1px solid #007BFF;
+    border-radius: 8px;
+    height: 50px;
+    padding: 0 10px;
+    margin-top: 10px;
+  ",
+                         tags$span(
+                           "国际运输:",
+                           style = "font-size: 16px; font-weight: bold; margin-right: 15px; line-height: 1;"
+                         ),
+                         tags$div(
+                           style = "
+      display: flex;
+      align-items: center;
+      height: 100%;
+      margin-bottom: 0; /* 移除底部间距 */
+    ",
+                           tags$style(HTML("
+      #sold_shipping_method .radio {
+        margin-bottom: 0 !important; /* 移除默认的 margin */
+      }
+      #sold_shipping_method {
+        margin-bottom: 0 !important; /* 避免容器本身多余间距 */
+      }
+    ")),
+                           radioButtons(
+                             inputId = "sold_shipping_method",
+                             label = NULL, # 去掉默认 label
+                             choices = list("空运" = "空运", "海运" = "海运"),
+                             selected = "空运",  # 默认选择空运
+                             inline = TRUE       # 设置为横向排布
+                           )
+                         )
+                       )
+                       
+                       
+                       
                      )
                    )
                  )
@@ -479,10 +538,10 @@ ui <- navbarPage(
           textInput("filter_order_id", "订单号", placeholder = "输入订单号", width = "100%"),
           textInput("filter_customer_name", "顾客姓名", placeholder = "输入顾客姓名", width = "100%"),
           selectInput(
-            inputId = "filter_platform", 
+            inputId = "filter_platform",
             label = "电商平台",
             choices = c("所有平台" = "", "Etsy" = "Etsy", "Shopify" = "Shopify", "TikTok" = "TikTok", "其他" = "其他"),
-            selected = "", 
+            selected = "",
             width = "100%"
           )
         ),
@@ -491,18 +550,21 @@ ui <- navbarPage(
         div(
           class = "card",
           style = "padding: 15px; border: 1px solid #007BFF; border-radius: 8px;",
+          
           tags$h4("订单信息修改", style = "color: #007BFF; font-weight: bold;"),
-          textInput("update_customer_name", "顾客姓名", placeholder = "更新顾客姓名", width = "100%"),
-          selectInput(
-            inputId = "update_platform", 
-            label = "电商平台",
-            choices = c("Etsy", "Shopify", "TikTok", "其他"),
-            selected = NULL, 
-            width = "100%"
+          
+          fluidRow(
+            column(7, textInput("update_customer_name", "顾客姓名", placeholder = "更新顾客姓名", width = "100%")),
+            column(5, selectInput(
+              inputId = "update_platform",
+              label = "电商平台",
+              choices = c("Etsy", "Shopify", "TikTok", "其他"),
+              selected = NULL,
+              width = "100%"
+            ))
           ),
-          textInput("update_tracking_number1", "运单号", placeholder = "更新运单号", width = "100%"),
-          textInput("update_tracking_number2", "运单号2", placeholder = "更新运单号2", width = "100%"),
-          textInput("update_tracking_number3", "运单号3", placeholder = "更新运单号3", width = "100%"),
+          
+          textInput("update_tracking_number", "运单号", placeholder = "更新运单号", width = "100%"),
           textAreaInput("update_order_notes", "订单备注", placeholder = "更新备注内容", width = "100%"),
           
           # 图片模块
