@@ -1310,13 +1310,23 @@ server <- function(input, output, session) {
     }
     
     if (nrow(matching_orders) > 1) {
-      # 如果匹配到多个订单，提示用户并初始化订单队列
-      showNotification(
-        "这个运单匹配了多个订单，接下来我们会逐一操作匹配订单。",
-        type = "warning",
-        duration = 5
-      )
-      order_queue(matching_orders$OrderID)  # 初始化订单队列
+      # 如果匹配到多个订单，显示弹窗提示
+      showModal(modalDialog(
+        title = "多订单合并提醒",
+        easyClose = FALSE,
+        size = "m",
+        div(
+          style = "font-size: 16px; padding: 10px;",
+          paste("这个运单匹配了多个订单，请确认开始按顺序操作这些订单")
+        ),
+        footer = tagList(
+          modalButton("取消"),
+          actionButton("confirm_multi_order", "确认", class = "btn-primary")
+        )
+      ))
+      
+      # 初始化订单队列
+      order_queue(matching_orders$OrderID)
     } else {
       # 如果只有一个订单，直接初始化订单队列
       order_queue(matching_orders$OrderID)
