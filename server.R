@@ -1137,17 +1137,22 @@ server <- function(input, output, session) {
     
     # 动态更新标题，若状态为“调货”，添加“已完成调货”按钮
     output$associated_items_title <- renderUI({
-      tagList(
+      div(
+        style = "display: flex; align-items: center; justify-content: space-between;",
+        
+        # 左侧标题
         tags$h4(
           sprintf("#%s - %s 的订单物品", order_id, customer_name),
-          style = "color: #007BFF; font-weight: bold;"
+          style = "color: #007BFF; font-weight: bold; margin: 0;"
         ),
+        
+        # 右侧按钮（仅在订单状态为“调货”时显示）
         if (order_status == "调货") {
           actionButton(
             inputId = "complete_transfer",
             label = "已完成调货",
             class = "btn-success",
-            style = "margin-left: 20px; font-size: 14px;"
+            style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
           )
         }
       )
