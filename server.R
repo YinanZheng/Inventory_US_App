@@ -1320,7 +1320,7 @@ server <- function(input, output, session) {
           paste("这个运单匹配了多个订单，请确认开始按顺序操作这些订单")
         ),
         footer = tagList(
-          modalButton("确认", class = "btn-primary") # 确认键用于关闭对话框
+          modalButton("取消")
         )
       ))
       
