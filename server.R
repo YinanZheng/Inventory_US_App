@@ -1,5 +1,8 @@
 # Define server logic
 server <- function(input, output, session) {
+  
+  source("utils.R", local = TRUE)
+  
   # Database
   con <- db_connection()
 
