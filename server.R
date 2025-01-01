@@ -1130,15 +1130,26 @@ server <- function(input, output, session) {
     selected_order <- filtered_orders()[selected_row, ]
     order_id <- selected_order$OrderID
     customer_name <- selected_order$CustomerName
+    order_status <- selected_order$OrderStatus
     
     # 填充左侧订单信息栏
     updateTextInput(session, "order_id", value = order_id)
     
-    # 动态更新标题
+    # 动态更新标题，若状态为“调货”，添加“已完成调货”按钮
     output$associated_items_title <- renderUI({
-      tags$h4(
-        sprintf("#%s - %s 的订单物品", order_id, customer_name),
-        style = "color: #007BFF; font-weight: bold;"
+      tagList(
+        tags$h4(
+          sprintf("#%s - %s 的订单物品", order_id, customer_name),
+          style = "color: #007BFF; font-weight: bold;"
+        ),
+        if (order_status == "调货") {
+          actionButton(
+            inputId = "complete_transfer",
+            label = "已完成调货",
+            class = "btn-success",
+            style = "margin-left: 20px; font-size: 14px;"
+          )
+        }
       )
     })
     
@@ -1320,7 +1331,7 @@ server <- function(input, output, session) {
           paste("这个运单匹配了多个订单，请确认开始按顺序操作这些订单")
         ),
         footer = tagList(
-          modalButton("取消")
+          modalButton("确定")
         )
       ))
       
