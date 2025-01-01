@@ -2719,7 +2719,7 @@ server <- function(input, output, session) {
   ## 移库模块（管理员模式）                                     ##
   ##                                                            ##
   ################################################################
-
+  
   # 管理员登录状态
   admin_logged_in <- reactiveVal(FALSE)
   
@@ -2738,47 +2738,45 @@ server <- function(input, output, session) {
   output$admin_controls <- renderUI({
     if (admin_logged_in()) {
       tagList(
-        tags$h4("物品状态管理", style = "color: #007BFF;"),
         
-        # 输入 SKU 自动过滤物品
-        textInput("admin_input_sku", "", placeholder = "请输入 SKU", width = "100%"),
-        
-        tags$hr(),
+        tags$h4("修改库存状态", style = "font-weight: bold; color: #007BFF;"),
         
         # 目标状态选择
-        selectInput("admin_target_status", "目标状态改为：", 
-                    choices = c("采购", "国内入库", "国内出库", "国内售出", "美国入库", "美国售出", "退货"), 
+        selectInput("admin_target_status", "目标库存状态改为：", 
+                    choices = c('采购','国内入库','国内出库','国内售出','美国入库','美国售出','美国发货','美国调货','退货'), 
                     selected = NULL, width = "100%"),
         
         # 是否记录修改时间
         checkboxInput("admin_record_timestamp", "记录修改时间", value = FALSE),
         
         # 更新选中物品状态
-        actionButton("admin_update_status_btn", "更新选中物品状态", class = "btn-success", style = "width: 100%; margin-top: 10px;"),
+        actionButton("admin_update_status_btn", "更新库存状态", class = "btn-success", style = "width: 100%; margin-top: 10px;"),
         
         tags$hr(),
         
-        actionButton("oauth_btn", "登录并授权 USPS", icon = icon("sign-in-alt")),
-        h4("授权结果"),
-        verbatimTextOutput("oauth_status")
+        tags$h4("修改瑕疵品状态", style = "font-weight: bold; color: #007BFF;"),
         
+        # 目标状态选择
+        selectInput("admin_target_defect", "目标下次状态改为：", 
+                    choices = c('未知','无瑕','瑕疵','修复'), 
+                    selected = NULL, width = "100%"),
+        
+        # 更新选中物品瑕疵品状态
+        actionButton("admin_update_defect_btn", "更新瑕疵品状态", class = "btn-success", style = "width: 100%; margin-top: 10px;"),
+        
+        tags$hr(),
+        
+        tags$h4("修改库存总数", style = "font-weight: bold; color: #FF5733;"),
+        
+        # 输入新的库存总数
+        numericInput("admin_new_total_quantity", "新库存总数：", value = 0, min = 0, width = "100%"),
+        
+        # 提交修改库存总数的按钮
+        actionButton("admin_update_inventory_btn", "修改库存总数", class = "btn-warning", style = "width: 100%; margin-top: 10px;")
       )
     } else {
       div(tags$p("请输入密码以访问管理员功能", style = "color: red; font-weight: bold; text-align: center;"))
     }
-  })
-  
-  # 通过 SKU 筛选物品数据
-  filtered_unique_items_data_admin <- reactive({
-    data <- unique_items_data()
-    sku <- trimws(input$admin_input_sku)
-    
-    # 自动过滤 SKU，同时排除 NA 值
-    if (!is.null(sku) && sku != "") {
-      data <- data %>% filter(!is.na(SKU) & SKU == sku)
-    }
-    
-    data
   })
   
   # 使用 uniqueItemsTableServer 渲染表格
@@ -2792,15 +2790,15 @@ server <- function(input, output, session) {
                                                         OrderID = "订单号"
                                                       )), 
                                                       selection = "multiple", 
-                                                      data = filtered_unique_items_data_admin)
+                                                      data = unique_items_data)
   
-  # 监听更新状态按钮
+  # 更新库存状态按钮
   observeEvent(input$admin_update_status_btn, {
     req(input$admin_target_status, unique_items_table_admin_selected_row())
     
     # 获取选中行的索引
     selected_rows <- unique_items_table_admin_selected_row()
-    selected_items <- filtered_unique_items_data_admin()[selected_rows, ]
+    selected_items <- unique_items_data()[selected_rows, ]
     
     # 确保有选中物品
     if (nrow(selected_items) == 0) {
@@ -2828,61 +2826,116 @@ server <- function(input, output, session) {
       })
       
       # 通知成功并刷新数据
-      showNotification("物品状态更新成功！", type = "message")
+      showNotification("库存状态更新成功！", type = "message")
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
     }, error = function(e) {
       # 捕获错误并通知用户
-      showNotification(paste("状态更新失败：", e$message), type = "error")
+      showNotification(paste("库存状态更新失败：", e$message), type = "error")
+    })
+  })
+  
+  observeEvent(input$admin_update_defect_btn, {
+    req(input$admin_target_defect, unique_items_table_admin_selected_row())
+    
+    # 获取选中行的索引
+    selected_rows <- unique_items_table_admin_selected_row()
+    selected_items <- unique_items_data()[selected_rows, ]
+    
+    # 确保有选中物品
+    if (nrow(selected_items) == 0) {
+      showNotification("请选择至少一个物品进行瑕疵品状态更新！", type = "error")
+      return()
+    }
+    
+    tryCatch({
+      # 遍历选中物品
+      lapply(1:nrow(selected_items), function(i) {
+        unique_id <- selected_items$UniqueID[i]
+        target_defect <- input$admin_target_defect  # 获取目标瑕疵品状态
+        
+        # 调用 update_status 更新瑕疵品状态
+        update_status(
+          con = con,
+          unique_id = unique_id,
+          new_status = NULL,  # 不更新物品状态
+          defect_status = target_defect,  # 更新瑕疵品状态
+          refresh_trigger = unique_items_data_refresh_trigger
+        )
+      })
+      
+      # 通知成功并刷新数据
+      showNotification("瑕疵品状态更新成功！", type = "message")
+      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
+      
+    }, error = function(e) {
+      # 捕获错误并通知用户
+      showNotification(paste("瑕疵品状态更新失败：", e$message), type = "error")
     })
   })
   
   
-  usps_auth_url <- "https://developer.usps.com/oauth/authorize"
-  usps_token_url <- "https://developer.usps.com/oauth/token"
-  client_id <- "KNqnm8z0iVobHrDWVMhxoDM1R3FiMbTh"  # 替换为实际的 Key
-  client_secret <- "AgBRw1H1pdWcB97Y"  # 替换为实际的 Secret
-  redirect_uri <- "http://54.254.120.88:3838/inventory/callback"
-  
-  observeEvent(input$oauth_btn, {
-    auth_url <- paste0(
-      usps_auth_url, "?response_type=code&client_id=", client_id,
-      "&redirect_uri=", URLencode(redirect_uri)
-    )
-    session$sendCustomMessage(type = "navigate", message = auth_url)
-  })
-  
-  observe({
-    # 监听回调 URL 参数
-    query <- parseQueryString(session$clientData$url_search)
+  # 更新总库存数按钮
+  observeEvent(input$admin_update_inventory_btn, {
+    # 获取点选的行数据
+    selected_rows <- unique_items_table_admin_selected_row()
+    selected_items <- unique_items_data()[selected_rows, ]
     
-    if (!is.null(query$code)) {
-      # 获取授权码
-      auth_code <- query$code
-      output$oauth_status <- renderText(paste("授权码：", auth_code))
-      
-      # 使用授权码换取访问令牌
-      response <- httr::POST(
-        url = usps_token_url,
-        body = list(
-          client_id = client_id,
-          client_secret = client_secret,
-          code = auth_code,
-          redirect_uri = redirect_uri,
-          grant_type = "authorization_code"
-        ),
-        encode = "form"
-      )
-      
-      # 解析访问令牌
-      if (response$status_code == 200) {
-        token_data <- httr::content(response, "parsed")
-        access_token <- token_data$access_token
-        output$oauth_status <- renderText(paste("访问令牌：", access_token))
-      } else {
-        output$oauth_status <- renderText("无法获取访问令牌，请检查配置。")
-      }
+    # 校验是否有选中物品
+    if (is.null(selected_rows) || nrow(selected_items) == 0) {
+      showNotification("请先选择至少一件物品！", type = "error")
+      return()
     }
+    
+    # 获取选中物品的 SKU 列表
+    sku_counts <- selected_items %>%
+      group_by(SKU) %>%
+      summarize(SelectedCount = n(), .groups = "drop")  # 按 SKU 聚合
+    
+    # 获取新库存总数
+    new_total_quantity <- input$admin_new_total_quantity
+    
+    # 校验库存输入
+    if (is.null(new_total_quantity) || new_total_quantity < 0) {
+      showNotification("库存总数必须为非负数！", type = "error")
+      return()
+    }
+    
+    tryCatch({
+      # 遍历每个 SKU，更新库存总数
+      lapply(1:nrow(sku_counts), function(i) {
+        sku <- sku_counts$SKU[i]
+        selected_count <- sku_counts$SelectedCount[i]
+        
+        # 检查 SKU 是否存在
+        existing_record <- dbGetQuery(con, "SELECT SKU, Quantity FROM inventory WHERE SKU = ?", params = list(sku))
+        if (nrow(existing_record) == 0) {
+          showNotification(paste0("SKU ", sku, " 不存在！"), type = "error")
+          return(NULL)
+        }
+        
+        # 更新库存总数为新值
+        dbExecute(con, "
+        UPDATE inventory
+        SET Quantity = ?
+        WHERE SKU = ?",
+                  params = list(new_total_quantity, sku)
+        )
+        
+        showNotification(
+          paste0("SKU ", sku, " 的库存总数已更新为 ", new_total_quantity, "！"),
+          type = "message"
+        )
+      })
+      
+      # 刷新数据
+      inventory(dbGetQuery(con, "SELECT * FROM inventory"))
+      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
+      
+    }, error = function(e) {
+      # 捕获错误并通知用户
+      showNotification(paste("修改库存总数时发生错误：", e$message), type = "error")
+    })
   })
 
   
