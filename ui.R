@@ -150,7 +150,7 @@ ui <- navbarPage(
         
         itemFilterUI(id = "inbound_filter", border_color = "#28A745", text_color = "#28A745"),
         
-        tags$hr(), # 分隔线
+        tags$hr(style = "margin: 5px 0; border: none;"),
         
         fluidRow(
           column(
@@ -162,7 +162,7 @@ ui <- navbarPage(
               # 卡片标题
               div(
                 style = "margin-bottom: 10px; padding-bottom: 8px;",
-                tags$h4("入库操作", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
+                tags$h4("入库操作", style = "color: #007BFF; font-weight: bold; margin-bottom: 5px;"),
               ),
               
               # SKU 输入框
@@ -173,7 +173,22 @@ ui <- navbarPage(
                   label = NULL, 
                   placeholder = "请扫描或输入SKU",
                   width = "100%"
-                )
+                ),
+                tags$script(HTML("
+                $(document).on('keypress', '#inbound_sku', function(e) {
+                    if(e.which === 13) {  // 检测回车键
+                      $('#confirm_inbound_btn').click();  // 模拟点击按钮
+                    }
+                  });
+                "))
+              ),
+              
+              numericInput(
+                inputId = "inbound_quantity",
+                label = "入库数量",
+                value = 1,        # 默认值
+                min = 1,          # 最小值
+                step = 1          # 步长
               ),
               
               # 瑕疵品复选框
@@ -210,7 +225,7 @@ ui <- navbarPage(
           )
         ),
         
-        tags$hr(), # 分隔线
+        tags$hr(style = "margin: 5px 0; border: none;"),
         
         fluidRow( 
           # 条形码生成下载按钮
@@ -222,12 +237,12 @@ ui <- navbarPage(
                    # 卡片标题
                    div(
                      style = "margin-bottom: 10px; padding-bottom: 8px;",
-                     tags$h4("条形码下载", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
+                     tags$h4("条形码下载", style = "color: #007BFF; font-weight: bold; margin-bottom: 5px;"),
                    ),
                    
                    tags$div(
                      style = "display: flex; justify-content: space-between; align-items: center;",
-                     actionButton("export_select_btn", "生成选中商品条形码", icon = icon("barcode"), class = "btn-info"),
+                     actionButton("export_select_btn", "生成选中物品条形码", icon = icon("barcode"), class = "btn-info"),
                      downloadButton("download_select_pdf", "下载条形码", class = "btn-info")
                    )
                  )
@@ -260,21 +275,22 @@ ui <- navbarPage(
   tabPanel(
     "售出", icon = icon("dollar-sign"),
     div(
-      class = "layout-container",  # Flexbox 容器
+      class = "layout-container",
       
-      # 左侧订单信息录入
+      # 左侧：动态变化的筛选区和订单登记
       div(
-        class = "sticky-sidebar",  # sticky 侧边栏
-        style = "width: 400px;", # override 宽度
+        class = "sticky-sidebar",
+        style = "width: 400px;",
         
-        itemFilterUI(id = "sold_filter", border_color = "#28A745", text_color = "#28A745"),
+        # 动态显示筛选区
+        uiOutput("dynamic_sidebar"),
         
+        # 订单登记区（共用）
         div(
           class = "card",
           style = "margin-bottom: 5px; padding: 15px; border: 1px solid #007BFF; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
           
-          # 订单录入表单标题
-          tags$h4("订单登记", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
+          tags$h4("订单登记与更新", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
           
           fluidRow(
             column(
@@ -348,111 +364,137 @@ ui <- navbarPage(
         )
       ),
       
-      # 主面板：右侧物品选择和已选物品列表
+      # 主面板：售出和订单管理的分页
       div(
         class = "main-panel",
-        
-        fluidRow(
-          # 货架部分
-          column(6,
-                 div(
-                   class = "card",
-                   style = "padding: 20px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);",
-                   tags$h4(
-                     HTML(paste0(as.character(icon("warehouse")), "  货架")),
-                     style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"
-                   ),
-                   DTOutput("shelf_table")  # 显示货架上的物品
-                 )
-          ),
-          
-          # 箱子部分
-          column(6,
-                 div(
-                   class = "card",
-                   style = "padding: 20px; margin-bottom: 20px; border: 1px solid #28A745; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);",
-                   tags$h4(
-                     HTML(paste0(as.character(icon("box")), "  发货箱")),
-                     style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
-                   ),
-                   DTOutput("box_table"),  # 显示已放入箱子的物品
-                   
-                   fluidRow(
-                     column(
-                       width = 7, # 左侧按钮宽度
-                       actionButton(
-                         "confirm_order_btn",
-                         "确认售出",
-                         icon = icon("check"),
-                         class = "btn-primary",
-                         style = "font-size: 16px; width: 100%; height: 50px; margin-top: 10px;"
-                       )
-                     ),
-                     column(
-                       width = 5, # 右侧选择框宽度
-                       tags$div(
-                         style = "
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    border: 1px solid #007BFF;
-    border-radius: 8px;
-    height: 50px;
-    padding: 0 10px;
-    margin-top: 10px;
-  ",
-                         tags$span(
-                           "国际运输:",
-                           style = "font-size: 16px; font-weight: bold; margin-right: 15px; line-height: 1;"
+        tabsetPanel(
+          id = "main_tabs",
+          tabPanel(
+            title = "物品售出",
+            value = "sold",
+            fluidRow(
+              # 货架部分
+              column(6,
+                     div(
+                       class = "card",
+                       style = "padding: 20px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);",
+                       tags$h4(
+                         HTML(paste0(
+                           as.character(icon("warehouse")), 
+                           "  货架  ",
+                           span(style = "display: inline-flex; color: #007BFF; font-size: 18px;", textOutput("shelf_count")) # 动态显示数量
+                         )),
+                         style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"
+                       ),
+                       DTOutput("shelf_table")  # 显示货架上的物品
+                     )
+              ),
+              
+              # 箱子部分
+              column(6,
+                     div(
+                       class = "card",
+                       style = "padding: 20px; margin-bottom: 20px; border: 1px solid #28A745; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);",
+                       tags$h4(
+                         HTML(paste0(
+                           as.character(icon("box")), 
+                           "  发货箱  ",
+                           span(style = "display: inline-flex; color: #28A745; font-size: 18px;", textOutput("box_count")) # 动态显示数量
+                         )),
+                         style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+                       ),
+                       DTOutput("box_table"),  # 显示已放入箱子的物品
+                       
+                       fluidRow(
+                         column(
+                           width = 7, # 左侧按钮宽度
+                           actionButton(
+                             "confirm_order_btn",
+                             "确认售出",
+                             icon = icon("check"),
+                             class = "btn-primary",
+                             style = "font-size: 16px; width: 100%; height: 50px; margin-top: 10px;"
+                           )
                          ),
-                         tags$div(
-                           style = "
-      display: flex;
-      align-items: center;
-      height: 100%;
-      margin-bottom: 0; /* 移除底部间距 */
-    ",
-                           tags$style(HTML("
-      #sold_shipping_method .radio {
-        margin-bottom: 0 !important; /* 移除默认的 margin */
-      }
-      #sold_shipping_method {
-        margin-bottom: 0 !important; /* 避免容器本身多余间距 */
-      }
-    ")),
-                           radioButtons(
-                             inputId = "sold_shipping_method",
-                             label = NULL, # 去掉默认 label
-                             choices = list("空运" = "空运", "海运" = "海运"),
-                             selected = "空运",  # 默认选择空运
-                             inline = TRUE       # 设置为横向排布
+                         column(
+                           width = 5, # 右侧选择框宽度
+                           tags$div(
+                             style = "
+                              display: flex;
+                              align-items: center;
+                              justify-content: flex-start;
+                              border: 1px solid #007BFF;
+                              border-radius: 8px;
+                              height: 50px;
+                              padding: 0 10px;
+                              margin-top: 10px;
+                            ",
+                             tags$span(
+                               "国际运输:",
+                               style = "font-size: 16px; font-weight: bold; margin-right: 15px; line-height: 1;"
+                             ),
+                             tags$div(
+                               style = "
+                                  display: flex;
+                                  align-items: center;
+                                  height: 100%;
+                                  margin-bottom: 0; /* 移除底部间距 */
+                                ",
+                               tags$style(HTML("
+                                  #sold_shipping_method .radio {
+                                    margin-bottom: 0 !important; /* 移除默认的 margin */
+                                  }
+                                  #sold_shipping_method {
+                                    margin-bottom: 0 !important; /* 避免容器本身多余间距 */
+                                  }
+                                ")),
+                               radioButtons(
+                                 inputId = "sold_shipping_method",
+                                 label = NULL, # 去掉默认 label
+                                 choices = list("空运" = "空运", "海运" = "海运"),
+                                 selected = "空运",  # 默认选择空运
+                                 inline = TRUE       # 设置为横向排布
+                               )
+                             )
                            )
                          )
                        )
-                       
-                       
-                       
                      )
-                   )
-                 )
-          )
-        ),
-        
-        tags$hr(style = "margin: 20px 0; border: 1px solid #ddd;"),  # 添加分隔线
-        
-        div(
-          style = "display: flex; flex-direction: column;",
-          div(
-            style = "flex-grow: 1; overflow-y: auto; padding-top: 10px;",  # 表格自适应高度
+              )
+            ),
+            
+            tags$hr(style = "margin: 20px 0; border: 1px solid #ddd;"),  # 添加分隔线
+            
             div(
-              id = "item_table_container_sold",
-              uniqueItemsTableUI("unique_items_table_sold")
+              style = "display: flex; flex-direction: column;",
+              div(
+                style = "flex-grow: 1; overflow-y: auto; padding-top: 10px;",  # 表格自适应高度
+                div(
+                  id = "item_table_container_sold",
+                  uniqueItemsTableUI("unique_items_table_sold")
+                )
+              )
+            )
+          ),
+          tabPanel(
+            title = "订单管理",
+            value = "order_management",
+            div(
+              class = "card",
+              style = "height: 460px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
+              orderTableUI("orders_table_module")
+            ),
+            div(
+              class = "card",
+              style = "height: 325px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
+              uiOutput("associated_items_title"),  # 动态标题
+              uniqueItemsTableUI("associated_items_table_module")
             )
           )
         )
       )
     )
-  ), # end of 售出 tab
+  ), # End of 售出
   
   tabPanel(
     "发货", icon = icon("truck"),

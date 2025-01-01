@@ -1,10 +1,10 @@
 uniqueItemsTableServer <- function(input, output, session, column_mapping, selection = "single", data, options = list(
-  scrollY = "700px",  # 根据内容动态调整滚动高度
+  scrollY = "770px",  # 根据内容动态调整滚动高度
   scrollX = TRUE,  # 支持水平滚动
   fixedHeader = TRUE,  # 启用表头固定
   dom = 't',  # 隐藏搜索框和分页等控件
   paging = FALSE,  # 禁止分页
-  searching = FALSE  # 支持搜索
+  searching = FALSE  # 禁止搜索
 )) {
   output$unique_items_table <- renderDT({
     # 初始化渲染表

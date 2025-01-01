@@ -317,10 +317,13 @@ render_table_with_images <- function(data,
                                      column_mapping, 
                                      selection = "single",
                                      image_column = NULL,
-                                     options = list(fixedHeader = TRUE,  # 启用表头固定
+                                     options = list(scrollY = "770px",  # 根据内容动态调整滚动高度
+                                                    scrollX = TRUE,  # 支持水平滚动
+                                                    fixedHeader = TRUE,  # 启用表头固定
                                                     dom = 't',  # 隐藏搜索框和分页等控件
-                                                    paging = FALSE,  # 禁用分页
-                                                    searching = FALSE)) {
+                                                    paging = FALSE,  # 禁止分页
+                                                    searching = FALSE  # 禁止搜索
+                                     )) {
   if (!is.null(image_column) && nrow(data) > 0) {
     # Render the image column
     data[[image_column]] <- render_image_column(data[[image_column]], host_url)
@@ -348,39 +351,49 @@ render_table_with_images <- function(data,
 }
 
 
-update_status <- function(con, unique_id, new_status, defect_status = NULL, shipping_method = NULL, refresh_trigger = NULL, update_timestamp = TRUE) {
-  if (!new_status %in% names(status_columns)) {
-    showNotification("Invalid status provided", type = "error")
-    return()
-  }
-  
-  # 获取时间戳列
-  timestamp_column <- status_columns[[new_status]]
-  timestamp_update <- if (update_timestamp) paste0(timestamp_column, " = NOW()") else NULL
-  
-  # 动态构建 SET 部分
+update_status <- function(con, unique_id, new_status = NULL, defect_status = NULL, 
+                          shipping_method = NULL, clear_shipping_method = FALSE, 
+                          refresh_trigger = NULL, update_timestamp = TRUE) {
+  # 构建动态 SQL 子句
   set_clauses <- c(
-    "Status = ?",
-    timestamp_update,
+    if (!is.null(new_status)) {
+      # 检查 new_status 的合法性
+      if (!new_status %in% names(status_columns)) {
+        showNotification("Invalid status provided", type = "error")
+        return()
+      }
+      # 获取时间戳列并添加状态更新
+      timestamp_column <- status_columns[[new_status]]
+      timestamp_update <- if (update_timestamp) paste0(timestamp_column, " = NOW()") else NULL
+      c("Status = ?", timestamp_update)
+    } else {
+      NULL
+    },
     if (!is.null(defect_status)) "Defect = ?" else NULL,
-    if (!is.null(shipping_method)) "IntlShippingMethod = ?" else NULL
+    if (!is.null(shipping_method)) "IntlShippingMethod = ?" else NULL,
+    if (clear_shipping_method) "IntlShippingMethod = NULL" else NULL # 显式清空运输方式
   )
   
   # 拼接 SET 子句
   set_clause <- paste(set_clauses[!is.null(set_clauses)], collapse = ", ")
   
-  # 完整 SQL 查询
+  # 如果没有任何更新内容，提示错误并返回
+  if (set_clause == "") {
+    showNotification("No updates provided", type = "error")
+    return()
+  }
+  
+  # 构建 SQL 查询
   query <- paste0(
     "UPDATE unique_items SET ", set_clause, " WHERE UniqueID = ?"
   )
   
   # 构建参数列表
   params <- c(
-    list(new_status),
-    if (!is.null(timestamp_update)) list() else NULL,
+    if (!is.null(new_status)) list(new_status) else NULL,
     if (!is.null(defect_status)) list(defect_status) else NULL,
     if (!is.null(shipping_method)) list(shipping_method) else NULL,
-    list(unique_id)
+    list(unique_id)  # 唯一 ID 是必须的
   )
   
   # 展平参数列表
@@ -394,6 +407,7 @@ update_status <- function(con, unique_id, new_status, defect_status = NULL, ship
     refresh_trigger(!refresh_trigger())
   }
 }
+
 
 
 update_order_id <- function(con, unique_id, order_id) {
@@ -674,7 +688,9 @@ handleOperation <- function(
     output,               # 输出对象
     refresh_trigger,      # 数据刷新触发器
     session,              # 当前会话对象
-    input = NULL          # 显式传递的 input 对象
+    input = NULL,          # 显式传递的 input 对象
+    clear_field = NULL,    # 需要清空的字段
+    clear_shipping_method = FALSE
 ) {
   sku <- trimws(sku_input) # 清理空格
   
@@ -705,9 +721,29 @@ handleOperation <- function(
     } else NULL
     
     # 动态设置运输方式
-    shipping_method <- if (!is.null(input) && operation_name %in% c("出库", "售出")) {
-      ifelse(operation_name == "出库", input$outbound_shipping_method, input$sold_shipping_method)
-    } else NULL
+    shipping_method <- if (!is.null(input)) {
+      if (operation_name == "撤回") {
+        NULL  # 清空运输方式
+      } else if (operation_name == "出库") {
+        input$outbound_shipping_method  # 出库时的运输方式
+      } else if (operation_name == "售出") {
+        input$sold_shipping_method  # 售出时的运输方式
+      } else {
+        NULL  # 默认情况
+      }
+    } else {
+      NULL
+    }
+    
+    # 动态清空字段逻辑
+    if (!is.null(clear_field)) {
+      dbExecute(con, paste0("
+        UPDATE unique_items
+        SET ", clear_field, " = NULL
+        WHERE UniqueID = ?"),
+                params = list(sku_items$UniqueID[1])
+      )
+    }
     
     # 调用更新状态函数
     update_status(
@@ -715,7 +751,8 @@ handleOperation <- function(
       unique_id = sku_items$UniqueID[1],
       new_status = update_status_value,
       defect_status = defect_status,
-      shipping_method = shipping_method,
+      shipping_method = shipping_method,    # 设置运输方式
+      clear_shipping_method = clear_shipping_method, # 是否清空运输方式
       refresh_trigger = refresh_trigger
     )
     
@@ -820,100 +857,81 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
       supplier_prefix <- "【供应商】"
       new_supplier_note <- paste0(supplier_prefix, preorder_supplier, "；")
       
-      # 更新备注逻辑
       if (nrow(existing_order) > 0) {
-        # 检查现有备注是否包含供应商信息
-        if (grepl(supplier_prefix, existing_order$OrderNotes[1])) {
-          # 更新供应商名字
-          order_notes <- gsub(paste0(supplier_prefix, ".*?；"), new_supplier_note, existing_order$OrderNotes[1])
+        existing_notes <- existing_order$OrderNotes[1] %||% ""  # 确保为长度为 1 的字符
+        if (grepl(supplier_prefix, existing_notes)) {
+          order_notes <- gsub(
+            paste0(supplier_prefix, ".*?；"),
+            new_supplier_note,
+            existing_notes
+          )
         } else {
-          # 添加供应商备注到最前面
-          order_notes <- paste0(new_supplier_note, existing_order$OrderNotes[1])
+          order_notes <- paste0(new_supplier_note, existing_notes)
         }
       } else {
-        # 对于新订单，直接生成备注
         order_notes <- paste0(new_supplier_note, order_notes %||% "")
       }
     }
     
     # 获取发货箱中的物品图片路径
     box_data <- box_items()
-    box_image_paths <- box_data$ItemImagePath[!is.na(box_data$ItemImagePath)]
+    box_image_paths <- if (nrow(box_data) > 0) {
+      box_data$ItemImagePath[!is.na(box_data$ItemImagePath)]
+    } else {
+      character(0)  # 如果为空，返回空字符向量
+    }
     
     # 获取订单内关联物品的图片路径
     order_items <- unique_items_data() %>% filter(OrderID == order_id)
-    order_image_paths <- order_items$ItemImagePath[!is.na(order_items$ItemImagePath)]
+    order_image_paths <- if (nrow(order_items) > 0) {
+      order_items$ItemImagePath[!is.na(order_items$ItemImagePath)]
+    } else {
+      character(0)  # 如果为空，返回空字符向量
+    }
+    
+    # 获取订单中的图片路径作为 inventory_path
+    order_image_path <- if (nrow(existing_order) > 0) {
+      existing_order$OrderImagePath[1]  # 提取 OrderImagePath
+    } else {
+      NULL
+    }
+    
+    # 处理 image_data 数据
+    image_path <- process_image_upload(
+      sku = order_id,
+      file_data = image_data$uploaded_file(),
+      pasted_data = image_data$pasted_file(),
+      inventory_path = order_image_path
+    )
     
     # 合并订单关联物品和发货箱的图片路径
     combined_image_paths <- unique(c(order_image_paths, box_image_paths))
     
-    if(length(combined_image_paths) > 0) showNotification(paste0("正在拼贴 ", length(combined_image_paths), " 张物品图"), type = "message")
-    
-    if (nrow(existing_order) > 0) {
-      # 如果订单已存在
-      existing_orders_path <- existing_order$OrderImagePath[1]
-      is_montage <- grepl("_montage\\.jpg$", basename(existing_orders_path))
-      
-      if (is.null(existing_orders_path)) {
-        # 情况 1：订单没有订单图且没有上传订单图片
-        if (is.null(image_data$uploaded_file()) && is.null(image_data$pasted_file())) {
-          if (length(combined_image_paths) > 0) {
-            montage_path <- paste0("/var/www/images/", order_id,"_montage_", format(Sys.time(), "%Y%m%d%H%M%S"), ".jpg") 
-            order_image_path <- generate_montage(combined_image_paths, montage_path)
-          }
-        } else {
-          # 使用上传的图片
-          order_image_path <- process_image_upload(
-            sku = order_id,
-            file_data = image_data$uploaded_file(),
-            pasted_data = image_data$pasted_file(),
-            inventory_path = NULL
-          )
-        }
-      } else if (is_montage) {
-        # 情况 2：订单有拼贴图，更新为新拼贴图
-        if (length(combined_image_paths) > 0) {
-          montage_path <- paste0("/var/www/images/", order_id, "_montage.jpg")
-          order_image_path <- generate_montage(combined_image_paths, montage_path)
-        } else {
-          order_image_path <- existing_orders_path
-        }
-      } else {
-        # 情况 3：订单有非拼贴图，保持现有图片
-        order_image_path <- existing_orders_path
-      }
+    # 决定订单图片路径
+    if (!is.null(image_path)) {
+      # 如果用户上传或粘贴了图片，直接使用用户的图片路径
+      order_image_path <- image_path
     } else {
-      # 如果订单不存在
-      if (is.null(image_data$uploaded_file()) && is.null(image_data$pasted_file())) {
-        # 没有上传图片，根据订单内关联的物品生成拼贴图
-        if (length(combined_image_paths) > 0) {
-          montage_path <- paste0("/var/www/images/", order_id, "_montage.jpg")
-          order_image_path <- generate_montage(combined_image_paths, montage_path)
-        } else {
-          # 没有关联物品，设为空，渲染时会使用占位图
-          order_image_path <- NA
-          showNotification("未找到上传图片或关联物品，使用默认占位图片！", type = "warning")
-        }
+      # 如果没有用户上传或粘贴的图片，使用库存中的图片路径和发货箱的图片路径生成拼贴图
+      combined_image_paths <- unique(c(order_image_paths, box_image_paths))
+      if (length(combined_image_paths) > 0) {
+        montage_path <- paste0("/var/www/images/", order_id, "_montage_", format(Sys.time(), "%Y%m%d%H%M%S"), ".jpg")
+        order_image_path <- generate_montage(combined_image_paths, montage_path)
       } else {
-        # 使用上传的图片
-        order_image_path <- process_image_upload(
-          sku = order_id,
-          file_data = image_data$uploaded_file(),
-          pasted_data = image_data$pasted_file(),
-          inventory_path = NULL
-        )
+        order_image_path <- NA  # 确保为长度为 1 的 NA
       }
     }
     
-    # 使用 %||% 确保所有参数为长度为 1 的值
+    # 确保所有参数为长度为 1 的值
     tracking_number <- tracking_number %||% NA
     order_notes <- order_notes %||% NA
     customer_name <- customer_name %||% NA
     customer_netname <- customer_netname %||% NA
-    platform <- platform  # 此时 platform 已验证非空，无需使用 %||%
+    order_image_path <- as.character(order_image_path %||% NA)
+    platform <- platform %||% ""
     
+    # 插入或更新订单
     if (nrow(existing_order) > 0) {
-      # 如果订单号已存在，更新图片和其他信息
       dbExecute(con, "
         UPDATE orders 
         SET OrderImagePath = COALESCE(?, OrderImagePath), 
@@ -925,19 +943,18 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
             OrderStatus = ?
         WHERE OrderID = ?",
                 params = list(
-                  order_image_path, 
+                  order_image_path,
                   tracking_number,
                   order_notes,
                   customer_name,
                   customer_netname,
                   platform,
-                  order_status,  # 更新订单状态
+                  order_status,
                   order_id
                 )
       )
       showNotification("订单信息已更新！", type = "message")
     } else {
-      # 如果订单号不存在，插入新订单记录
       dbExecute(con, "
         INSERT INTO orders (OrderID, UsTrackingNumber, OrderNotes, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderStatus)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -949,7 +966,7 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
                   customer_netname,
                   platform,
                   order_image_path,
-                  order_status  # 插入订单状态
+                  order_status
                 )
       )
       showNotification("订单已成功登记！", type = "message")
@@ -957,9 +974,10 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
     
     # 更新订单表格
     orders(dbGetQuery(con, "SELECT * FROM orders"))
+    return(TRUE)
   }, error = function(e) {
-    # 错误处理
     showNotification(paste("登记订单时发生错误：", e$message), type = "error")
+    return(FALSE)
   })
 }
 
@@ -1005,6 +1023,12 @@ adjust_inventory <- function(con, sku, adjustment, maker = NULL, major_type = NU
     # 查询现有库存
     existing_item <- dbGetQuery(con, "SELECT * FROM inventory WHERE SKU = ?", params = list(sku))
     
+    # 从 unique_items 表获取历史总数量
+    historical_quantity <- dbGetQuery(con, "
+      SELECT COUNT(*) AS TotalQuantity 
+      FROM unique_items 
+      WHERE SKU = ?", params = list(sku))$TotalQuantity[1]
+    
     if (nrow(existing_item) > 0) {
       # SKU 已存在，计算新的库存和成本
       new_quantity <- existing_item$Quantity + adjustment
@@ -1014,11 +1038,17 @@ adjust_inventory <- function(con, sku, adjustment, maker = NULL, major_type = NU
       
       # 更新平均成本和运费
       if (needs_cost_update) {
-        # 使用 existing_item$Quantity 计算平均成本和运费
-        new_ave_product_cost <- ((existing_item$ProductCost * existing_item$Quantity) + 
-                                   (product_cost * quantity)) / (existing_item$Quantity + quantity)
-        new_ave_shipping_cost <- ((existing_item$ShippingCost * existing_item$Quantity) + 
-                                    (unit_shipping_cost * quantity)) / (existing_item$Quantity + quantity)
+        # 如果历史总数量为 0，直接使用新的采购成本
+        if (historical_quantity == 0) {
+          new_ave_product_cost <- product_cost
+          new_ave_shipping_cost <- unit_shipping_cost
+        } else {
+          # 基于 unique_items 的历史总数量计算加权平均成本
+          new_ave_product_cost <- ((existing_item$ProductCost * historical_quantity) + 
+                                     (product_cost * quantity)) / (historical_quantity + quantity)
+          new_ave_shipping_cost <- ((existing_item$ShippingCost * historical_quantity) + 
+                                      (unit_shipping_cost * quantity)) / (historical_quantity + quantity)
+        }
       } else {
         # 如果不需要更新成本，保持原有成本不变
         new_ave_product_cost <- existing_item$ProductCost
@@ -1105,6 +1135,96 @@ generate_montage <- function(image_paths, output_path, geometry = "+5+5") {
   
   return(output_path)
 }
+
+reset_order_form <- function(session, image_module) {
+  updateTextInput(session, "order_id", value = "")
+  updateSelectInput(session, "platform", selected = "")
+  updateTextInput(session, "customer_name", value = "")
+  updateTextInput(session, "customer_netname", value = "")
+  updateCheckboxInput(session, "is_preorder", value = FALSE)
+  updateCheckboxInput(session, "is_transfer_order", value = FALSE)
+  updateTextInput(session, "tracking_number", value = "")
+  image_module$reset()
+  updateTextAreaInput(session, "order_notes", value = "")
+}
+
+
+
+createSearchableDropdown <- function(input_id, label, data, placeholder = "搜索...") {
+  # 将数据转换为 Dropdown 所需格式
+  options <- if (length(data) > 0) {
+    lapply(data, function(item) list(key = item, text = item))
+  } else {
+    # 提供默认值避免空选项
+    list(list(key = "no-data", text = "无数据"))
+  }
+  
+  # 定义 DropdownMenuItemType
+  DropdownMenuItemType <- function(type) {
+    JS(paste0("jsmodule['@fluentui/react'].DropdownMenuItemType.", type))
+  }
+  
+  # 包含搜索框的选项列表
+  options_with_search <- function(opt) {
+    filter_header <- list(
+      key = "__FilterHeader__", 
+      text = "-", 
+      itemType = DropdownMenuItemType("Header") # 添加一个 Header 类型选项用于搜索框
+    )
+    append(list(filter_header), opt)
+  }
+  
+  # 定义模糊搜索渲染逻辑
+  render_search_box <- JS(paste0("(option) => {
+    if (option.key !== '__FilterHeader__') {
+      return option.text;
+    }
+    const onChange = (event, newValue) => {
+      const query = newValue.toLocaleLowerCase();
+      const checkboxLabels = document.querySelectorAll(
+        '#", input_id, "-list .ms-Checkbox-label'
+      );
+      checkboxLabels.forEach(label => {
+        const text = label.innerText.replace('\\n', '').replace('', '').toLocaleLowerCase();
+        // 使用 indexOf 实现模糊匹配
+        if (query === '' || text.indexOf(query) !== -1) {
+          label.parentElement.style.display = 'flex';
+        } else {
+          label.parentElement.style.display = 'none';
+        }
+      });
+    };
+    const props = { 
+      placeholder: '", placeholder, "', 
+      underlined: true, 
+      onChange 
+    };
+    return React.createElement(jsmodule['@fluentui/react'].SearchBox, props);
+  }"))
+  
+  # 定义样式，控制下拉菜单的高度
+  dropdown_styles <- JS("{
+    callout: {
+      maxHeight: '200px', // 设置下拉菜单最大高度
+      overflowY: 'auto'   // 启用垂直滚动条
+    }
+  }")
+  
+  # 返回创建的 UI
+  div(
+    style = "padding-bottom: 15px;", # 外层 div 设置内边距和字体大小
+    Dropdown.shinyInput(
+      inputId = input_id,
+      label = label,
+      options = options_with_search(options), # 添加搜索框到选项列表中
+      multiSelect = TRUE,
+      placeholder = placeholder,
+      onRenderOption = render_search_box, # 自定义渲染逻辑
+      styles = dropdown_styles            # 应用样式控制下拉菜单高度
+    )
+  )
+}
+
 
 
 
