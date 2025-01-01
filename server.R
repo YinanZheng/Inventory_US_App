@@ -405,8 +405,13 @@ server <- function(input, output, session) {
   
   # 监听 SKU 输入
   observeEvent(input$inbound_sku, {
-    handleSkuInput(
-      sku_input = input$inbound_sku,
+    req(input$inbound_sku)
+    
+    sanitized_inbound_sku <- trimws(input$inbound_sku)
+    
+    # 调用 handleSkuInput 并获取待入库数量
+    pending_quantity <- handleSkuInput(
+      sku_input = sanitized_inbound_sku,
       output_name = "inbound_item_info",
       count_label = "待入库数",
       count_field = "PendingQuantity",
@@ -415,85 +420,85 @@ server <- function(input, output, session) {
       placeholder_path = placeholder_300px_path,
       host_url = host_url
     )
+    
+    # 设置入库数量最大值
+    if (!is.null(pending_quantity) && pending_quantity > 0) {
+      updateNumericInput(session, "inbound_quantity", max = pending_quantity, value = 1)
+      showNotification(paste0("已更新待入库数量最大值为 ", pending_quantity, "！"), type = "message")
+    } else {
+      updateNumericInput(session, "inbound_quantity", max = 0, value = 0)
+      showNotification("无有效的待入库数量！", type = "warning")
+    }
   })
   
   # 确认入库逻辑
   observeEvent(input$confirm_inbound_btn, {
-    unique_ID <- handleOperation(
-      operation_name = "入库",
-      sku_input = input$inbound_sku,
-      output_name = "inbound_item_info",
-      query_status = "采购",
-      update_status_value = "国内入库",
-      count_label = "待入库数",
-      count_field = "PendingQuantity",
+    # 从输入中获取入库数量，确保为正整数
+    inbound_quantity <- as.integer(input$inbound_quantity)
+    if (is.na(inbound_quantity) || inbound_quantity <= 0) {
+      showNotification("入库数量必须是一个正整数！", type = "error")
+      return()
+    }
+    
+    sanitized_inbound_sku <- trimws(input$inbound_sku)
+    
+    # 批量处理入库逻辑
+    for (i in seq_len(inbound_quantity)) {
+      unique_ID <- handleOperation(
+        operation_name = "入库",
+        sku_input = sanitized_inbound_sku,
+        output_name = "inbound_item_info",
+        query_status = "国内出库",
+        update_status_value = "美国入库",
+        count_label = "待入库数",
+        count_field = "PendingQuantity",
+        con = con,
+        output = output,
+        refresh_trigger = NULL,
+        session = session,
+        input = input
+      )
+      
+      # 如果未找到对应的 UniqueID，停止后续操作
+      if (is.null(unique_ID) || unique_ID == "") {
+        showNotification(paste0("此SKU第 ", i, " 件物品不存在，已中止入库！"), type = "error")
+        break
+      }
+      
+      # 检查是否启用了瑕疵品选项
+      defective_item <- input$defective_item
+      defect_notes <- trimws(input$defective_notes)
+      
+      if (defective_item && defect_notes != "") {
+        tryCatch({
+          add_defective_note(
+            con = con,
+            unique_id = unique_ID,
+            note_content = defect_notes,
+            status_label = "瑕疵",
+            refresh_trigger = NULL
+          )
+          showNotification("瑕疵品备注已成功添加！", type = "message")
+        }, error = function(e) {
+          showNotification(paste("添加备注时发生错误：", e$message), type = "error")
+        })
+      } else if (defective_item) {
+        showNotification("无瑕疵品备注！", type = "warning")
+      }
+    }
+    
+    # 批量调整库存
+    adjust_inventory(
       con = con,
-      output = output,
-      refresh_trigger = NULL,
-      session = session,
-      input = input
+      sku = sanitized_inbound_sku,
+      adjustment = inbound_quantity  # 根据输入的数量调整库存
     )
     
-    # 检查 unique_ID 是否为空
-    if (is.null(unique_ID) || unique_ID == "") {
-      return()
-    }
-    
-    # 根据 unique_ID 查询对应的物品信息
-    item_info <- dbGetQuery(con, "SELECT SKU FROM unique_items WHERE UniqueID = ?", 
-                            params = list(unique_ID))
-    
-    if (nrow(item_info) == 0) {
-      showNotification("未找到对应的物品信息！", type = "error")
-      return()
-    }
-    
-    # 提取 SKU 信息
-    sku <- item_info$SKU[1]
-    
-    # 调用 adjust_inventory 增加库存，忽略成本参数
-    adjust_result <- adjust_inventory(
-      con = con,
-      sku = sku,
-      adjustment = 1  # 入库时库存增加 1
-    )
-    
-    if (!adjust_result) {
-      showNotification("库存增加失败！", type = "error")
-      return()
-    }
-    
-    # 检查是否启用了瑕疵品选项
-    defective_item <- input$defective_item
-    defect_notes <- trimws(input$defective_notes)
-    
-    # 如果选中瑕疵品并填写了备注
-    if (defective_item && defect_notes != "") {
-      tryCatch({
-        # 调用 add_defective_note 更新备注
-        add_defective_note(
-          con = con,
-          unique_id = unique_ID,
-          note_content = defect_notes,
-          status_label = "瑕疵",
-          refresh_trigger = NULL
-        )
-        showNotification("瑕疵品备注已成功添加！", type = "message")
-      }, error = function(e) {
-        showNotification(paste("添加备注时发生错误：", e$message), type = "error")
-      })
-    } else if (defective_item) {
-      # 如果勾选了瑕疵品但没有填写备注
-      showNotification("无瑕疵品备注！", type = "warning")
-    } else {
-      # 未选择瑕疵品时，正常完成入库
-      showNotification("入库操作完成！", type = "message")
-    }
-    
-    # 更新 inventory, unique_items数据并触发 UI 刷新
+    # 刷新 UI 和数据
     inventory(dbGetQuery(con, "SELECT * FROM inventory"))
     unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
     
+    # 重置输入
     updateTextInput(session, "inbound_sku", value = "")
     updateNumericInput(session, "inbound_quantity", value = 1)
   })
