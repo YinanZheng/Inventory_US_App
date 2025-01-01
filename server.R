@@ -554,22 +554,6 @@ server <- function(input, output, session) {
   
   ######
   
-  # 动态生成运单号输入框
-  output$additional_tracking_numbers <- renderUI({
-    rows <- tracking_rows()
-    
-    # 确保至少返回一个空的 UI，否则初始时页面可能为空
-    if (rows < 2) {
-      return(tagList())
-    }
-    
-    # 动态生成从运单号2开始的输入框
-    tracking_inputs <- lapply(2:rows, function(i) {
-      textInput(paste0("tracking_number", i), paste0("运单号 ", i), placeholder = "请输入运单号", width = "100%")
-    })
-    do.call(tagList, tracking_inputs)
-  })
-  
   # 监听增加运单号按钮点击
   observeEvent(input$add_tracking_btn, {
     rows <- tracking_rows()
