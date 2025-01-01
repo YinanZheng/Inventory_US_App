@@ -1192,6 +1192,37 @@ server <- function(input, output, session) {
                ))
   })
   
+  observeEvent(input$complete_transfer, {
+    req(selected_order_row())
+    
+    # 获取选中订单
+    selected_row <- selected_order_row()
+    selected_order <- filtered_orders()[selected_row, ]
+    order_id <- selected_order$OrderID
+    
+    tryCatch({
+      # 更新数据库中订单状态和备注
+      dbExecute(con, "
+      UPDATE orders
+      SET OrderStatus = '备货',
+          OrderNotes = CONCAT(IFNULL(OrderNotes, ''), '[美国调货完成 ', Sys.Date(), ']')
+      WHERE OrderID = ?
+    ", params = list(order_id))
+      
+      # 重新加载 orders 数据
+      orders(dbGetQuery(con, "SELECT * FROM orders"))
+      
+      # 通知用户操作成功
+      showNotification(sprintf("订单 #%s 已更新为备货状态！", order_id), type = "message")
+      
+    }, error = function(e) {
+      # 捕获更新错误并通知用户
+      showNotification(sprintf("更新订单状态时发生错误：%s", e$message), type = "error")
+    })
+  })
+  
+  
+  
   # 清空筛选条件逻辑
   observeEvent(input$reset_filter_btn, {
     tryCatch({
