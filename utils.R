@@ -669,6 +669,10 @@ handleSkuInput <- function(
       count_label = count_label,
       count_field = count_field
     )
+    
+    # 返回 count_field 的值
+    return(item_info[[count_field]][1])
+    
   }, error = function(e) {
     # 错误处理
     showNotification(paste("处理 SKU 输入时发生错误：", e$message), type = "error")
