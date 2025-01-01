@@ -1298,7 +1298,7 @@ server <- function(input, output, session) {
     req(input$shipping_bill_number)
     
     # 获取匹配的订单
-    matching_orders <- orders() %>% filter(UsTrackingNumber1 == input$shipping_bill_number)
+    matching_orders <- orders() %>% filter(UsTrackingNumber == input$shipping_bill_number)
     
     if (nrow(matching_orders) == 0) {
       output$order_info_card <- renderUI({ NULL })
