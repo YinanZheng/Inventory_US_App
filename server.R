@@ -1199,29 +1199,32 @@ server <- function(input, output, session) {
     selected_row <- selected_order_row()
     selected_order <- filtered_orders()[selected_row, ]
     order_id <- selected_order$OrderID
+    existing_notes <- selected_order$OrderNotes %||% ""  # 若为空，则默认空字符串
+    
+    # 在 R 中拼接备注内容
+    new_notes <- paste(existing_notes, sprintf("【调货完成 %s】", format(Sys.Date(), "%Y-%m-%d")))
     
     tryCatch({
-      # 更新数据库中订单状态和备注
+      # 使用拼接后的备注信息进行 SQL 更新
       dbExecute(con, "
       UPDATE orders
       SET OrderStatus = '备货',
-          OrderNotes = CONCAT(IFNULL(OrderNotes, ''), '[美国调货完成 ', Sys.Date(), ']')
+          OrderNotes = ?
       WHERE OrderID = ?
-    ", params = list(order_id))
+    ", params = list(new_notes, order_id))
       
-      # 重新加载 orders 数据
+      # 重新加载最新的 orders 数据
       orders(dbGetQuery(con, "SELECT * FROM orders"))
       
       # 通知用户操作成功
       showNotification(sprintf("订单 #%s 已更新为备货状态！", order_id), type = "message")
       
     }, error = function(e) {
-      # 捕获更新错误并通知用户
+      # 捕获错误并通知用户
       showNotification(sprintf("更新订单状态时发生错误：%s", e$message), type = "error")
     })
   })
-  
-  
+
   
   # 清空筛选条件逻辑
   observeEvent(input$reset_filter_btn, {
