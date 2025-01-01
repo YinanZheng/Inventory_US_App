@@ -183,12 +183,16 @@ ui <- navbarPage(
                 "))
               ),
               
-              numericInput(
-                inputId = "inbound_quantity",
-                label = "入库数量",
-                value = 1,        # 默认值
-                min = 1,          # 最小值
-                step = 1          # 步长
+              div(
+                style = "width: 100%;",
+                numericInput(
+                  inputId = "inbound_quantity",
+                  label = "入库数量",
+                  value = 1,        # 默认值
+                  min = 1,          # 最小值
+                  max = 1,
+                  step = 1          # 步长
+                )
               ),
               
               # 瑕疵品复选框
