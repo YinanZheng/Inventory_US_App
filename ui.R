@@ -921,7 +921,7 @@ ui <- navbarPage(
           dateRangeInput(
             inputId = "download_date_range",
             label = "选择采购日期范围:",
-            start = Sys.Date() - 30, # 默认最近30天
+            start = Sys.Date() - 365, # 默认最近365天
             end = Sys.Date(),        # 默认结束日期为今天
             format = "yyyy-mm-dd",   # 日期格式
             separator = " 至 ",

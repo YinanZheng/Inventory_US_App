@@ -2145,22 +2145,19 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  
   # 动态生成供应商筛选器
   output$download_maker_ui <- renderUI({
     makers <- unique_items_data() %>% pull(Maker) %>% unique()
-    maker_options <- lapply(makers, function(maker) list(key = maker, text = maker))
     
-    div(
-      style = "padding-bottom: 15px;", # 外层 div 设置内边距和字体大小
-      Dropdown.shinyInput(
-        inputId = "download_maker",
-        label = "选择供应商:",
-        options = maker_options,
-        multiSelect = TRUE,
-        placeholder = "请选择供应商..."
-      )
+    createSearchableDropdown(
+      input_id = "download_maker",
+      label = "选择供应商:",
+      data = makers,
+      placeholder = "搜索供应商..."
     )
   })
+  
   
   # 监听供应商选择变化并动态更新商品名称
   observe({
@@ -2187,11 +2184,16 @@ server <- function(input, output, session) {
   observeEvent(input$download_reset_filters, {
     # 重置供应商筛选为全选
     makers <- unique_items_data() %>% pull(Maker) %>% unique()
-    updateSelectizeInput(session, "download_maker", choices = makers, selected = makers)
+    updateDropdown.shinyInput(
+      session = session,
+      inputId = "download_maker",
+      options = lapply(makers, function(maker) list(key = maker, text = maker)), # 更新选项
+      value = NULL # 重置为未选中状态
+    )
     
     # 重置商品名称筛选为空选项
-    item_names <- c("")  # 仅包含空选项
-    updateSelectizeInput(session, "download_item_name", choices = item_names, selected = "")
+    updateSelectizeInput(session, "download_item_name", choices = "", selected = "")
+    updateDateRangeInput(session, "download_date_range", start = Sys.Date() - 365, end = Sys.Date())
   })
   
   # 下载物品表为 Excel
@@ -2273,35 +2275,35 @@ server <- function(input, output, session) {
         image_width_max <- 1
         
         if (!is.na(image_path) && file.exists(image_path)) {
-        
-        # 获取图片的实际宽高比
-        dims <- get_image_dimensions(image_path)
-        width_ratio <- dims$width / dims$height  # 宽高比
-        
-        row_to_insert <- i + 1  # 对应数据的行号
-        
-        image_width <- image_height * width_ratio  # 动态宽度（英寸）
-        
-        # 更新最大宽度
-        image_width_max <- max(image_width_max, image_width)
-        
-        insertImage(
-          wb = wb,
-          sheet = "物品明细表",
-          file = normalizePath(image_path),
-          startRow = row_to_insert,
-          startCol = col_to_insert,
-          width = image_width,
-          height = image_height,
-          units = "in"
-        )
-        
-        # 清空路径数据
-        writeData(wb, "物品明细表", "", startCol = col_to_insert, startRow = i + 1)
-        
-        # 调整行高和列宽
-        setRowHeights(wb, "物品明细表", rows = row_to_insert, heights = image_height * 78)
-        
+          
+          # 获取图片的实际宽高比
+          dims <- get_image_dimensions(image_path)
+          width_ratio <- dims$width / dims$height  # 宽高比
+          
+          row_to_insert <- i + 1  # 对应数据的行号
+          
+          image_width <- image_height * width_ratio  # 动态宽度（英寸）
+          
+          # 更新最大宽度
+          image_width_max <- max(image_width_max, image_width)
+          
+          insertImage(
+            wb = wb,
+            sheet = "物品明细表",
+            file = normalizePath(image_path),
+            startRow = row_to_insert,
+            startCol = col_to_insert,
+            width = image_width,
+            height = image_height,
+            units = "in"
+          )
+          
+          # 清空路径数据
+          writeData(wb, "物品明细表", "", startCol = col_to_insert, startRow = i + 1)
+          
+          # 调整行高和列宽
+          setRowHeights(wb, "物品明细表", rows = row_to_insert, heights = image_height * 78)
+          
         } else {
           showNotification(paste("跳过不存在的图片:", image_path), type = "warning", duration = 5)
         }
