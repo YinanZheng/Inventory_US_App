@@ -1248,10 +1248,8 @@ server <- function(input, output, session) {
     # 使用 uniqueItemsTableServer 渲染关联物品表
     callModule(uniqueItemsTableServer, "associated_items_table_module",
                column_mapping = c(common_columns, list(
-                 PurchaseTime = "采购日期",
-                 IntlShippingMethod = "国际运输",
-                 IntlAirTracking = "国际空运单号",
-                 IntlSeaTracking = "国际海运单号"
+                 UsEntryTime = "入库日期",
+                 DefectNotes = "瑕疵品备注"
                )),
                data = associated_items,
                options = list(
