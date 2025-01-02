@@ -353,7 +353,8 @@ render_table_with_images <- function(data,
 
 update_status <- function(con, unique_id, new_status = NULL, defect_status = NULL, 
                           shipping_method = NULL, clear_shipping_method = FALSE, 
-                          refresh_trigger = NULL, update_timestamp = TRUE) {
+                          refresh_trigger = NULL, update_timestamp = TRUE, 
+                          clear_status_timestamp = NULL) {
   # 构建动态 SQL 子句
   set_clauses <- c(
     if (!is.null(new_status)) {
@@ -362,7 +363,7 @@ update_status <- function(con, unique_id, new_status = NULL, defect_status = NUL
         showNotification("Invalid status provided", type = "error")
         return()
       }
-      # 获取时间戳列并添加状态更新
+      # 获取时间戳列
       timestamp_column <- status_columns[[new_status]]
       timestamp_update <- if (update_timestamp) paste0(timestamp_column, " = NOW()") else NULL
       c("Status = ?", timestamp_update)
@@ -371,7 +372,17 @@ update_status <- function(con, unique_id, new_status = NULL, defect_status = NUL
     },
     if (!is.null(defect_status)) "Defect = ?" else NULL,
     if (!is.null(shipping_method)) "IntlShippingMethod = ?" else NULL,
-    if (clear_shipping_method) "IntlShippingMethod = NULL" else NULL # 显式清空运输方式
+    if (clear_shipping_method) "IntlShippingMethod = NULL" else NULL, # 显式清空运输方式
+    if (!is.null(clear_status_timestamp)) {
+      # 检查 clear_status_timestamp 的合法性
+      if (!clear_status_timestamp %in% names(status_columns)) {
+        showNotification("Invalid clear_status_timestamp provided", type = "error")
+        return()
+      }
+      paste0(status_columns[[clear_status_timestamp]], " = NULL") # 清空指定列
+    } else {
+      NULL
+    }
   )
   
   # 拼接 SET 子句
