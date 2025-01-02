@@ -338,7 +338,7 @@ server <- function(input, output, session) {
   
   unique_items_table_sold_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_sold",
                                                      column_mapping <- c(common_columns, list(
-                                                       IntlShippingMethod = "国际运输",
+                                                       UsEntryTime = "入库日期",
                                                        UsSoldTime = "售出日期",
                                                        UsShippingTime = "发货日期",
                                                        OrderID = "订单号")
