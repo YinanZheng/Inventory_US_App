@@ -80,7 +80,7 @@ ui <- navbarPage(
         position: sticky; /* 保持固定 */
         top: 70px; /* 与导航栏对齐 */
         z-index: 900;
-        width: 450px; /* 固定宽度 */
+        width: 380px; /* 固定宽度 */
         height: calc(100vh - 70px); /* 自动计算高度 */
         overflow-y: auto; /* 滚动支持 */
         border: 1px solid #e0e0e0;
@@ -146,8 +146,7 @@ ui <- navbarPage(
       class = "layout-container",  # Flexbox 容器
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
-        style = "width: 400px;", # override 宽度
-        
+
         itemFilterUI(id = "inbound_filter", border_color = "#28A745", text_color = "#28A745"),
         
         tags$hr(style = "margin: 5px 0; border: none;"),
@@ -284,7 +283,7 @@ ui <- navbarPage(
       # 左侧：动态变化的筛选区和订单登记
       div(
         class = "sticky-sidebar",
-        style = "width: 400px;",
+        style = "width: 400px;",  # 使用内联样式覆盖宽度
         
         # 动态显示筛选区
         uiOutput("dynamic_sidebar"),
@@ -479,8 +478,7 @@ ui <- navbarPage(
       # 左侧：发货条形码输入区域
       div(
         class = "sticky-sidebar",
-        style = "width: 400px;",  # 左侧固定宽度
-        
+
         div(
           class = "card",
           style = "padding: 20px; border: 1px solid #007BFF; border-radius: 8px; margin-bottom: 20px;",
@@ -604,8 +602,7 @@ ui <- navbarPage(
       class = "layout-container",  # Flexbox 容器
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
-        style = "width: 300px;", # override 宽度
-        
+
         # 登记瑕疵品部分
         div(
           style = "margin-bottom: 20px;",
@@ -925,7 +922,6 @@ ui <- navbarPage(
       class = "layout-container",
       div(
         class = "sticky-sidebar",
-        style = "width: 300px;",
         passwordInput("admin_password", "请输入管理员密码：", width = "100%"),
         actionButton("admin_login_btn", "登录", icon = icon("unlock"), class = "btn-primary", style = "width: 100%; margin-top: 10px;"),
         tags$hr(),
