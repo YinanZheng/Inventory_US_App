@@ -1574,7 +1574,7 @@ server <- function(input, output, session) {
       
       if (length(remaining_queue) == 0) {
         # 如果队列为空，提示操作完成
-        showNotification("所有匹配订单已完成操作！", type = "success")
+        showNotification("所有匹配订单已完成操作！", type = "message")
         updateTextInput(session, "shipping_bill_number", value = "")
       } else {
         # 处理下一个订单
