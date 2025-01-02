@@ -480,13 +480,6 @@ server <- function(input, output, session) {
       }
     }
     
-    # 批量调整库存
-    adjust_inventory(
-      con = con,
-      sku = input$inbound_sku,
-      adjustment = inbound_quantity  # 根据输入的数量调整库存
-    )
-    
     # 刷新 UI 和数据
     inventory(dbGetQuery(con, "SELECT * FROM inventory"))
     unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
@@ -681,7 +674,7 @@ server <- function(input, output, session) {
       
       # 从 unique_items_data 获取符合条件的货架物品
       all_shelf_items <- unique_items_data() %>%
-        filter(SKU == selected_sku, Status == "国内入库", Defect != "瑕疵") %>%
+        filter(SKU == selected_sku, Status == "美国入库", Defect != "瑕疵") %>%
         select(SKU, UniqueID, ItemName, ProductCost, ItemImagePath) %>%
         arrange(ProductCost)  # 按单价从低到高排序
       
@@ -1057,7 +1050,7 @@ server <- function(input, output, session) {
       
       # 从 unique_items_data 获取货架中符合条件的物品总量
       all_shelf_items <- unique_items_data() %>%
-        filter(SKU == scanned_sku, Status == "国内入库", Defect != "瑕疵") %>%
+        filter(SKU == scanned_sku, Status == "美国入库", Defect != "瑕疵") %>%
         select(SKU, UniqueID, ItemName, ProductCost, ItemImagePath) %>%
         arrange(ProductCost)  # 按单价从低到高排序
       
@@ -1168,8 +1161,7 @@ server <- function(input, output, session) {
         update_status(
           con = con,
           unique_id = item$UniqueID,
-          new_status = "国内售出",
-          shipping_method = input$sold_shipping_method,
+          new_status = "美国售出",
           refresh_trigger = unique_items_data_refresh_trigger
         )
         
@@ -1374,11 +1366,11 @@ server <- function(input, output, session) {
             adjustment = 1  # 增加库存数量
           )
           
-          # 恢复物品状态到“国内入库”
+          # 恢复物品状态到“美国入库”
           update_status(
             con = con,
             unique_id = item$UniqueID,
-            new_status = "国内入库"
+            new_status = "美国入库"
           )
           
           # 清空物品的 OrderID
@@ -1781,7 +1773,7 @@ server <- function(input, output, session) {
       # 遍历每个选中物品，进行状态更新和备注添加
       lapply(selected_data$UniqueID, function(unique_id) {
         # 更新状态为瑕疵
-        update_status(con, unique_id, "国内入库", defect_status = "瑕疵", refresh_trigger = unique_items_data_refresh_trigger)
+        update_status(con, unique_id, defect_status = "瑕疵", refresh_trigger = unique_items_data_refresh_trigger)
         
         # 添加备注
         defect_notes <- trimws(input$manage_defective_notes)
@@ -1826,7 +1818,7 @@ server <- function(input, output, session) {
       # 遍历每个选中物品，进行状态更新和备注添加
       lapply(selected_data$UniqueID, function(unique_id) {
         # 更新状态为修复
-        update_status(con, unique_id, "国内入库", defect_status = "修复", refresh_trigger = unique_items_data_refresh_trigger)
+        update_status(con, unique_id, defect_status = "修复", refresh_trigger = unique_items_data_refresh_trigger)
         
         # 添加备注
         repair_notes <- trimws(input$manage_defective_notes)
