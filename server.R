@@ -1027,6 +1027,66 @@ server <- function(input, output, session) {
     }
   })
   
+  # 扫码入箱功能
+  observeEvent(input$sku_to_box, {
+    req(input$sku_to_box)  # 确保输入框不为空
+    
+    tryCatch({
+      # 获取输入的 SKU
+      scanned_sku <- trimws(input$sku_to_box)
+      
+      if (is.null(scanned_sku) || scanned_sku == "") {
+        showNotification("请输入有效的 SKU！", type = "error")
+        return()
+      }
+      
+      # 从 unique_items_data 获取货架中符合条件的物品总量
+      all_shelf_items <- unique_items_data() %>%
+        filter(SKU == scanned_sku, Status == "国内入库", Defect != "瑕疵") %>%
+        select(SKU, UniqueID, ItemName, ProductCost, ItemImagePath) %>%
+        arrange(ProductCost)  # 按单价从低到高排序
+      
+      # 如果货架中没有符合条件的物品，提示错误
+      if (nrow(all_shelf_items) == 0) {
+        showNotification("货架上未找到对应 SKU 的物品！", type = "error")
+        updateTextInput(session, "sku_to_box", value = "")  # 清空输入框
+        return()
+      }
+      
+      # 从箱子中获取当前 SKU 的已选数量
+      box_data <- box_items()
+      box_sku_count <- sum(box_data$SKU == scanned_sku)
+      
+      # 如果箱子中物品数量 >= 货架中物品总量，则阻止操作
+      if (box_sku_count >= nrow(all_shelf_items)) {
+        showNotification("该 SKU 的所有物品已移入箱子，无法继续添加！", type = "error")
+        updateTextInput(session, "sku_to_box", value = "")  # 清空输入框
+        return()
+      }
+      
+      # 获取第一个符合条件的物品
+      selected_item <- all_shelf_items[box_sku_count + 1, ]
+      
+      # 更新箱子内容
+      current_box <- box_items()
+      box_items(bind_rows(current_box, selected_item))
+      
+      # 更新货架上的物品
+      updated_shelf <- all_shelf_items[-(1:(box_sku_count + 1)), ]  # 移除已入箱的物品
+      shelf_items(updated_shelf)
+      
+      # 通知用户
+      showNotification(paste("物品已移入箱子！SKU:", scanned_sku), type = "message")
+      
+      # 清空输入框
+      updateTextInput(session, "sku_to_box", value = "")
+      
+    }, error = function(e) {
+      # 捕获错误并通知用户
+      showNotification(paste("处理 SKU 时发生错误：", e$message), type = "error")
+    })
+  })
+  
   # 确认售出
   observeEvent(input$confirm_order_btn, {
     req(input$order_id)

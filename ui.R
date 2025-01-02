@@ -399,67 +399,38 @@ ui <- navbarPage(
                      div(
                        class = "card",
                        style = "padding: 20px; margin-bottom: 20px; border: 1px solid #28A745; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);",
-                       tags$h4(
-                         HTML(paste0(
-                           as.character(icon("box")), 
-                           "  发货箱  ",
-                           span(style = "display: inline-flex; color: #28A745; font-size: 18px;", textOutput("box_count")) # 动态显示数量
-                         )),
-                         style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+                       div(
+                         style = "display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;",
+                         
+                         # 发货箱标题和动态显示数量
+                         tags$h4(
+                           HTML(paste0(
+                             as.character(icon("box")), 
+                             "  发货箱  ",
+                             span(style = "display: inline-flex; color: #28A745; font-size: 18px;", textOutput("box_count")) # 动态显示数量
+                           )),
+                           style = "color: #28A745; font-weight: bold; margin: 0;"
+                         ),
+                         
+                         # SKU 输入栏
+                         textInput(
+                           inputId = "sku_to_box",
+                           label = NULL,  # 不显示标签
+                           placeholder = "扫码入箱",  # 提示文字
+                           width = "300px"  # 控制输入框宽度
+                         )
                        ),
                        DTOutput("box_table"),  # 显示已放入箱子的物品
                        
                        fluidRow(
                          column(
-                           width = 7, # 左侧按钮宽度
+                           width = 12, # 左侧按钮宽度
                            actionButton(
                              "confirm_order_btn",
                              "确认售出",
                              icon = icon("check"),
                              class = "btn-primary",
                              style = "font-size: 16px; width: 100%; height: 50px; margin-top: 10px;"
-                           )
-                         ),
-                         column(
-                           width = 5, # 右侧选择框宽度
-                           tags$div(
-                             style = "
-                              display: flex;
-                              align-items: center;
-                              justify-content: flex-start;
-                              border: 1px solid #007BFF;
-                              border-radius: 8px;
-                              height: 50px;
-                              padding: 0 10px;
-                              margin-top: 10px;
-                            ",
-                             tags$span(
-                               "国际运输:",
-                               style = "font-size: 16px; font-weight: bold; margin-right: 15px; line-height: 1;"
-                             ),
-                             tags$div(
-                               style = "
-                                  display: flex;
-                                  align-items: center;
-                                  height: 100%;
-                                  margin-bottom: 0; /* 移除底部间距 */
-                                ",
-                               tags$style(HTML("
-                                  #sold_shipping_method .radio {
-                                    margin-bottom: 0 !important; /* 移除默认的 margin */
-                                  }
-                                  #sold_shipping_method {
-                                    margin-bottom: 0 !important; /* 避免容器本身多余间距 */
-                                  }
-                                ")),
-                               radioButtons(
-                                 inputId = "sold_shipping_method",
-                                 label = NULL, # 去掉默认 label
-                                 choices = list("空运" = "空运", "海运" = "海运"),
-                                 selected = "空运",  # 默认选择空运
-                                 inline = TRUE       # 设置为横向排布
-                               )
-                             )
                            )
                          )
                        )
