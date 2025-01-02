@@ -493,7 +493,7 @@ fetchSkuOperationData <- function(sku, con) {
       inv.MajorType,
       inv.MinorType,
       inv.Quantity AS TotalQuantity, -- 总库存数量
-      SUM(CASE WHEN u.Status = '国内出库' THEN 1 ELSE 0 END) AS PendingQuantity, -- 待入库数
+      SUM(CASE WHEN u.Status = '国内出库' THEN 1 ELSE 0 END) AS PendingQuantity -- 待入库数
     FROM inventory AS inv
     LEFT JOIN unique_items AS u
       ON inv.SKU = u.SKU
@@ -1021,6 +1021,7 @@ adjust_inventory <- function(con, sku, adjustment, maker = NULL, major_type = NU
                              minor_type = NULL, item_name = NULL, quantity = NULL, 
                              product_cost = NULL, unit_shipping_cost = NULL, image_path = NULL) {
   tryCatch({
+    sku <- trimws(sku)  # 清理空格
     # 查询现有库存
     existing_item <- dbGetQuery(con, "SELECT * FROM inventory WHERE SKU = ?", params = list(sku))
     

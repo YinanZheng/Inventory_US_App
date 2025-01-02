@@ -405,13 +405,9 @@ server <- function(input, output, session) {
   
   # 监听 SKU 输入
   observeEvent(input$inbound_sku, {
-    req(input$inbound_sku)
-    
-    sanitized_inbound_sku <- trimws(input$inbound_sku)
-    
     # 调用 handleSkuInput 并获取待入库数量
     pending_quantity <- handleSkuInput(
-      sku_input = sanitized_inbound_sku,
+      sku_input = input$inbound_sku,
       output_name = "inbound_item_info",
       count_label = "待入库数",
       count_field = "PendingQuantity",
@@ -427,7 +423,6 @@ server <- function(input, output, session) {
       showNotification(paste0("已更新待入库数量最大值为 ", pending_quantity, "！"), type = "message")
     } else {
       updateNumericInput(session, "inbound_quantity", max = 0, value = 0)
-      showNotification("无有效的待入库数量！", type = "warning")
     }
   })
   
@@ -440,13 +435,11 @@ server <- function(input, output, session) {
       return()
     }
     
-    sanitized_inbound_sku <- trimws(input$inbound_sku)
-    
     # 批量处理入库逻辑
     for (i in seq_len(inbound_quantity)) {
       unique_ID <- handleOperation(
         operation_name = "入库",
-        sku_input = sanitized_inbound_sku,
+        sku_input = input$inbound_sku,
         output_name = "inbound_item_info",
         query_status = "国内出库",
         update_status_value = "美国入库",
@@ -490,7 +483,7 @@ server <- function(input, output, session) {
     # 批量调整库存
     adjust_inventory(
       con = con,
-      sku = sanitized_inbound_sku,
+      sku = input$inbound_sku,
       adjustment = inbound_quantity  # 根据输入的数量调整库存
     )
     
