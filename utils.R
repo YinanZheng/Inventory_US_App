@@ -494,7 +494,6 @@ fetchSkuOperationData <- function(sku, con) {
       inv.MinorType,
       inv.Quantity AS TotalQuantity, -- 总库存数量
       SUM(CASE WHEN u.Status = '国内出库' THEN 1 ELSE 0 END) AS PendingQuantity, -- 待入库数
-      SUM(CASE WHEN u.Status = '美国入库' AND u.Defect != '瑕疵' THEN 1 ELSE 0 END) AS AvailableForSold -- 可售出数
     FROM inventory AS inv
     LEFT JOIN unique_items AS u
       ON inv.SKU = u.SKU
@@ -564,7 +563,6 @@ renderItemInfo <- function(output, output_name, item_info, img_path, count_label
       MinorType = "",
       PendingQuantity = 0,
       AvailableForOutbound = 0,
-      AvailableForSold = 0,
       stringsAsFactors = FALSE
     )
   }
