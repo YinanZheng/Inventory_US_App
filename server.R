@@ -1370,7 +1370,7 @@ server <- function(input, output, session) {
             con = con,
             unique_id = item$UniqueID,
             new_status = "美国入库",
-            clear_status_timestamp = "美国出库" # 同时清空美国售出的时间戳
+            clear_status_timestamp = "美国售出" # 同时清空美国售出的时间戳
           )
           
           # 清空物品的 OrderID
