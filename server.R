@@ -1245,10 +1245,11 @@ server <- function(input, output, session) {
       items
     })
     
-    # 使用 uniqueItemsTableServer 渲染关联物品表
+    # 渲染关联订单物品表
     callModule(uniqueItemsTableServer, "associated_items_table_module",
                column_mapping = c(common_columns, list(
                  UsEntryTime = "入库日期",
+                 UsSoldTime = "售出日期",
                  DefectNotes = "瑕疵品备注"
                )),
                data = associated_items,
