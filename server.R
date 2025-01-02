@@ -934,7 +934,7 @@ server <- function(input, output, session) {
       preorder_supplier = input$preorder_supplier
     )
     
-    reset_order_form(session, image_sold)
+    # reset_order_form(session, image_sold)
   })
   
   # 清空订单信息按钮
