@@ -174,10 +174,28 @@ ui <- navbarPage(
                   width = "100%"
                 ),
                 tags$script(HTML("
-                $(document).on('keypress', '#inbound_sku', function(e) {
-                    if(e.which === 13) {  // 检测回车键
-                      $('#confirm_inbound_btn').click();  // 模拟点击按钮
-                    }
+                  let inboundSkuTimeout;  // 定义全局定时器变量
+                  let isInBoundSkuTypingFinished = false;  // 定义标志变量，表示输入是否完成
+              
+                  // 监听输入框内容变化
+                  $(document).on('input', '#inbound_sku', function() {
+                      clearTimeout(inboundSkuTimeout);  // 清除之前的定时器
+                      isInBoundSkuTypingFinished = false;  // 重置标志
+              
+                      inboundSkuTimeout = setTimeout(function() {
+                          isInBoundSkuTypingFinished = true;  // 输入完成后更新标志
+                      }, 300);  // 延迟 300 毫秒
+                  });
+              
+                  // 监听回车键事件
+                  $(document).on('keypress', '#inbound_sku', function(e) {
+                      if (e.which === 13) {  // 检测回车键
+                          e.preventDefault();  // 阻止默认行为
+              
+                          if (isInBoundSkuTypingFinished) {  // 仅在输入完成后允许触发回车
+                              $('#confirm_inbound_btn').click();  // 模拟点击按钮
+                          }
+                      }
                   });
                 "))
               ),
