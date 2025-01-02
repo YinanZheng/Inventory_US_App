@@ -245,8 +245,8 @@ ui <- navbarPage(
                    
                    tags$div(
                      style = "display: flex; justify-content: space-between; align-items: center;",
-                     actionButton("export_select_btn", "生成选中物品条形码", icon = icon("barcode"), class = "btn-info"),
-                     downloadButton("download_select_pdf", "下载条形码", class = "btn-info")
+                     actionButton("export_select_btn", "生成条形码", icon = icon("barcode"), class = "btn-info"),
+                     downloadButton("download_select_pdf", "下载条形码", class = "btn-primary")
                    )
                  )
           )
@@ -349,16 +349,10 @@ ui <- navbarPage(
           # 按钮区
           div(
             style = "margin-top: 10px; display: flex; justify-content: space-between;",
-            actionButton(
-              "register_order_btn",
-              "登记/更新订单",
-              icon = icon("save"),
-              class = "btn-primary",
-              style = "font-size: 16px; width: 48%; height: 42px;"
-            ),
+            uiOutput("register_order_button_ui"),
             actionButton(
               "clear_order_btn",
-              "清空订单输入",
+              "清空订单",
               icon = icon("eraser"),
               class = "btn-warning",
               style = "font-size: 16px; width: 48%; height: 42px;"

@@ -834,6 +834,17 @@ server <- function(input, output, session) {
         updateTextInput(session, "tracking_number", value = existing_order$UsTrackingNumber[1])
         updateTextAreaInput(session, "order_notes", value = existing_order$OrderNotes[1])
         
+        # 动态更新按钮为“更新订单”
+        output$register_order_button_ui <- renderUI({
+          actionButton(
+            "register_order_btn",
+            "更新订单",
+            icon = icon("edit"),
+            class = "btn-success",
+            style = "font-size: 16px; min-width: 130px; height: 42px;"
+          )
+        })
+        
         showNotification("已找到订单信息！字段已自动填充", type = "message")
       } else {
         # 如果订单记录不存在，清空出order ID以外所有相关字段
@@ -848,6 +859,17 @@ server <- function(input, output, session) {
         updateTextInput(session, "tracking_number", value = "")
         image_sold$reset()
         updateTextAreaInput(session, "order_notes", value = "")
+        
+        # 动态更新按钮为“登记订单”
+        output$register_order_button_ui <- renderUI({
+          actionButton(
+            "register_order_btn",
+            "登记订单",
+            icon = icon("plus"),
+            class = "btn-primary",
+            style = "font-size: 16px; min-width: 130px; height: 42px;"
+          )
+        })
       }
     }, error = function(e) {
       # 捕获错误并通知用户
