@@ -545,10 +545,6 @@ ui <- navbarPage(
           div(
             class = "order-info-scroll",  # 滚动条样式
             style = "height: 100%; width: 100%; overflow-x: auto; overflow-y: hidden; padding: 15px;",
-            tags$h4(
-              HTML(paste0(as.character(icon("clipboard-list")), " 订单信息")),
-              style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"
-            ),
             div(
               style = "white-space: nowrap; display: inline-flex; gap: 15px;",  # 水平布局
               uiOutput("order_info_card")  # 动态显示订单信息卡片
