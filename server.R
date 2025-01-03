@@ -1738,8 +1738,8 @@ server <- function(input, output, session) {
   # })
   
 
-  observe({
-    # 用户输入的 SKU
+  observeEvent(input$us_shipping_sku_input, {
+  # 用户输入的 SKU
     new_sku <- trimws(input$us_shipping_sku_input)
     
     # 调用 renderOrderItems 渲染物品卡片
