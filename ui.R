@@ -125,6 +125,21 @@ ui <- navbarPage(
       table.dataTable thead th {
         white-space: nowrap; /* 表头内容强制不换行 */
       }
+      
+      .order-card {
+        border: 1px solid #ddd;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      
+      .order-card:hover {
+        border-color: #007BFF;
+        box-shadow: 0px 4px 8px rgba(0, 123, 255, 0.2);
+      }
+      
+      .order-card.selected {
+        border-color: #007BFF !important;
+        box-shadow: 0px 4px 8px rgba(0, 123, 255, 0.5) !important;
+      } 
     ")),
       
       tags$script(HTML("
