@@ -1416,6 +1416,9 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # 定义 reactiveVal 存储 current_order_id
+  current_order_id <- reactiveVal()
+  
   # 运单号输入初始逻辑
   observe({
     req(input$shipping_bill_number)
@@ -1435,7 +1438,7 @@ server <- function(input, output, session) {
     ############################################################
     
     # 默认选择第一个订单
-    current_order_id <- matching_orders$OrderID[1]
+    current_order_id(matching_orders$OrderID[1])  # 设置 reactiveVal 值
     
     # 等待 UI 完全渲染后执行高亮逻辑
     session$onFlushed(function() {
@@ -1445,21 +1448,21 @@ server <- function(input, output, session) {
       $('.order-card').css('box-shadow', '0px 4px 8px rgba(0, 0, 0, 0.1)');
       $('#order_card_%s').css('border-color', '#007BFF');
       $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');
-    ", current_order_id, current_order_id))
+    ", current_order_id(), current_order_id()))
     })
     
     output$order_items_title <- renderUI({
-      req(current_order_id)  # 确保当前订单 ID 存在
+      req(current_order_id())  # 确保当前订单 ID 存在
       tags$h4(
-        HTML(paste0(as.character(icon("box")), " 订单号 ", current_order_id, " 的物品")),
+        HTML(paste0(as.character(icon("box")), " 订单号 ", current_order_id(), " 的物品")),
         style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
       )
     })
     
-    current_order <- matching_orders %>% filter(OrderID == current_order_id)
+    current_order <- matching_orders %>% filter(OrderID == current_order_id())
     
     # 提取物品信息
-    order_items <- unique_items_data() %>% filter(OrderID == current_order_id)
+    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
     
     # 检查物品是否存在
     if (nrow(order_items) == 0) {
@@ -1473,22 +1476,21 @@ server <- function(input, output, session) {
     
     # 检查订单状态
     if (current_order$OrderStatus[1] == "装箱") {
-      showNotification(paste0("订单 ", current_order_id, " 已装箱，无需操作！"), type = "warning")
+      showNotification(paste0("订单 ", current_order_id(), " 已装箱，无需操作！"), type = "warning")
     } else {
       runjs("document.getElementById('sku_input').focus();")
-      showNotification(paste0("请为订单 ", current_order_id, " 扫描或输入SKU条码！"), type = "message")
+      showNotification(paste0("请为订单 ", current_order_id(), " 扫描或输入SKU条码！"), type = "message")
     }
   })
   
   # SKU 输入逻辑
   observeEvent(input$sku_input, {
-    req(input$sku_input, order_queue())
+    req(input$sku_input)
     
-    current_order_id <- order_queue()[1]
     sku <- trimws(input$sku_input)
     
     # 获取当前订单的物品
-    order_items <- unique_items_data() %>% filter(OrderID == current_order_id)
+    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
     
     if (nrow(order_items) == 0) {
       showNotification("未找到订单对应的物品，请检查订单信息！", type = "error")
@@ -1513,7 +1515,7 @@ server <- function(input, output, session) {
       showNotification(paste0("SKU ", sku, " 已成功操作完成！"), type = "message")
       
       # 更新后的物品数据
-      updated_items <- unique_items_data() %>% filter(OrderID == current_order_id)
+      updated_items <- unique_items_data() %>% filter(OrderID == current_order_id())
       
       # 检查是否所有物品状态均为“美国发货”
       if (all(updated_items$Status == "美国发货")) {
@@ -1522,7 +1524,7 @@ server <- function(input, output, session) {
           easyClose = FALSE,
           div(
             style = "padding: 10px; font-size: 16px;",
-            paste0("订单 ", current_order_id, " 的所有物品已完成扫描，是否确认装箱？")
+            paste0("订单 ", current_order_id(), " 的所有物品已完成扫描，是否确认装箱？")
           ),
           footer = tagList(
             modalButton("取消"),
@@ -1543,7 +1545,7 @@ server <- function(input, output, session) {
     req(input$selected_order_id)  # 确保订单 ID 存在
     
     # 获取选中的订单 ID
-    selected_order_id <- input$selected_order_id
+    current_order_id(input$selected_order_id)
     
     # 更新高亮样式
     runjs(sprintf("
@@ -1551,15 +1553,15 @@ server <- function(input, output, session) {
       $('.order-card').css('box-shadow', '0px 4px 8px rgba(0, 0, 0, 0.1)');  // 恢复默认阴影
       $('#order_card_%s').css('border-color', '#007BFF');  // 高亮选中卡片
       $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');  // 添加高亮阴影
-    ", selected_order_id, selected_order_id))
+    ", current_order_id(), current_order_id()))
     
     # 更新选中订单的物品信息
-    order_items <- unique_items_data() %>% filter(OrderID == selected_order_id)
+    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
     
     # 渲染物品信息
     if (nrow(order_items) == 0) {
       output$order_items_cards <- renderUI({ NULL })
-      showNotification(paste0("订单号 ", selected_order_id, " 没有匹配到物品！"), type = "error")
+      showNotification(paste0("订单号 ", current_order_id(), " 没有匹配到物品！"), type = "error")
       return()
     }
     renderOrderItems(output, "order_items_cards", order_items)
@@ -1567,7 +1569,7 @@ server <- function(input, output, session) {
     # 更新标题
     output$order_items_title <- renderUI({
       tags$h4(
-        HTML(paste0(as.character(icon("box")), " 订单号 ", selected_order_id, " 的物品")),
+        HTML(paste0(as.character(icon("box")), " 订单号 ", current_order_id(), " 的物品")),
         style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
       )
     })
@@ -1575,11 +1577,9 @@ server <- function(input, output, session) {
   
   # 确认装箱逻辑
   observeEvent(input$confirm_shipping_btn, {
-    req(order_queue())
     
     # 获取当前订单
-    current_order_id <- order_queue()[1]
-    order_items <- unique_items_data() %>% filter(OrderID == current_order_id)
+    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
     
     if (!all(order_items$Status == "美国发货")) {
       showNotification("还有未完成操作的物品，请核对！", type = "warning")
@@ -1588,12 +1588,12 @@ server <- function(input, output, session) {
     
     # 更新当前订单状态
     tryCatch({
-      dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(current_order_id))
+      dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(current_order_id()))
       orders(orders() %>% mutate(
-        OrderStatus = ifelse(OrderID == current_order_id, "装箱", OrderStatus)
+        OrderStatus = ifelse(OrderID == current_order_id(), "装箱", OrderStatus)
       ))
       
-      showNotification(paste0("订单 ", current_order_id, " 已成功装箱！"), type = "message")
+      showNotification(paste0("订单 ", current_order_id(), " 已成功装箱！"), type = "message")
       
       # 从队列中移除已完成的订单
       remaining_queue <- order_queue()[-1]
