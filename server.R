@@ -1669,8 +1669,32 @@ server <- function(input, output, session) {
       summarise(StockQuantity = n(), .groups = "drop")  # 按 SKU 统计库存
   })
 
-  new_order_items <- reactiveVal()  # 初始化为空，与 unique_items_data() 结构一致
-
+  new_order_items <- reactiveVal(data.frame(
+    UniqueID = character(),
+    SKU = character(),
+    ProductCost = numeric(),
+    DomesticShippingCost = numeric(),
+    Status = character(),
+    Defect = character(),
+    DefectNotes = character(),
+    PurchaseTime = as.Date(character()),
+    DomesticEntryTime = as.Date(character()),
+    DomesticExitTime = as.Date(character()),
+    DomesticSoldTime = as.Date(character()),
+    UsEntryTime = as.Date(character()),
+    UsShippingTime = as.Date(character()),
+    UsRelocationTime = as.Date(character()),
+    UsSoldTime = as.Date(character()),
+    ReturnTime = as.Date(character()),
+    IntlShippingMethod = character(),
+    IntlTracking = character(),
+    IntlShippingCost = numeric(),
+    OrderID = character(),
+    created_at = as.POSIXct(character()),
+    updated_at = as.POSIXct(character()),
+    stringsAsFactors = FALSE
+  ))
+  
   observeEvent(input$us_shipping_sku_input, {
     req(input$us_shipping_sku_input)  # 确保输入不为空
 
