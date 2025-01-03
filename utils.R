@@ -1291,7 +1291,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
     
     # 创建水平滚动布局
     div(
-      style = "overflow-x: auto; white-space: nowrap; padding: 10px; background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px;",
+      style = "overflow-x: auto; white-space: nowrap; padding: 10px; background-color: #f9f9f9;",
       lapply(seq_len(nrow(matching_orders)), function(i) {
         order_info <- matching_orders[i, ]
         img_path <- ifelse(
@@ -1302,7 +1302,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
         
         # 单个订单的卡片布局
         div(
-          style = "display: inline-block; width: 450px; height: 310px; margin-right: 20px; vertical-align: top; background-color: #ffffff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;",
+          style = "display: inline-block; width: 500px; height: 310px; margin-right: 20px; vertical-align: top; background-color: #ffffff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;",
           fluidRow(
             column(
               4,  # 图片部分
@@ -1310,15 +1310,14 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
                 style = "text-align: center;",
                 img(
                   src = img_path,
-                  height = "300px",
-                  style = "border: 2px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);"
+                  height = "300px"
                 )
               )
             ),
             column(
               8,  # 订单信息部分
               div(
-                style = "height: 300px; overflow-y: auto;",  # 预防信息溢出
+                style = "height: 280px; overflow-y: auto;",  # 预防信息溢出
                 tags$h4(
                   "订单信息",
                   style = "margin-bottom: 10px; font-weight: bold; color: #333;"
