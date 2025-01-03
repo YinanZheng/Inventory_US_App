@@ -538,7 +538,7 @@ ui <- navbarPage(
         # 订单信息区域
         div(
           class = "order-info-container",  # 单独的容器样式
-          style = "height: 400px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px; 
+          style = "height: 350px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px; 
              padding: 0px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); overflow: hidden;",
           
           # 内部可滚动区域
