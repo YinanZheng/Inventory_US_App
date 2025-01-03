@@ -1709,8 +1709,11 @@ server <- function(input, output, session) {
   observe({
     req(new_order_items())  # 确保 new_order_items 存在
 
+    showNotification(new_order_items()$OrderID)
+    
+    new_order_items_sort <- new_order_items() %>% arrange(SKU)
     # 调用 renderOrderItems 渲染物品卡片
-    renderOrderItems(output, "item_cards", new_order_items() %>% arrange(SKU))
+    renderOrderItems(output, "item_cards", new_order_items_sort)
   })
 
 ##########################################################################################  
