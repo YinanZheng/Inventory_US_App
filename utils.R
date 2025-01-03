@@ -1282,16 +1282,15 @@ createSearchableDropdown <- function(input_id, label, data, placeholder = "搜�
 
 # 渲染订单信息（图片在左，文字在右）
 renderOrderInfo <- function(output, output_name, matching_orders) {
-  # 动态渲染多个订单信息
   output[[output_name]] <- renderUI({
-    # 如果匹配的订单为空，返回空UI
+    # 如果没有匹配的订单
     if (nrow(matching_orders) == 0) {
       return(NULL)
     }
     
-    # 创建水平滚动布局
+    # 渲染多个订单卡片
     div(
-      style = "overflow-x: auto; white-space: nowrap; padding: 10px; background-color: #f9f9f9;",
+      style = "display: flex; gap: 15px;",  # 子元素水平排列
       lapply(seq_len(nrow(matching_orders)), function(i) {
         order_info <- matching_orders[i, ]
         img_path <- ifelse(
@@ -1300,9 +1299,10 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
           paste0(host_url, "/images/", basename(order_info$OrderImagePath))
         )
         
-        # 单个订单的卡片布局
+        # 单个订单卡片
         div(
-          style = "display: inline-block; width: 500px; height: 310px; margin-right: 20px; vertical-align: top; background-color: #ffffff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;",
+          style = "width: 500px; height: 310px; background-color: #ffffff; border: 1px solid #ddd; 
+                   border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;",
           fluidRow(
             column(
               4,  # 图片部分
@@ -1311,14 +1311,14 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
                 img(
                   src = img_path,
                   height = "280px",
-                  style = "border-radius: 8px; max-width: 100%; object-fit: cover;"  # 确保图片不会溢出或变形
+                  style = "border-radius: 8px; max-width: 100%; object-fit: cover;"
                 )
               )
             ),
             column(
               8,  # 订单信息部分
               div(
-                style = "height: 280px; overflow-y: auto; padding-left: 10px;",  # 确保订单信息有足够空间显示
+                style = "height: 280px; overflow-y: auto; padding-left: 10px;",
                 tags$h4(
                   "订单信息",
                   style = "margin-bottom: 10px; font-weight: bold; color: #333;"
@@ -1341,7 +1341,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
                     tags$td(tags$strong("备注:"), style = "padding: 5px; vertical-align: top;"),
                     tags$td(
                       div(
-                        style = "color: #007BFF; white-space: normal; word-wrap: break-word;",  # 自动换行
+                        style = "color: #007BFF; white-space: normal; word-wrap: break-word;",
                         order_info$OrderNotes
                       )
                     )
@@ -1355,11 +1355,11 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
             )
           )
         )
-        
       })
     )
   })
 }
+
 
 
 
