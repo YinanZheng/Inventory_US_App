@@ -331,7 +331,8 @@ server <- function(input, output, session) {
   unique_items_table_inbound_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_inbound",
                                                         column_mapping <- c(common_columns, list(
                                                           UsEntryTime = "入库日期",
-                                                          DefectNotes = "瑕疵品备注")
+                                                          DefectNotes = "瑕疵品备注",
+                                                          IntlTracking = "国际物流单号")
                                                         ), selection = "multiple", data = filtered_unique_items_data_inbound)
   
   unique_items_table_manage_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_manage",
