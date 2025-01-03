@@ -557,10 +557,7 @@ ui <- navbarPage(
           style = "flex-grow: 1; overflow-y: auto; padding: 15px; border: 1px solid #28A745; 
              border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
           class = "card",
-          tags$h4(
-            HTML(paste0(as.character(icon("box")), " 订单内物品")),
-            style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
-          ),
+          uiOutput("order_items_title"),  # 动态标题
           uiOutput("order_items_cards")  # 动态显示订单内物品卡片
         )
       )

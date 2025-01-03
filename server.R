@@ -1435,6 +1435,15 @@ server <- function(input, output, session) {
     
     # 默认选择第一个订单
     current_order_id <- matching_orders$OrderID[1]
+    
+    output$order_items_title <- renderUI({
+      req(current_order_id)  # 确保当前订单 ID 存在
+      tags$h4(
+        HTML(paste0(as.character(icon("box")), " 订单号 ", current_order_id, " 的物品")),
+        style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+      )
+    })
+    
     current_order <- matching_orders %>% filter(OrderID == current_order_id)
     
     # 提取物品信息
