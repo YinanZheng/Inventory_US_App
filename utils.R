@@ -1302,42 +1302,49 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
         
         # 单个订单的卡片布局
         div(
-          style = "display: inline-block; width: 300px; margin-right: 20px; vertical-align: top;",
-          div(
-            style = "text-align: center; margin-bottom: 10px;",
-            img(
-              src = img_path,
-              height = "150px",
-              style = "border: 2px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);"
-            )
-          ),
-          div(
-            style = "padding: 10px; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
-            tags$h4(
-              "订单信息",
-              style = "margin-bottom: 10px; font-weight: bold; color: #333;"
+          style = "display: inline-block; width: 450px; margin-right: 20px; vertical-align: top; background-color: #ffffff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;",
+          fluidRow(
+            column(
+              4,  # 图片部分
+              div(
+                style = "text-align: center;",
+                img(
+                  src = img_path,
+                  height = "120px",
+                  style = "border: 2px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);"
+                )
+              )
             ),
-            tags$table(
-              style = "width: 100%; font-size: 14px; color: #444;",
-              tags$tr(
-                tags$td(tags$strong("订单号:"), style = "padding: 5px; vertical-align: top;"),
-                tags$td(tags$span(order_info$OrderID, style = "color: #007BFF; font-weight: bold;"))
-              ),
-              tags$tr(
-                tags$td(tags$strong("顾客姓名:"), style = "padding: 5px; vertical-align: top;"),
-                tags$td(tags$span(order_info$CustomerName, style = "color: #007BFF;"))
-              ),
-              tags$tr(
-                tags$td(tags$strong("平台:"), style = "padding: 5px; vertical-align: top;"),
-                tags$td(tags$span(order_info$Platform, style = "color: #007BFF;"))
-              ),
-              tags$tr(
-                tags$td(tags$strong("备注:"), style = "padding: 5px; vertical-align: top;"),
-                tags$td(tags$span(order_info$OrderNotes, style = "color: #007BFF;"))
-              ),
-              tags$tr(
-                tags$td(tags$strong("状态:"), style = "padding: 5px; vertical-align: top;"),
-                tags$td(tags$span(order_info$OrderStatus, style = "color: #007BFF;"))
+            column(
+              8,  # 订单信息部分
+              div(
+                tags$h4(
+                  "订单信息",
+                  style = "margin-bottom: 10px; font-weight: bold; color: #333;"
+                ),
+                tags$table(
+                  style = "width: 100%; font-size: 14px; color: #444;",
+                  tags$tr(
+                    tags$td(tags$strong("订单号:"), style = "padding: 5px; vertical-align: top;"),
+                    tags$td(tags$span(order_info$OrderID, style = "color: #007BFF; font-weight: bold;"))
+                  ),
+                  tags$tr(
+                    tags$td(tags$strong("顾客姓名:"), style = "padding: 5px; vertical-align: top;"),
+                    tags$td(tags$span(order_info$CustomerName, style = "color: #007BFF;"))
+                  ),
+                  tags$tr(
+                    tags$td(tags$strong("平台:"), style = "padding: 5px; vertical-align: top;"),
+                    tags$td(tags$span(order_info$Platform, style = "color: #007BFF;"))
+                  ),
+                  tags$tr(
+                    tags$td(tags$strong("备注:"), style = "padding: 5px; vertical-align: top;"),
+                    tags$td(tags$span(order_info$OrderNotes, style = "color: #007BFF;"))
+                  ),
+                  tags$tr(
+                    tags$td(tags$strong("状态:"), style = "padding: 5px; vertical-align: top;"),
+                    tags$td(tags$span(order_info$OrderStatus, style = "color: #007BFF;"))
+                  )
+                )
               )
             )
           )
@@ -1346,6 +1353,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
     )
   })
 }
+
 
 
 # 动态渲染物品卡片
