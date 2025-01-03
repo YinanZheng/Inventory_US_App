@@ -1431,42 +1431,32 @@ server <- function(input, output, session) {
     # 渲染多个订单的信息
     renderOrderInfo(output, "order_info_card", matching_orders)
     
-    # 如果有多个订单，弹窗提醒
-    if (nrow(matching_orders) > 1) {
-      showModal(modalDialog(
-        title = "多订单合并提醒",
-        easyClose = FALSE,
-        size = "m",
-        div(
-          style = "font-size: 16px; padding: 10px;",
-          paste("此运单匹配了多个订单！")
-        ),
-        footer = tagList(
-          modalButton("确定")
-        )
-      ))
+    ############################################################
+    
+    # 默认选择第一个订单
+    current_order_id <- matching_orders$OrderID[1]
+    current_order <- matching_orders %>% filter(OrderID == current_order_id)
+    
+    # 提取物品信息
+    order_items <- unique_items_data() %>% filter(OrderID == current_order_id)
+    
+    # 检查物品是否存在
+    if (nrow(order_items) == 0) {
+      output$order_items_cards <- renderUI({ NULL })
+      showNotification("当前订单没有匹配到物品！", type = "error")
+      return()
     }
     
-    # # 提取物品信息
-    # order_items <- unique_items_data() %>% filter(OrderID == current_order_id)
-    # 
-    # # 检查物品是否存在
-    # if (nrow(order_items) == 0) {
-    #   output$order_items_cards <- renderUI({ NULL })
-    #   showNotification("当前订单没有匹配到物品！", type = "error")
-    #   return()
-    # }
-    # 
-    # # 渲染物品信息
-    # renderOrderItems(output, "order_items_cards", current_order_id, order_items)
-    # 
-    # # 检查订单状态
-    # if (current_order$OrderStatus[1] == "装箱") {
-    #   showNotification(paste0("订单 ", current_order_id, " 已装箱，无需操作！"), type = "warning")
-    # } else {
-    #   runjs("document.getElementById('sku_input').focus();")
-    #   showNotification(paste0("请为订单 ", current_order_id, " 扫描或输入SKU条码！"), type = "message")
-    # }
+    # 渲染物品信息
+    renderOrderItems(output, "order_items_cards", order_items)
+    
+    # 检查订单状态
+    if (current_order$OrderStatus[1] == "装箱") {
+      showNotification(paste0("订单 ", current_order_id, " 已装箱，无需操作！"), type = "warning")
+    } else {
+      runjs("document.getElementById('sku_input').focus();")
+      showNotification(paste0("请为订单 ", current_order_id, " 扫描或输入SKU条码！"), type = "message")
+    }
   })
   
   # SKU 输入逻辑

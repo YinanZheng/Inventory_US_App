@@ -1361,10 +1361,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
 
 
 # 动态渲染物品卡片
-renderOrderItems <- function(output, output_name, order_id, items_data) {
-  # 提取订单内物品数据
-  order_items <- items_data %>% filter(OrderID == order_id)
-  
+renderOrderItems <- function(output, output_name, order_items) {
   # 如果没有物品，返回提示信息
   if (nrow(order_items) == 0) {
     output[[output_name]] <- renderUI({
