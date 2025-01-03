@@ -1623,10 +1623,10 @@ server <- function(input, output, session) {
   ##############################################################################################
   
   new_orders <- reactive({
-    req(input$us_shipping_bill_number, input$platform)  # 确保运单号和平台存在
+    req(input$us_shipping_bill_number, input$us_shipping_platform)  # 确保运单号和平台存在
     
     # 如果平台未选择或运单号为空，返回 NULL
-    if (trimws(input$platform) == "" || trimws(input$us_shipping_bill_number) == "") {
+    if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
       return(NULL)
     }
     
