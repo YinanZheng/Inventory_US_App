@@ -1420,7 +1420,8 @@ server <- function(input, output, session) {
   current_order_id <- reactiveVal()
   
   # 运单号输入初始逻辑
-  observe({
+  observeEvent(input$shipping_bill_number, {
+    # 检查输入值是否有效
     req(input$shipping_bill_number)
     
     # 获取匹配的订单
@@ -1537,7 +1538,9 @@ server <- function(input, output, session) {
       }
       
       # 清空输入框
+      updateTextInput(session, "shipping_bill_number", value = "")
       updateTextInput(session, "sku_input", value = "")
+      
     }, error = function(e) {
       showNotification(paste("更新状态时发生错误：", e$message), type = "error")
     })
