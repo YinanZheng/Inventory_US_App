@@ -1310,14 +1310,15 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
                 style = "text-align: center;",
                 img(
                   src = img_path,
-                  height = "280px"
+                  height = "280px",
+                  style = "border-radius: 8px; max-width: 100%; object-fit: cover;"  # 确保图片不会溢出或变形
                 )
               )
             ),
             column(
               8,  # 订单信息部分
               div(
-                style = "height: 280px; overflow-y: auto;",  # 预防信息溢出
+                style = "height: 280px; overflow-y: auto; padding-left: 10px;",  # 确保订单信息有足够空间显示
                 tags$h4(
                   "订单信息",
                   style = "margin-bottom: 10px; font-weight: bold; color: #333;"
@@ -1354,6 +1355,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
             )
           )
         )
+        
       })
     )
   })
