@@ -1302,7 +1302,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
         
         # 单个订单的卡片布局
         div(
-          style = "display: inline-block; width: 450px; margin-right: 20px; vertical-align: top; background-color: #ffffff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;",
+          style = "display: inline-block; width: 450px; height: 310px; margin-right: 20px; vertical-align: top; background-color: #ffffff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;",
           fluidRow(
             column(
               4,  # 图片部分
@@ -1310,7 +1310,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
                 style = "text-align: center;",
                 img(
                   src = img_path,
-                  height = "120px",
+                  height = "300px",
                   style = "border: 2px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);"
                 )
               )
@@ -1318,6 +1318,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
             column(
               8,  # 订单信息部分
               div(
+                style = "height: 300px; overflow-y: auto;",  # 预防信息溢出
                 tags$h4(
                   "订单信息",
                   style = "margin-bottom: 10px; font-weight: bold; color: #333;"
@@ -1338,7 +1339,12 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
                   ),
                   tags$tr(
                     tags$td(tags$strong("备注:"), style = "padding: 5px; vertical-align: top;"),
-                    tags$td(tags$span(order_info$OrderNotes, style = "color: #007BFF;"))
+                    tags$td(
+                      div(
+                        style = "color: #007BFF; white-space: normal; word-wrap: break-word;",  # 自动换行
+                        order_info$OrderNotes
+                      )
+                    )
                   ),
                   tags$tr(
                     tags$td(tags$strong("状态:"), style = "padding: 5px; vertical-align: top;"),
@@ -1353,6 +1359,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
     )
   })
 }
+
 
 
 
