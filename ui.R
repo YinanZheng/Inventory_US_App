@@ -524,38 +524,25 @@ ui <- navbarPage(
       div(
         class = "sticky-sidebar",
 
-        div(
-          class = "card",
-          style = "padding: 20px; border: 1px solid #007BFF; border-radius: 8px; margin-bottom: 20px;",
-          
-          tags$h4("国内售出订单发货", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),  # 分区标题
-          
-          # 运单号输入框
-          textInput(
-            "shipping_bill_number",
-            "运单号:",
-            placeholder = "请扫描或输入运单号",
-            width = "100%"
-          ),
-          
-          # SKU 输入框
-          textInput(
-            "sku_input",
-            "SKU:",
-            placeholder = "请扫描或输入SKU条形码",
-            width = "100%"
-          ),
-          
-          # 清空按钮
-          actionButton(
-            "clear_shipping_btn",
-            "清空",
-            icon = icon("trash"),
-            style = "margin-top: 15px; background-color: #DC3545; color: white; border: none; border-radius: 4px; padding: 8px 16px;"
-          )
-        )
-      ),
-      
+        # 国内售出订单发货
+        div(class = "card", style = "padding: 20px; border: 1px solid #007BFF; border-radius: 8px; margin-bottom: 20px;",
+            tags$h4("国内售出订单发货", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
+            textInput("shipping_bill_number", "运单号:", placeholder = "请扫描或输入运单号", width = "100%"),
+            textInput("sku_input", "SKU:", placeholder = "请扫描或输入SKU条形码", width = "100%"),
+            actionButton("clear_shipping_bill", "清空", icon = icon("trash-alt"), class = "btn-danger", style = "margin-top: 10px;")
+        ),
+        
+        # 美国售出订单发货
+        div(class = "card", style = "padding: 20px; border: 1px solid #28A745; border-radius: 8px; margin-bottom: 20px;",
+            tags$h4("美国售出订单发货", style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"),
+            textInput("us_shipping_bill_number", "运单号:", placeholder = "请扫描或输入运单号", width = "100%"),
+            textInput("us_sku_input", "SKU:", placeholder = "请扫描或输入SKU条形码", width = "100%"),
+            selectInput("platform", "平台:", choices = c("请选择" = "", "Etsy" = "Etsy", "Shopify" = "Shopify", "TikTok" = "TikTok"), width = "100%"),
+            textAreaInput("order_notes", "订单备注:", placeholder = "请输入订单备注", width = "100%", height = "80px"),
+            actionButton("ship_order", "发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;")
+        ),
+      )
+        
       # 右侧：主面板内容
       div(
         class = "main-panel",
