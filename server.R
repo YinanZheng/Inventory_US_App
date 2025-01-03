@@ -1416,11 +1416,12 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # 运单号输入初始逻辑
   observe({
     req(input$shipping_bill_number)
     
     # 获取匹配的订单
-    matching_orders <- orders() %>% filter(UsTrackingNumber == input$shipping_bill_number)
+    matching_orders <- orders() %>% filter(UsTrackingNumber == trimws(input$shipping_bill_number))
     
     if (nrow(matching_orders) == 0) {
       output$order_info_card <- renderUI({ NULL })
@@ -1435,6 +1436,14 @@ server <- function(input, output, session) {
     
     # 默认选择第一个订单
     current_order_id <- matching_orders$OrderID[1]
+    
+    # 设置默认高亮样式
+    runjs(sprintf("
+      $('.order-card').css('border-color', '#ddd');  // 清除其他卡片高亮
+      $('.order-card').css('box-shadow', '0px 4px 8px rgba(0, 0, 0, 0.1)');  // 恢复默认阴影
+      $('#order_card_%s').css('border-color', '#007BFF');  // 高亮第一个订单卡片
+      $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');  // 添加高亮阴影
+    ", current_order_id, current_order_id))
     
     output$order_items_title <- renderUI({
       req(current_order_id)  # 确保当前订单 ID 存在
@@ -1526,6 +1535,7 @@ server <- function(input, output, session) {
     })
   })
   
+  # 点击订单卡片逻辑
   observeEvent(input$selected_order_id, {
     req(input$selected_order_id)  # 确保订单 ID 存在
     
