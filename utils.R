@@ -1302,48 +1302,54 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
         # 单个订单卡片
         div(
           id = paste0("order_card_", order_info$OrderID),  # 唯一 ID
-          style = "cursor: pointer; width: 500px; height: 310px; background-color: #ffffff; border: 1px solid #ddd; 
-                   border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px; transition: border-color 0.2s;",
+          class = "order-card",  # 添加卡片样式
+          style = "width: 500px; height: 310px; background-color: #ffffff; border: 1px solid #ddd; 
+                   border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px; cursor: pointer; transition: border-color 0.2s;",
           `data-order-id` = order_info$OrderID,  # 传递订单 ID
-          onclick = paste0("Shiny.setInputValue('selected_order_id', '", order_info$OrderID, "', {priority: 'event'})"),  # 触发 Shiny 输入
-   
+          onclick = paste0("Shiny.setInputValue('selected_order_id', '", order_info$OrderID, "', {priority: 'event'})"),  # 点击事件
           fluidRow(
-            div(
-              style = "text-align: center; flex: 1; max-width: 45%; padding-right: 10px;",
-              img(
-                src = img_path,
-                height = "280px",
-                style = "border-radius: 8px; max-width: 100%; object-fit: cover;"
+            column(
+              6,  # 图片部分
+              div(
+                style = "text-align: center; padding-left: 0px; padding-right: 0px;",  # 去掉左右间距
+                img(
+                  src = img_path,
+                  height = "280px",
+                  style = "border-radius: 8px; max-width: 100%; object-fit: cover;"
+                )
               )
             ),
-            div(
-              style = "flex: 1; max-width: 55%; height: 100%; overflow-y: auto; padding-left: 10px;",
-              tags$table(
-                style = "width: 100%; font-size: 14px; color: #444;",
-                tags$tr(
-                  tags$td(tags$strong("订单号:"), style = "padding: 5px; vertical-align: top;"),
-                  tags$td(tags$span(order_info$OrderID, style = "color: #007BFF; font-weight: bold;"))
-                ),
-                tags$tr(
-                  tags$td(tags$strong("顾客姓名:"), style = "padding: 5px; vertical-align: top;"),
-                  tags$td(tags$span(order_info$CustomerName, style = "color: #007BFF;"))
-                ),
-                tags$tr(
-                  tags$td(tags$strong("平台:"), style = "padding: 5px; vertical-align: top;"),
-                  tags$td(tags$span(order_info$Platform, style = "color: #007BFF;"))
-                ),
-                tags$tr(
-                  tags$td(tags$strong("备注:"), style = "padding: 5px; vertical-align: top;"),
-                  tags$td(
-                    div(
-                      style = "color: #007BFF; white-space: normal; word-wrap: break-word;",
-                      order_info$OrderNotes
+            column(
+              6,  # 订单信息部分
+              div(
+                style = "height: 280px; overflow-y: auto; padding-left: 0px; padding-right: 0px;",  # 去掉左右间距
+                tags$table(
+                  style = "width: 100%; font-size: 14px; color: #444;",
+                  tags$tr(
+                    tags$td(tags$strong("订单号:"), style = "padding: 5px; vertical-align: top;"),
+                    tags$td(tags$span(order_info$OrderID, style = "color: #007BFF; font-weight: bold;"))
+                  ),
+                  tags$tr(
+                    tags$td(tags$strong("顾客姓名:"), style = "padding: 5px; vertical-align: top;"),
+                    tags$td(tags$span(order_info$CustomerName, style = "color: #007BFF;"))
+                  ),
+                  tags$tr(
+                    tags$td(tags$strong("平台:"), style = "padding: 5px; vertical-align: top;"),
+                    tags$td(tags$span(order_info$Platform, style = "color: #007BFF;"))
+                  ),
+                  tags$tr(
+                    tags$td(tags$strong("备注:"), style = "padding: 5px; vertical-align: top;"),
+                    tags$td(
+                      div(
+                        style = "color: #007BFF; white-space: normal; word-wrap: break-word;",
+                        order_info$OrderNotes
+                      )
                     )
+                  ),
+                  tags$tr(
+                    tags$td(tags$strong("状态:"), style = "padding: 5px; vertical-align: top;"),
+                    tags$td(tags$span(order_info$OrderStatus, style = "color: #007BFF;"))
                   )
-                ),
-                tags$tr(
-                  tags$td(tags$strong("状态:"), style = "padding: 5px; vertical-align: top;"),
-                  tags$td(tags$span(order_info$OrderStatus, style = "color: #007BFF;"))
                 )
               )
             )
