@@ -14,8 +14,8 @@ itemFilterUI <- function(id, border_color = "#007BFF", text_color = "#007BFF", u
       ),
       actionButton(
         ns("reset_btn"), 
-        "重置", 
-        icon = icon("snowplow"), 
+        "重置筛选", 
+        icon = icon("rotate-right"), 
         class = "btn-danger", 
         style = "font-size: 14px; height: 30px; padding: 5px 10px; margin-left: auto;" # 右对齐按钮
       )
