@@ -1663,11 +1663,13 @@ server <- function(input, output, session) {
 
   # 计算 SKU 的有效库存数量
   stock_data <- reactive({
+    req(unique_items_data())  # 确保数据存在
     unique_items_data() %>%
-      filter(Status == "美国入库", Defect != "瑕疵") %>%  # 仅统计 "美国入库" 且无瑕疵的物品
+      filter(Status == "美国入库", is.na(Defect) | Defect != "瑕疵") %>%  # 确保过滤条件有效
       group_by(SKU) %>%
-      summarise(StockQuantity = n(), .groups = "drop")  # 按 SKU 统计库存
+      summarise(StockQuantity = n(), .groups = "drop")
   })
+  
 
   new_order_items <- reactiveVal(data.frame(
     UniqueID = character(),
@@ -1697,10 +1699,10 @@ server <- function(input, output, session) {
   
   observeEvent(input$us_shipping_sku_input, {
     req(input$us_shipping_sku_input)  # 确保输入不为空
-
+    
     # 用户输入的 SKU
     new_sku <- trimws(input$us_shipping_sku_input)
-
+    
     # 校验 SKU 是否有效
     valid_sku <- stock_data() %>% filter(SKU == new_sku)
     
@@ -1709,33 +1711,45 @@ server <- function(input, output, session) {
       updateTextInput(session, "us_shipping_sku_input", value = "")
       return()
     }
-
+    
     # 获取当前 SKU 列表
     current_items <- new_order_items()
-
-    # # 检查是否超过库存限制
-    # existing_count <- sum(current_items$SKU == new_sku)
-    # if (existing_count >= valid_sku$StockQuantity[1]) {
-    #   showNotification(paste0("输入的 SKU '", new_sku, "' 已达到库存上限！"), type = "error")
-    #   updateTextInput(session, "us_shipping_sku_input", value = "")
-    #   return()
-    # }
-
+    
+    # 如果为空，则初始化为空数据框
+    if (is.null(current_items)) {
+      current_items <- unique_items_data()[0, ]
+    }
+    
+    # 检查是否超过库存限制
+    existing_count <- sum(current_items$SKU == new_sku)
+    if (existing_count >= valid_sku$StockQuantity[1]) {
+      showNotification(paste0("输入的 SKU '", new_sku, "' 已达到库存上限！"), type = "error")
+      updateTextInput(session, "us_shipping_sku_input", value = "")
+      return()
+    }
+    
     # 添加 SKU 到 new_order_items
     item_info <- unique_items_data() %>% filter(SKU == new_sku & Status == "美国入库") %>% slice(1)
     current_items <- rbind(current_items, item_info)
     new_order_items(current_items)  # 更新 new_order_items
-
+    
     # 清空输入框
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
+  
 
   observe({
     req(new_order_items())  # 确保 new_order_items 存在
-
-    showNotification(new_order_items()$OrderID)
     
+    # 确保 new_order_items 不为空并有 SKU 数据
+    if (nrow(new_order_items()) == 0) {
+      output$item_cards <- renderUI({ div("没有物品数据。") })
+      return()
+    }
+    
+    # 排序并渲染
     new_order_items_sort <- new_order_items() %>% arrange(SKU)
+    
     # 调用 renderOrderItems 渲染物品卡片
     renderOrderItems(output, "item_cards", new_order_items_sort)
   })
