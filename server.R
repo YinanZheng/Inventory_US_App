@@ -1242,14 +1242,6 @@ server <- function(input, output, session) {
     associated_items <- reactive({
       # 根据订单号筛选关联物品
       items <- unique_items_data() %>% filter(OrderID == order_id)
-      
-      # 动态移除列
-      if (all(items$IntlShippingMethod == "空运" | is.na(items$IntlShippingMethod))) {
-        items <- items %>% select(-IntlSeaTracking)  # 移除海运单号列
-      } else if (all(items$IntlShippingMethod == "海运" | is.na(items$IntlShippingMethod))) {
-        items <- items %>% select(-IntlAirTracking)  # 移除空运单号列
-      }
-      
       items
     })
     
