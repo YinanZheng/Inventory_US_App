@@ -1671,7 +1671,7 @@ server <- function(input, output, session) {
   })
 
 
-  new_order_items <- reactiveVal(unique_items_data()[0, ])  # 初始化为空数据框
+  new_order_items <- reactiveVal()  # 初始化为空数据框
   
   observeEvent(input$us_shipping_sku_input, {
     req(input$us_shipping_sku_input)  # 确保输入不为空
@@ -1691,19 +1691,16 @@ server <- function(input, output, session) {
     # 获取当前 SKU 列表
     current_items <- new_order_items()
 
-    # 如果为空，则初始化为空数据框
-    if (is.null(current_items)) {
-      current_items <- unique_items_data()[0, ]
+    if (!is.null(current_items)) {
+      # 检查是否超过库存限制
+      existing_count <- sum(current_items$SKU == new_sku)
+      if (existing_count >= valid_sku$StockQuantity[1]) {
+        showNotification(paste0("输入的 SKU '", new_sku, "' 已达到库存上限！"), type = "error")
+        updateTextInput(session, "us_shipping_sku_input", value = "")
+        return()
+      }
     }
-
-    # 检查是否超过库存限制
-    existing_count <- sum(current_items$SKU == new_sku)
-    if (existing_count >= valid_sku$StockQuantity[1]) {
-      showNotification(paste0("输入的 SKU '", new_sku, "' 已达到库存上限！"), type = "error")
-      updateTextInput(session, "us_shipping_sku_input", value = "")
-      return()
-    }
-
+    
     # 添加 SKU 到 new_order_items
     item_info <- unique_items_data() %>% filter(SKU == new_sku & Status == "美国入库") %>% slice(1)
     current_items <- rbind(current_items, item_info)
