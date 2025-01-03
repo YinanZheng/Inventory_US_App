@@ -1739,8 +1739,6 @@ server <- function(input, output, session) {
   
 
   observe({
-    req(new_order_items())  # 确保 new_order_items 存在
-    
     # 用户输入的 SKU
     new_sku <- trimws(input$us_shipping_sku_input)
     
