@@ -1444,6 +1444,25 @@ server <- function(input, output, session) {
     
     # 渲染订单信息
     renderOrderInfo(output, "order_info_card", matching_orders())
+    
+    # 检查是否所有订单状态均为“装箱”
+    all_packed <- all(matching_orders()$OrderStatus == "装箱")
+    
+    if (nrow(matching_orders()) > 0 && all_packed) {
+      # 弹出完成提示
+      showModal(modalDialog(
+        title = "运单完成提示",
+        "当前运单号所对应的所有订单已完成装箱操作！",
+        easyClose = TRUE,
+        footer = tagList(
+          modalButton("关闭")
+        )
+      ))
+      
+      # 清空运单号和 SKU 输入框
+      updateTextInput(session, "shipping_bill_number", value = "")
+      updateTextInput(session, "sku_input", value = "")
+    }
   })
   
   observe({
@@ -1470,8 +1489,16 @@ server <- function(input, output, session) {
   
   # 运单号输入初始逻辑
   observeEvent(input$shipping_bill_number, {
+    # 如果运单号为空，清空右侧内容
+    if (trimws(input$shipping_bill_number) == "") {
+      output$order_info_card <- renderUI({ NULL })  # 清空订单信息
+      output$order_items_cards <- renderUI({ NULL })  # 清空物品信息
+      output$order_items_title <- renderUI({ NULL })  # 清空标题
+      return()
+    }
+    
     req(input$shipping_bill_number)
-
+    
     # 默认选择第一个订单
     current_order_id(matching_orders()$OrderID[1])  # 设置 reactiveVal 值
     
@@ -1531,10 +1558,9 @@ server <- function(input, output, session) {
           easyClose = FALSE,
           div(
             style = "padding: 10px; font-size: 16px;",
-            paste0("订单 ", current_order_id(), " 的所有物品已完成扫描，是否确认装箱？")
+            paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
           ),
           footer = tagList(
-            modalButton("取消"),
             actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
           )
         ))
