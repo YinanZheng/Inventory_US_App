@@ -1434,11 +1434,11 @@ server <- function(input, output, session) {
     
     ############################################################
     
+    # 默认选择第一个订单
+    current_order_id <- matching_orders$OrderID[1]
+    
     # 等待 UI 完全渲染后执行高亮逻辑
     session$onFlushed(function() {
-      # 默认选择第一个订单
-      current_order_id <- matching_orders$OrderID[1]
-      
       # 设置高亮
       runjs(sprintf("
       $('.order-card').css('border-color', '#ddd');
