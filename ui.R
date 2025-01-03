@@ -537,7 +537,7 @@ ui <- navbarPage(
             tags$h4("美国售出订单发货", style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"),
             textInput("us_shipping_bill_number", "运单号:", placeholder = "请扫描或输入运单号", width = "100%"),
             textInput("us_sku_input", "SKU:", placeholder = "请扫描或输入SKU条形码", width = "100%"),
-            selectInput("platform", "平台:", choices = c("请选择" = "", "Etsy" = "Etsy", "Shopify" = "Shopify", "TikTok" = "TikTok"), width = "100%"),
+            selectInput("platform", "平台:", choices = c("请选择" = "", "Etsy" = "Etsy", "Shopify" = "Shopify", "TikTok" = "TikTok"), selected = "TikTok", width = "100%"),
             textAreaInput("order_notes", "订单备注:", placeholder = "请输入订单备注", width = "100%", height = "80px"),
             actionButton("ship_order", "发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;")
         ),

@@ -1620,6 +1620,40 @@ server <- function(input, output, session) {
     showNotification("运单号和 SKU 输入框已清空！", type = "message")
   })
   
+  ##############################################################################################
+  
+  new_orders <- reactive({
+    req(input$us_shipping_bill_number, input$platform)  # 确保运单号和平台存在
+    
+    # 如果平台未选择或运单号为空，返回 NULL
+    if (trimws(input$platform) == "" || trimws(input$us_shipping_bill_number) == "") {
+      return(NULL)
+    }
+    
+    # 创建动态订单数据
+    data.frame(
+      OrderID = trimws(input$us_shipping_bill_number),  # 运单号即订单号
+      UsTrackingNumber = trimws(input$us_shipping_bill_number),
+      Platform = trimws(input$platform),
+      CustomerName = "",  # 留空
+      CustomerNickname = "",  # 留空
+      OrderStatus = "备货",  # 默认状态
+      OrderNote = trimws(input$order_notes),  # 填写的备注
+      OrderImagePath = "",  # 默认空
+      stringsAsFactors = FALSE
+    )
+  })
+  
+  observe({
+    req(new_orders())  # 确保 new_orders 存在
+    
+    # 动态渲染订单卡片
+    renderOrderInfo(output, "order_info_card", new_orders())
+  })
+  
+  
+  
+  
 ##########################################################################################  
 ##########################################################################################  
 ##########################################################################################    
