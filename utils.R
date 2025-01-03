@@ -1318,7 +1318,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
             column(
               6,  # 订单信息部分
               div(
-                style = "height: 280px; overflow-y: auto; padding-left: 10px;",
+                style = "height: 280px; overflow-y: auto; padding-left: 0px;",
                 tags$table(
                   style = "width: 100%; font-size: 14px; color: #444;",
                   tags$tr(
