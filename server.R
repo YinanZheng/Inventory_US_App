@@ -1416,30 +1416,64 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  # 定义 reactiveVal 存储 current_order_id
+
+  matching_orders <- reactive({
+    req(input$shipping_bill_number)
+    orders() %>% 
+      filter(UsTrackingNumber == trimws(input$shipping_bill_number)) %>% 
+      arrange(OrderStatus == "装箱")  # 非“装箱”的排在前面，“装箱”的排在后面
+  })
+  
   current_order_id <- reactiveVal()
   
-  # 运单号输入初始逻辑
-  observeEvent(input$shipping_bill_number, {
-    # 检查输入值是否有效
-    req(input$shipping_bill_number)
+  order_items <- reactive({
+    req(current_order_id())
+    unique_items_data() %>% filter(OrderID == current_order_id())
+  })
+  
+  ###
+  
+  observe({
+    req(matching_orders())  # 确保 matching_orders 存在且有效
     
-    # 获取匹配的订单
-    matching_orders <- orders() %>% filter(UsTrackingNumber == trimws(input$shipping_bill_number))
-    
-    if (nrow(matching_orders) == 0) {
+    if (nrow(matching_orders()) == 0) {
       output$order_info_card <- renderUI({ NULL })
       showNotification("未找到与此运单号关联的订单！", type = "error")
       return()
     }
     
-    # 渲染多个订单的信息
-    renderOrderInfo(output, "order_info_card", matching_orders)
+    # 渲染订单信息
+    renderOrderInfo(output, "order_info_card", matching_orders())
+  })
+  
+  observe({
+    req(order_items())  # 确保 order_items 存在且有效
     
-    ############################################################
+    if (nrow(order_items()) == 0) {
+      output$order_items_cards <- renderUI({ NULL })
+      showNotification("当前订单没有匹配到物品！", type = "error")
+      return()
+    }
     
+    # 渲染物品信息
+    renderOrderItems(output, "order_items_cards", order_items())
+    
+    # 更新标题
+    output$order_items_title <- renderUI({
+      tags$h4(
+        HTML(paste0(as.character(icon("box")), " 订单号 ", current_order_id(), " 的物品")),
+        style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+      )
+    })
+  })
+  
+  
+  # 运单号输入初始逻辑
+  observeEvent(input$shipping_bill_number, {
+    req(input$shipping_bill_number)
+
     # 默认选择第一个订单
-    current_order_id(matching_orders$OrderID[1])  # 设置 reactiveVal 值
+    current_order_id(matching_orders()$OrderID[1])  # 设置 reactiveVal 值
     
     # 使用临时变量存储 `current_order_id`
     selected_order_id <- current_order_id()
@@ -1455,28 +1489,7 @@ server <- function(input, output, session) {
     ", selected_order_id, selected_order_id))
     }, once = TRUE)  # 确保只运行一次
     
-    output$order_items_title <- renderUI({
-      req(current_order_id())  # 确保当前订单 ID 存在
-      tags$h4(
-        HTML(paste0(as.character(icon("box")), " 订单号 ", current_order_id(), " 的物品")),
-        style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
-      )
-    })
-    
-    current_order <- matching_orders %>% filter(OrderID == current_order_id())
-    
-    # 提取物品信息
-    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
-    
-    # 检查物品是否存在
-    if (nrow(order_items) == 0) {
-      output$order_items_cards <- renderUI({ NULL })
-      showNotification("当前订单没有匹配到物品！", type = "error")
-      return()
-    }
-    
-    # 渲染物品信息
-    renderOrderItems(output, "order_items_cards", order_items)
+    current_order <- matching_orders() %>% filter(OrderID == current_order_id())
     
     # 检查订单状态
     if (current_order$OrderStatus[1] == "装箱") {
@@ -1493,16 +1506,9 @@ server <- function(input, output, session) {
     
     sku <- trimws(input$sku_input)
     
-    # 获取当前订单的物品
-    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
-    
-    if (nrow(order_items) == 0) {
-      showNotification("未找到订单对应的物品，请检查订单信息！", type = "error")
-      return()
-    }
-    
     # 查找SKU对应的物品
-    matching_item <- order_items %>% filter(SKU == sku, Status != "美国发货")
+    matching_item <- order_items() %>% filter(SKU == sku, Status != "美国发货")
+    
     if (nrow(matching_item) == 0) {
       showNotification("未找到对应SKU或该SKU已完成操作！", type = "error")
       return()
@@ -1518,12 +1524,8 @@ server <- function(input, output, session) {
       )
       showNotification(paste0("SKU ", sku, " 已成功操作完成！"), type = "message")
       
-      # 更新后的物品数据
-      updated_items <- unique_items_data() %>% filter(OrderID == current_order_id())
-      renderOrderItems(output, "order_items_cards", updated_items)
-      
       # 检查是否所有物品状态均为“美国发货”
-      if (all(updated_items$Status == "美国发货")) {
+      if (all(order_items()$Status == "美国发货")) {
         showModal(modalDialog(
           title = "确认装箱",
           easyClose = FALSE,
@@ -1560,34 +1562,12 @@ server <- function(input, output, session) {
       $('#order_card_%s').css('border-color', '#007BFF');  // 高亮选中卡片
       $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');  // 添加高亮阴影
     ", current_order_id(), current_order_id()))
-    
-    # 更新选中订单的物品信息
-    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
-    
-    # 渲染物品信息
-    if (nrow(order_items) == 0) {
-      output$order_items_cards <- renderUI({ NULL })
-      showNotification(paste0("订单号 ", current_order_id(), " 没有匹配到物品！"), type = "error")
-      return()
-    }
-    renderOrderItems(output, "order_items_cards", order_items)
-    
-    # 更新标题
-    output$order_items_title <- renderUI({
-      tags$h4(
-        HTML(paste0(as.character(icon("box")), " 订单号 ", current_order_id(), " 的物品")),
-        style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
-      )
-    })
   })
   
   # 确认装箱逻辑
   observeEvent(input$confirm_shipping_btn, {
     
-    # 获取当前订单
-    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
-    
-    if (!all(order_items$Status == "美国发货")) {
+    if (!all(order_items()$Status == "美国发货")) {
       showNotification("还有未完成操作的物品，请核对！", type = "warning")
       return()
     }
