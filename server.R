@@ -1520,6 +1520,7 @@ server <- function(input, output, session) {
       
       # 更新后的物品数据
       updated_items <- unique_items_data() %>% filter(OrderID == current_order_id())
+      renderOrderItems(output, "order_items_cards", updated_items)
       
       # 检查是否所有物品状态均为“美国发货”
       if (all(updated_items$Status == "美国发货")) {
@@ -1538,7 +1539,6 @@ server <- function(input, output, session) {
       }
       
       # 清空输入框
-      updateTextInput(session, "shipping_bill_number", value = "")
       updateTextInput(session, "sku_input", value = "")
       
     }, error = function(e) {
