@@ -1319,10 +1319,6 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
               6,  # 订单信息部分
               div(
                 style = "height: 280px; overflow-y: auto; padding-left: 10px;",
-                tags$h4(
-                  "订单信息",
-                  style = "margin-bottom: 10px; font-weight: bold; color: #333;"
-                ),
                 tags$table(
                   style = "width: 100%; font-size: 14px; color: #444;",
                   tags$tr(
