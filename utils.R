@@ -1299,6 +1299,22 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
           paste0(host_url, "/images/", basename(order_info$OrderImagePath))
         )
         
+        # 动态添加蒙版和打勾图标
+        mask_overlay <- if (order_info$OrderStatus == "装箱") {
+          div(
+            style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+                    background: rgba(128, 128, 128, 0.6); display: flex; justify-content: center; align-items: center;
+                    border-radius: 8px;",
+            tags$div(
+              style = "width: 50px; height: 50px; background: #28a745; border-radius: 50%; display: flex; 
+                       justify-content: center; align-items: center;",
+              tags$i(class = "fas fa-check", style = "color: white; font-size: 24px;")  # 绿色勾
+            )
+          )
+        } else {
+          NULL
+        }
+        
         # 单个订单卡片
         div(
           id = paste0("order_card_", order_info$OrderID),  # 唯一 ID
@@ -1307,6 +1323,9 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
                    border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px; cursor: pointer; transition: border-color 0.2s;",
           `data-order-id` = order_info$OrderID,  # 传递订单 ID
           onclick = paste0("Shiny.setInputValue('selected_order_id', '", order_info$OrderID, "', {priority: 'event'})"),  # 点击事件
+          
+          mask_overlay,  # 动态显示蒙版
+          
           fluidRow(
             column(
               6,  # 图片部分
@@ -1407,7 +1426,9 @@ renderOrderItems <- function(output, output_name, order_items) {
         class = "card",
         style = "position: relative; display: inline-block; padding: 10px; width: 230px; text-align: center; 
                  border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
+        
         mask_overlay,  # 动态显示蒙版
+        
         div(
           style = "margin-bottom: 10px;",
           tags$img(
