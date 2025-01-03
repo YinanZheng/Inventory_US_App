@@ -527,19 +527,19 @@ ui <- navbarPage(
         # 国内售出订单发货
         div(class = "card", style = "padding: 20px; border: 1px solid #007BFF; border-radius: 8px; margin-bottom: 20px;",
             tags$h4("国内售出订单发货", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
-            textInput("shipping_bill_number", "运单号:", placeholder = "请扫描或输入运单号", width = "100%"),
-            textInput("sku_input", "SKU:", placeholder = "请扫描或输入SKU条形码", width = "100%"),
+            textInput("shipping_bill_number", "运单号:", placeholder = "请扫描运单号", width = "100%"),
+            textInput("sku_input", "SKU:", placeholder = "请扫描SKU条形码", width = "100%"),
             actionButton("clear_shipping_bill", "清空", icon = icon("trash-alt"), class = "btn-danger", style = "margin-top: 10px;")
         ),
         
         # 美国售出订单发货
         div(class = "card", style = "padding: 20px; border: 1px solid #28A745; border-radius: 8px; margin-bottom: 20px;",
             tags$h4("美国售出订单发货", style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"),
-            textInput("us_shipping_bill_number", "运单号:", placeholder = "请扫描或输入运单号", width = "100%"),
-            textInput("us_sku_input", "SKU:", placeholder = "请扫描或输入SKU条形码", width = "100%"),
-            selectInput("platform", "平台:", choices = c("请选择" = "", "Etsy" = "Etsy", "Shopify" = "Shopify", "TikTok" = "TikTok"), selected = "TikTok", width = "100%"),
-            textAreaInput("order_notes", "订单备注:", placeholder = "请输入订单备注", width = "100%", height = "80px"),
-            actionButton("ship_order", "发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;")
+            textInput("us_shipping_bill_number", "运单号:", placeholder = "请扫描运单号", width = "100%"),
+            textInput("us_shipping_sku_input", "SKU:", placeholder = "请扫描SKU条形码", width = "100%"),
+            selectInput("us_shipping_platform", "平台:", choices = c("请选择" = "", "Etsy" = "Etsy", "Shopify" = "Shopify", "TikTok" = "TikTok"), selected = "TikTok", width = "100%"),
+            textAreaInput("us_shipping_order_notes", "订单备注:", placeholder = "请输入订单备注", width = "100%", height = "80px"),
+            actionButton("us_ship_order", "发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;")
         ),
       ),
         
