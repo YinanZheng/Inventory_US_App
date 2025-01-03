@@ -1669,7 +1669,7 @@ server <- function(input, output, session) {
       summarise(StockQuantity = n(), .groups = "drop")  # 按 SKU 统计库存
   })
 
-  new_order_items <- reactiveVal(unique_items_data()[0, ])  # 初始化为空，与 unique_items_data() 结构一致
+  # new_order_items <- reactiveVal(unique_items_data()[0, ])  # 初始化为空，与 unique_items_data() 结构一致
 # 
 #   observeEvent(input$us_shipping_sku_input, {
 #     req(input$us_shipping_sku_input)  # 确保输入不为空
