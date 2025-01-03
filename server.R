@@ -1417,6 +1417,9 @@ server <- function(input, output, session) {
   ################################################################
   
 
+  ### 数据准备
+  
+  # 运单号输入逻辑
   matching_orders <- reactive({
     req(input$shipping_bill_number)
     orders() %>% 
@@ -1424,15 +1427,19 @@ server <- function(input, output, session) {
       arrange(OrderStatus == "装箱")  # 非“装箱”的排在前面，“装箱”的排在后面
   })
   
+  # 当前订单ID
   current_order_id <- reactiveVal()
   
+  # 当前订单的物品
   order_items <- reactive({
     req(current_order_id())
     unique_items_data() %>% filter(OrderID == current_order_id())
   })
   
-  ###
   
+  ### 渲染
+  
+  # 渲染订单信息卡片
   observe({
     req(matching_orders())  # 确保 matching_orders 存在且有效
     
@@ -1465,6 +1472,7 @@ server <- function(input, output, session) {
     }
   })
   
+  # 渲染物品信息卡片  
   observe({
     req(order_items())  # 确保 order_items 存在且有效
     
@@ -1487,6 +1495,8 @@ server <- function(input, output, session) {
   })
   
   
+  ### 逻辑
+  
   # 运单号输入初始逻辑
   observeEvent(input$shipping_bill_number, {
     # 如果运单号为空，清空右侧内容
@@ -1496,27 +1506,33 @@ server <- function(input, output, session) {
       output$order_items_title <- renderUI({ NULL })  # 清空标题
       return()
     }
+  })
+  
+  # 点击订单卡片逻辑
+  observeEvent(input$selected_order_id, {
+    req(input$selected_order_id)  # 确保订单 ID 存在
     
-    req(input$shipping_bill_number)
+    # 获取选中的订单 ID
+    current_order_id(input$selected_order_id)
     
-    # 默认选择第一个订单
-    current_order_id(matching_orders()$OrderID[1])  # 设置 reactiveVal 值
+    # 更新高亮样式
+    runjs(sprintf("
+      $('.order-card').css('border-color', '#ddd');  // 清除其他卡片高亮
+      $('.order-card').css('box-shadow', '0px 4px 8px rgba(0, 0, 0, 0.1)');  // 恢复默认阴影
+      $('#order_card_%s').css('border-color', '#007BFF');  // 高亮选中卡片
+      $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');  // 添加高亮阴影
+    ", current_order_id(), current_order_id()))
+  })
+  
+  # 判断选中订单状态，提示用户操作
+  observe({
+    req(current_order_id())  # 确保当前订单 ID 存在
     
-    # 使用临时变量存储 `current_order_id`
-    selected_order_id <- current_order_id()
-    
-    # 等待 UI 完全渲染后执行高亮逻辑
-    session$onFlushed(function() {
-      # 设置高亮
-      runjs(sprintf("
-      $('.order-card').css('border-color', '#ddd');
-      $('.order-card').css('box-shadow', '0px 4px 8px rgba(0, 0, 0, 0.1)');
-      $('#order_card_%s').css('border-color', '#007BFF');
-      $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');
-    ", selected_order_id, selected_order_id))
-    }, once = TRUE)  # 确保只运行一次
-    
+    # 获取当前选中订单信息
     current_order <- matching_orders() %>% filter(OrderID == current_order_id())
+    
+    # 确保选中订单存在
+    req(nrow(current_order) > 0)
     
     # 检查订单状态
     if (current_order$OrderStatus[1] == "装箱") {
@@ -1573,23 +1589,7 @@ server <- function(input, output, session) {
       showNotification(paste("更新状态时发生错误：", e$message), type = "error")
     })
   })
-  
-  # 点击订单卡片逻辑
-  observeEvent(input$selected_order_id, {
-    req(input$selected_order_id)  # 确保订单 ID 存在
-    
-    # 获取选中的订单 ID
-    current_order_id(input$selected_order_id)
-    
-    # 更新高亮样式
-    runjs(sprintf("
-      $('.order-card').css('border-color', '#ddd');  // 清除其他卡片高亮
-      $('.order-card').css('box-shadow', '0px 4px 8px rgba(0, 0, 0, 0.1)');  // 恢复默认阴影
-      $('#order_card_%s').css('border-color', '#007BFF');  // 高亮选中卡片
-      $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');  // 添加高亮阴影
-    ", current_order_id(), current_order_id()))
-  })
-  
+
   # 确认装箱逻辑
   observeEvent(input$confirm_shipping_btn, {
     
@@ -1614,10 +1614,13 @@ server <- function(input, output, session) {
   })
   
   
+  
 ##########################################################################################  
 ##########################################################################################  
 ##########################################################################################    
 
+  
+  
   ################################################################
   ##                                                            ##
   ## 物品管理分页                                               ##
