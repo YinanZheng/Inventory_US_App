@@ -541,7 +541,7 @@ ui <- navbarPage(
             textAreaInput("order_notes", "订单备注:", placeholder = "请输入订单备注", width = "100%", height = "80px"),
             actionButton("ship_order", "发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;")
         ),
-      )
+      ),
         
       # 右侧：主面板内容
       div(
