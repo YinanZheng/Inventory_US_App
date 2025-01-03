@@ -1302,7 +1302,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
         div(
           style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
                   background: rgba(128, 128, 128, 0.6); display: flex; justify-content: center; align-items: center;
-                  border-radius: 8px;",
+                  border-radius: 8px; z-index: 2;",
           tags$div(
             style = "width: 50px; height: 50px; background: #28a745; border-radius: 50%; display: flex; 
                      justify-content: center; align-items: center;",
@@ -1317,54 +1317,53 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
       div(
         id = paste0("order_card_", order_info$OrderID),  # 唯一 ID
         class = "order-card",  # 添加卡片样式
-        style = "position: relative; width: 500px; height: 310px; background-color: #ffffff; border: 1px solid #ddd; 
-                 border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px; cursor: pointer;",
+        style = "position: relative; display: inline-block; width: 500px; height: 310px; background-color: #ffffff; 
+                 border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); margin-right: 15px; cursor: pointer;",
         
         mask_overlay,  # 动态显示蒙版
         
-        fluidRow(
-          column(
-            6,  # 图片部分
-            div(
-              style = "text-align: center; padding-left: 0px; padding-right: 0px;",  # 去掉左右间距
-              img(
-                src = img_path,
-                height = "280px",
-                style = "border-radius: 8px; max-width: 100%; object-fit: cover;"
-              )
+        # 卡片内容
+        div(
+          style = "display: flex; gap: 10px; height: 100%;",
+          
+          # 图片部分
+          div(
+            style = "flex: 1; text-align: center; display: flex; align-items: center; justify-content: center;",
+            img(
+              src = img_path,
+              style = "height: 280px; max-width: 100%; object-fit: cover; border-radius: 8px;"
             )
           ),
-          column(
-            6,  # 订单信息部分
-            div(
-              style = "height: 280px; overflow-y: auto; padding-left: 0px; padding-right: 0px;",  # 去掉左右间距
-              tags$table(
-                style = "width: 100%; font-size: 14px; color: #444;",
-                tags$tr(
-                  tags$td(tags$strong("订单号:"), style = "padding: 5px; vertical-align: top;"),
-                  tags$td(tags$span(order_info$OrderID, style = "color: #007BFF; font-weight: bold;"))
-                ),
-                tags$tr(
-                  tags$td(tags$strong("顾客姓名:"), style = "padding: 5px; vertical-align: top;"),
-                  tags$td(tags$span(order_info$CustomerName, style = "color: #007BFF;"))
-                ),
-                tags$tr(
-                  tags$td(tags$strong("平台:"), style = "padding: 5px; vertical-align: top;"),
-                  tags$td(tags$span(order_info$Platform, style = "color: #007BFF;"))
-                ),
-                tags$tr(
-                  tags$td(tags$strong("备注:"), style = "padding: 5px; vertical-align: top;"),
-                  tags$td(
-                    div(
-                      style = "color: #007BFF; white-space: normal; word-wrap: break-word;",
-                      order_info$OrderNotes
-                    )
+          
+          # 订单信息部分
+          div(
+            style = "flex: 1; overflow-y: auto; padding: 10px;",
+            tags$table(
+              style = "width: 100%; font-size: 14px; color: #444;",
+              tags$tr(
+                tags$td(tags$strong("订单号:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(tags$span(order_info$OrderID, style = "color: #007BFF; font-weight: bold;"))
+              ),
+              tags$tr(
+                tags$td(tags$strong("顾客姓名:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(tags$span(order_info$CustomerName, style = "color: #007BFF;"))
+              ),
+              tags$tr(
+                tags$td(tags$strong("平台:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(tags$span(order_info$Platform, style = "color: #007BFF;"))
+              ),
+              tags$tr(
+                tags$td(tags$strong("备注:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(
+                  div(
+                    style = "color: #007BFF; white-space: normal; word-wrap: break-word;",
+                    order_info$OrderNotes
                   )
-                ),
-                tags$tr(
-                  tags$td(tags$strong("状态:"), style = "padding: 5px; vertical-align: top;"),
-                  tags$td(tags$span(order_info$OrderStatus, style = "color: #007BFF;"))
                 )
+              ),
+              tags$tr(
+                tags$td(tags$strong("状态:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(tags$span(order_info$OrderStatus, style = "color: #007BFF;"))
               )
             )
           )
@@ -1372,7 +1371,10 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
       )
     })
     
-    do.call(tagList, order_cards)  # 返回卡片列表
+    div(
+      style = "display: flex; gap: 15px; flex-wrap: nowrap; overflow-x: auto; padding: 10px;",
+      do.call(tagList, order_cards)  # 返回卡片列表
+    )
   })
 }
 
