@@ -1305,7 +1305,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
                    border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;",
           fluidRow(
             column(
-              5,  # 图片部分
+              6,  # 图片部分
               div(
                 style = "text-align: center;",
                 img(
@@ -1316,7 +1316,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
               )
             ),
             column(
-              7,  # 订单信息部分
+              6,  # 订单信息部分
               div(
                 style = "height: 280px; overflow-y: auto; padding-left: 10px;",
                 tags$h4(
