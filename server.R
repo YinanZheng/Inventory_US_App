@@ -1649,6 +1649,14 @@ server <- function(input, output, session) {
     
     # 动态渲染订单卡片
     renderOrderInfo(output, "order_info_card", new_orders())
+    
+    # 更新标题
+    output$order_items_title <- renderUI({
+      tags$h4(
+        HTML(paste0(as.character(icon("box")), " 订单号 ", new_orders()$OrderID, " 的物品")),
+        style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+      )
+    })
   })
   
   
