@@ -1634,12 +1634,12 @@ server <- function(input, output, session) {
     data.frame(
       OrderID = trimws(input$us_shipping_bill_number),  # 运单号即订单号
       UsTrackingNumber = trimws(input$us_shipping_bill_number),
-      Platform = input$us_shipping_platform,
       CustomerName = "",  # 留空
       CustomerNickname = "",  # 留空
-      OrderStatus = "备货",  # 默认状态
-      OrderNote = trimws(input$us_shipping_order_notes),  # 填写的备注
+      Platform = input$us_shipping_platform,
       OrderImagePath = "",  # 默认空
+      OrderNotes = trimws(input$us_shipping_order_notes),  # 填写的备注
+      OrderStatus = "备货",  # 默认状态
       stringsAsFactors = FALSE
     )
   })
