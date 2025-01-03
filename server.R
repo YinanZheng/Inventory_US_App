@@ -1526,6 +1526,40 @@ server <- function(input, output, session) {
     })
   })
   
+  observeEvent(input$selected_order_id, {
+    req(input$selected_order_id)  # 确保订单 ID 存在
+    
+    # 获取选中的订单 ID
+    selected_order_id <- input$selected_order_id
+    
+    # 更新高亮样式
+    runjs(sprintf("
+    $('.order-card').css('border-color', '#ddd');  // 清除其他卡片高亮
+    $('.order-card').css('box-shadow', '0px 4px 8px rgba(0, 0, 0, 0.1)');  // 恢复默认阴影
+    $('#order_card_%s').css('border-color', '#007BFF');  // 高亮选中卡片
+    $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');  // 添加高亮阴影
+  ", selected_order_id, selected_order_id))
+    
+    # 更新选中订单的物品信息
+    order_items <- unique_items_data() %>% filter(OrderID == selected_order_id)
+    
+    # 渲染物品信息
+    if (nrow(order_items) == 0) {
+      output$order_items_cards <- renderUI({ NULL })
+      showNotification(paste0("订单号 ", selected_order_id, " 没有匹配到物品！"), type = "error")
+      return()
+    }
+    renderOrderItems(output, "order_items_cards", selected_order_id, order_items)
+    
+    # 更新标题
+    output$order_items_title <- renderUI({
+      tags$h4(
+        HTML(paste0(as.character(icon("box")), " 订单号 ", selected_order_id, " 的物品")),
+        style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+      )
+    })
+  })
+  
   # 确认装箱逻辑
   observeEvent(input$confirm_shipping_btn, {
     req(order_queue())
