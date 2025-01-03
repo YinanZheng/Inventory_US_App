@@ -522,13 +522,16 @@ ui <- navbarPage(
         # 订单信息区域
         div(
           style = "height: 400px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px; 
-             padding: 15px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
+           padding: 15px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); overflow-x: auto; overflow-y: hidden;",  # 添加水平滚动条
           class = "card",
           tags$h4(
             HTML(paste0(as.character(icon("clipboard-list")), " 订单信息")),
             style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"
           ),
-          uiOutput("order_info_card")  # 动态显示订单信息卡片
+          div(
+            style = "white-space: nowrap; display: flex; gap: 15px;",  # 确保卡片水平排列
+            uiOutput("order_info_card")  # 动态显示订单信息卡片
+          )
         ),
         
         # 订单内物品区域
