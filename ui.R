@@ -306,6 +306,8 @@ ui <- navbarPage(
         # 动态显示筛选区
         uiOutput("dynamic_sidebar"),
         
+        tags$hr(style = "margin: 5px 0; border: none;"),
+        
         # 订单登记区（共用）
         div(
           class = "card",
