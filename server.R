@@ -1416,9 +1416,6 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  # ReactiveVal 用于存储当前处理的订单队列
-  order_queue <- reactiveVal(NULL)
-  
   observe({
     req(input$shipping_bill_number)
     
@@ -1431,62 +1428,45 @@ server <- function(input, output, session) {
       return()
     }
     
+    # 渲染多个订单的信息
+    renderOrderInfo(output, "order_info_card", matching_orders)
+    
+    # 如果有多个订单，弹窗提醒
     if (nrow(matching_orders) > 1) {
-      # 如果匹配到多个订单，显示弹窗提示
       showModal(modalDialog(
         title = "多订单合并提醒",
         easyClose = FALSE,
         size = "m",
         div(
           style = "font-size: 16px; padding: 10px;",
-          paste("这个运单匹配了多个订单，请确认开始按顺序操作这些订单")
+          paste("此运单匹配了多个订单！")
         ),
         footer = tagList(
           modalButton("确定")
         )
       ))
-      
-      # 初始化订单队列
-      order_queue(matching_orders$OrderID)
-    } else {
-      # 如果只有一个订单，直接初始化订单队列
-      order_queue(matching_orders$OrderID)
     }
     
-    # 处理第一个订单
-    current_order_id <- order_queue()[1]
-    current_order <- matching_orders %>% filter(OrderID == current_order_id)
-    
-    # 提取订单信息
-    img_path <- ifelse(
-      is.na(current_order$OrderImagePath[1]) || current_order$OrderImagePath[1] == "",
-      placeholder_300px_path,
-      paste0(host_url, "/images/", basename(current_order$OrderImagePath[1]))
-    )
-    
-    # 调用渲染函数
-    renderOrderInfo(output, "order_info_card", current_order_id, img_path, orders())
-    
-    # 提取物品信息
-    order_items <- unique_items_data() %>% filter(OrderID == current_order_id)
-    
-    # 检查物品是否存在
-    if (nrow(order_items) == 0) {
-      output$order_items_cards <- renderUI({ NULL })
-      showNotification("当前订单没有匹配到物品！", type = "error")
-      return()
-    }
-    
-    # 渲染物品信息
-    renderOrderItems(output, "order_items_cards", current_order_id, order_items)
-    
-    # 检查订单状态
-    if (current_order$OrderStatus[1] == "装箱") {
-      showNotification(paste0("订单 ", current_order_id, " 已装箱，无需操作！"), type = "warning")
-    } else {
-      runjs("document.getElementById('sku_input').focus();")
-      showNotification(paste0("请为订单 ", current_order_id, " 扫描或输入SKU条码！"), type = "message")
-    }
+    # # 提取物品信息
+    # order_items <- unique_items_data() %>% filter(OrderID == current_order_id)
+    # 
+    # # 检查物品是否存在
+    # if (nrow(order_items) == 0) {
+    #   output$order_items_cards <- renderUI({ NULL })
+    #   showNotification("当前订单没有匹配到物品！", type = "error")
+    #   return()
+    # }
+    # 
+    # # 渲染物品信息
+    # renderOrderItems(output, "order_items_cards", current_order_id, order_items)
+    # 
+    # # 检查订单状态
+    # if (current_order$OrderStatus[1] == "装箱") {
+    #   showNotification(paste0("订单 ", current_order_id, " 已装箱，无需操作！"), type = "warning")
+    # } else {
+    #   runjs("document.getElementById('sku_input').focus();")
+    #   showNotification(paste0("请为订单 ", current_order_id, " 扫描或输入SKU条码！"), type = "message")
+    # }
   })
   
   # SKU 输入逻辑

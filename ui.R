@@ -521,7 +521,7 @@ ui <- navbarPage(
         
         # 订单信息区域
         div(
-          style = "height: 400px; margin-bottom: 20px; border: 2px solid #007BFF; border-radius: 8px; 
+          style = "height: 400px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px; 
              padding: 15px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
           class = "card",
           tags$h4(
@@ -533,7 +533,7 @@ ui <- navbarPage(
         
         # 订单内物品区域
         div(
-          style = "flex-grow: 1; overflow-y: auto; padding: 15px; border: 2px solid #28A745; 
+          style = "flex-grow: 1; overflow-y: auto; padding: 15px; border: 1px solid #28A745; 
              border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
           class = "card",
           tags$h4(

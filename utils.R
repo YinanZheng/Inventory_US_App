@@ -1281,67 +1281,72 @@ createSearchableDropdown <- function(input_id, label, data, placeholder = "搜�
 
 
 # 渲染订单信息（图片在左，文字在右）
-renderOrderInfo <- function(output, output_name, order_id, img_path, orders_data) {
-  # 提取订单数据
-  order_info <- orders_data %>% filter(OrderID == order_id)
-  
-  # 如果订单不存在，返回空UI
-  if (nrow(order_info) == 0) {
-    output[[output_name]] <- renderUI({ NULL })
-    return()
-  }
-  
-  # 动态渲染订单信息
+renderOrderInfo <- function(output, output_name, matching_orders) {
+  # 动态渲染多个订单信息
   output[[output_name]] <- renderUI({
-    fluidRow(
-      column(
-        4,
-        div(
-          style = "text-align: center;",
-          img(
-            src = img_path,
-            height = "300px",
-            style = "border: 2px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);"
-          )
+    # 如果匹配的订单为空，返回空UI
+    if (nrow(matching_orders) == 0) {
+      return(NULL)
+    }
+    
+    # 创建水平滚动布局
+    div(
+      style = "overflow-x: auto; white-space: nowrap; padding: 10px; background-color: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 8px;",
+      lapply(seq_len(nrow(matching_orders)), function(i) {
+        order_info <- matching_orders[i, ]
+        img_path <- ifelse(
+          is.na(order_info$OrderImagePath) || order_info$OrderImagePath == "",
+          placeholder_300px_path,
+          paste0(host_url, "/images/", basename(order_info$OrderImagePath))
         )
-      ),
-      column(
-        8,
+        
+        # 单个订单的卡片布局
         div(
-          style = "padding: 20px; background-color: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 8px;
-                             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); height: 300px;",
-          tags$h4(
-            "订单信息",
-            style = "border-bottom: 3px solid #007BFF; margin-bottom: 15px; padding-bottom: 8px; font-weight: bold; color: #333;"
+          style = "display: inline-block; width: 300px; margin-right: 20px; vertical-align: top;",
+          div(
+            style = "text-align: center; margin-bottom: 10px;",
+            img(
+              src = img_path,
+              height = "150px",
+              style = "border: 2px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);"
+            )
           ),
-          tags$table(
-            style = "width: 100%; font-size: 16px; color: #444;",
-            tags$tr(
-              tags$td(tags$strong("订单号:"), style = "padding: 8px 10px; width: 120px; vertical-align: top;"),
-              tags$td(tags$span(order_info$OrderID[1], style = "color: #007BFF; font-weight: bold;"))
+          div(
+            style = "padding: 10px; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);",
+            tags$h4(
+              "订单信息",
+              style = "margin-bottom: 10px; font-weight: bold; color: #333;"
             ),
-            tags$tr(
-              tags$td(tags$strong("顾客姓名:"), style = "padding: 8px 10px; vertical-align: top;"),
-              tags$td(tags$span(order_info$CustomerName[1], style = "color: #007BFF;"))
-            ),
-            tags$tr(
-              tags$td(tags$strong("平台:"), style = "padding: 8px 10px; vertical-align: top;"),
-              tags$td(tags$span(order_info$Platform[1], style = "color: #007BFF;"))
-            ),
-            tags$tr(
-              tags$td(tags$strong("备注:"), style = "padding: 8px 10px; vertical-align: top;"),
-              tags$td(tags$span(order_info$OrderNotes[1], style = "color: #007BFF;"))
-            ),
-            tags$tr(
-              tags$td(tags$strong("状态:"), style = "padding: 8px 10px; vertical-align: top;"),
-              tags$td(tags$span(order_info$OrderStatus[1], style = "color: #007BFF;"))
+            tags$table(
+              style = "width: 100%; font-size: 14px; color: #444;",
+              tags$tr(
+                tags$td(tags$strong("订单号:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(tags$span(order_info$OrderID, style = "color: #007BFF; font-weight: bold;"))
+              ),
+              tags$tr(
+                tags$td(tags$strong("顾客姓名:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(tags$span(order_info$CustomerName, style = "color: #007BFF;"))
+              ),
+              tags$tr(
+                tags$td(tags$strong("平台:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(tags$span(order_info$Platform, style = "color: #007BFF;"))
+              ),
+              tags$tr(
+                tags$td(tags$strong("备注:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(tags$span(order_info$OrderNotes, style = "color: #007BFF;"))
+              ),
+              tags$tr(
+                tags$td(tags$strong("状态:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(tags$span(order_info$OrderStatus, style = "color: #007BFF;"))
+              )
             )
           )
         )
-      )
+      })
     )
   })
 }
+
 
 # 动态渲染物品卡片
 renderOrderItems <- function(output, output_name, order_id, items_data) {
