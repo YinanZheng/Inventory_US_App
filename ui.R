@@ -528,6 +528,8 @@ ui <- navbarPage(
           class = "card",
           style = "padding: 20px; border: 1px solid #007BFF; border-radius: 8px; margin-bottom: 20px;",
           
+          tags$h4("国内售出订单发货", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),  # 分区标题
+          
           # 运单号输入框
           textInput(
             "shipping_bill_number",
@@ -542,6 +544,14 @@ ui <- navbarPage(
             "SKU:",
             placeholder = "请扫描或输入SKU条形码",
             width = "100%"
+          ),
+          
+          # 清空按钮
+          actionButton(
+            "clear_shipping_btn",
+            "清空",
+            icon = icon("trash"),
+            style = "margin-top: 15px; background-color: #DC3545; color: white; border: none; border-radius: 4px; padding: 8px 16px;"
           )
         )
       ),
