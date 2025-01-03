@@ -1554,6 +1554,8 @@ server <- function(input, output, session) {
     
     if (nrow(matching_item) == 0) {
       showNotification("未找到对应SKU或该SKU已完成操作！", type = "error")
+      # 清空输入框
+      updateTextInput(session, "sku_input", value = "")
       return()
     }
     
