@@ -1310,7 +1310,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
                 style = "text-align: center;",
                 img(
                   src = img_path,
-                  height = "300px"
+                  height = "280px"
                 )
               )
             ),
