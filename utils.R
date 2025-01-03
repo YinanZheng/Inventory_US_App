@@ -994,8 +994,25 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
 }
 
 
+# 动态生成 input 命名空间
+get_input_id <- function(base_id, suffix) {
+  # 提取 "XXX" 的前缀部分
+  prefix <- strsplit(base_id, "-")[[1]][1]
+  # 拼接完整 ID
+  paste0(prefix, "-", suffix)
+}
+
+
 # 从输入数据中筛选数据
-filter_unique_items_data_by_inputs <- function(data, input, maker_input_id, item_name_input_id, date_range_input_id = NULL) {
+filter_unique_items_data_by_inputs <- function(
+    data, 
+    input, 
+    maker_input_id, 
+    item_name_input_id, 
+    purchase_date_range_id = NULL, 
+    sold_date_range_id = NULL,
+    exit_date_range_id = NULL
+) {
   req(data)  # 确保数据不为空
   
   # 按供应商筛选
@@ -1004,24 +1021,48 @@ filter_unique_items_data_by_inputs <- function(data, input, maker_input_id, item
   }
   
   # 按商品名称筛选
-  if (!is.null(input[[item_name_input_id]])) {
-    # 如果是列表（如 ComboBox 返回值），提取 text 字段
-    item_name <- if (is.list(input[[item_name_input_id]]) && !is.null(input[[item_name_input_id]]$text)) {
-      input[[item_name_input_id]]$text
-    } else {
-      input[[item_name_input_id]]
-    }
-    
-    # 继续筛选
-    if (!is.null(item_name) && item_name != "") {
-      data <- data %>% filter(ItemName == item_name)
-    }
+  if (!is.null(input[[item_name_input_id]]) && input[[item_name_input_id]] != "") {
+    data <- data %>% filter(ItemName == input[[item_name_input_id]])
   }
   
   # 按采购日期筛选
-  if (!is.null(date_range_input_id) && !is.null(input[[date_range_input_id]]) && length(input[[date_range_input_id]]) == 2) {
-    date_range <- as.Date(input[[date_range_input_id]])
-    data <- data %>% filter(as.Date(PurchaseTime) >= date_range[1], as.Date(PurchaseTime) <= date_range[2])
+  if (!is.null(purchase_date_range_id) && !is.null(input[[purchase_date_range_id]]) && length(input[[purchase_date_range_id]]) == 2) {
+    purchase_date_range <- as.Date(input[[purchase_date_range_id]])
+    data <- data %>% filter(as.Date(PurchaseTime) >= purchase_date_range[1], as.Date(PurchaseTime) <= purchase_date_range[2])
+  }
+  
+  # 按售出日期筛选，仅对库存状态为‘国内售出’的物品有效
+  if (!is.null(sold_date_range_id) && 
+      !is.null(input[[sold_date_range_id]]) && 
+      length(input[[sold_date_range_id]]) == 2) {
+    
+    only_show_sold_id <- get_input_id(sold_date_range_id, "only_show_sold")
+    
+    if (!is.null(input[[only_show_sold_id]]) && input[[only_show_sold_id]]) {
+      sold_date_range <- as.Date(input[[sold_date_range_id]])
+      data <- data %>%
+        filter(Status == "国内售出", # 仅对状态为‘国内售出’的记录
+               as.Date(DomesticSoldTime) >= sold_date_range[1], 
+               as.Date(DomesticSoldTime) <= sold_date_range[2]) %>%
+        select(-DomesticExitTime) # 去掉“国内出库”列
+    }
+  }
+  
+  # 按出库日期筛选，仅对库存状态为‘国内出库’的物品有效
+  if (!is.null(exit_date_range_id) && 
+      !is.null(input[[exit_date_range_id]]) && 
+      length(input[[exit_date_range_id]]) == 2) {
+    
+    only_show_exit_id <- get_input_id(exit_date_range_id, "only_show_exit")
+    
+    if (!is.null(input[[only_show_exit_id]]) && input[[only_show_exit_id]]) {
+      exit_date_range <- as.Date(input[[exit_date_range_id]])
+      data <- data %>%
+        filter(Status == "国内出库", # 仅对状态为‘国内出库’的记录
+               as.Date(DomesticExitTime) >= exit_date_range[1], 
+               as.Date(DomesticExitTime) <= exit_date_range[2]) %>%
+        select(-DomesticSoldTime) # 去掉“国内售出”列
+    }
   }
   
   data

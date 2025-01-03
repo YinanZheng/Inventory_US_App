@@ -1,4 +1,11 @@
-itemFilterUI <- function(id, border_color = "#007BFF", text_color = "#007BFF", use_purchase_date = TRUE) {
+itemFilterUI <- function(
+    id, 
+    border_color = "#007BFF", 
+    text_color = "#007BFF", 
+    use_purchase_date = TRUE, 
+    use_sold_date = FALSE, 
+    use_exit_date = FALSE
+) {
   ns <- NS(id)
   
   div(
@@ -7,17 +14,17 @@ itemFilterUI <- function(id, border_color = "#007BFF", text_color = "#007BFF", u
     
     # 标题和清空按钮在同一行，左右对齐
     div(
-      style = "margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; width: 100%;", # Flex 布局
+      style = "margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; width: 100%;", 
       tags$h4(
         "物品筛选", 
-        style = sprintf("color: %s; font-weight: bold; margin: 0;", text_color) # 左对齐标题
+        style = sprintf("color: %s; font-weight: bold; margin: 0;", text_color) 
       ),
       actionButton(
         ns("reset_btn"), 
         "重置筛选", 
         icon = icon("rotate-right"), 
         class = "btn-danger", 
-        style = "font-size: 14px; height: 30px; padding: 5px 10px; margin-left: auto;" # 右对齐按钮
+        style = "font-size: 14px; height: 30px; padding: 5px 10px; margin-left: auto;" 
       )
     ),
     
@@ -45,7 +52,7 @@ itemFilterUI <- function(id, border_color = "#007BFF", text_color = "#007BFF", u
       )
     ),
     
-    # 根据 use_purchase_date 参数动态显示采购日期筛选部分
+    # 日期范围筛选部分
     if (use_purchase_date) {
       fluidRow(
         column(12, 
@@ -54,7 +61,27 @@ itemFilterUI <- function(id, border_color = "#007BFF", text_color = "#007BFF", u
         )
       )
     } else {
-      NULL  # 如果不使用采购日期筛选，隐藏该部分
+      NULL
+    },
+    
+    if (use_exit_date) {
+      div(
+        dateRangeInput(ns("exit_date_range"), "出库日期范围", 
+                       start = Sys.Date() - 365, end = Sys.Date(), width = "100%"),
+        checkboxInput(ns("only_show_exit"), "仅显示出库物品", value = FALSE, width = "100%")
+      )
+    } else {
+      NULL
+    },
+    
+    if (use_sold_date) {
+      div(
+        dateRangeInput(ns("sold_date_range"), "售出日期范围", 
+                       start = Sys.Date() - 365, end = Sys.Date(), width = "100%"),
+        checkboxInput(ns("only_show_sold"), "仅显示售出物品", value = FALSE, width = "100%")
+      )
+    } else {
+      NULL
     }
   )
 }
