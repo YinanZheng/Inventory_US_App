@@ -1523,6 +1523,9 @@ server <- function(input, output, session) {
       $('#order_card_%s').css('border-color', '#007BFF');  // 高亮选中卡片
       $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');  // 添加高亮阴影
     ", current_order_id(), current_order_id()))
+    
+    # 聚焦 SKU 输入框
+    runjs("document.getElementById('sku_input').focus();")
   })
   
   # 判断选中订单状态，提示用户操作
@@ -1536,9 +1539,7 @@ server <- function(input, output, session) {
     req(nrow(current_order) > 0)
     
     # 检查订单状态
-    if (current_order$OrderStatus[1] == "装箱") {
-      showNotification(paste0("订单 ", current_order_id(), " 已装箱，无需操作！"), type = "warning")
-    } else {
+    if (current_order$OrderStatus[1] != "装箱") {
       runjs("document.getElementById('sku_input').focus();")
       showNotification(paste0("请为订单 ", current_order_id(), " 扫描或输入SKU条码！"), type = "message")
     }
