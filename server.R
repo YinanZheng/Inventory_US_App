@@ -1621,46 +1621,46 @@ server <- function(input, output, session) {
   })
   
   ##############################################################################################
-  # 
-  # new_orders <- reactive({
-  #   req(input$us_shipping_bill_number, input$us_shipping_platform)  # 确保运单号和平台存在
-  #   
-  #   # 如果平台未选择或运单号为空，返回 NULL
-  #   if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
-  #     return(NULL)
-  #   }
-  #   
-  #   # 创建动态订单数据
-  #   data.frame(
-  #     OrderID = trimws(input$us_shipping_bill_number),  # 运单号即订单号
-  #     UsTrackingNumber = trimws(input$us_shipping_bill_number),
-  #     CustomerName = "",  # 留空
-  #     CustomerNickname = "",  # 留空
-  #     Platform = input$us_shipping_platform,
-  #     OrderImagePath = "",  # 默认空
-  #     OrderNotes = trimws(input$us_shipping_order_notes),  # 填写的备注
-  #     OrderStatus = "备货",  # 默认状态
-  #     stringsAsFactors = FALSE
-  #   )
-  # })
-  # 
-  # observe({
-  #   req(new_orders())  # 确保 new_orders 存在
-  #   
-  #   # 动态渲染订单卡片
-  #   renderOrderInfo(output, "order_info_card", new_orders())
-  #   
-  #   # 更新标题
-  #   output$order_items_title <- renderUI({
-  #     tags$h4(
-  #       HTML(paste0(as.character(icon("box")), " 订单号 ", new_orders()$OrderID, " 的物品")),
-  #       style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
-  #     )
-  #   })
-  # })
-  # 
-  # 
-  # 
+
+  new_orders <- reactive({
+    req(input$us_shipping_bill_number, input$us_shipping_platform)  # 确保运单号和平台存在
+
+    # 如果平台未选择或运单号为空，返回 NULL
+    if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
+      return(NULL)
+    }
+
+    # 创建动态订单数据
+    data.frame(
+      OrderID = trimws(input$us_shipping_bill_number),  # 运单号即订单号
+      UsTrackingNumber = trimws(input$us_shipping_bill_number),
+      CustomerName = "",  # 留空
+      CustomerNickname = "",  # 留空
+      Platform = input$us_shipping_platform,
+      OrderImagePath = "",  # 默认空
+      OrderNotes = trimws(input$us_shipping_order_notes),  # 填写的备注
+      OrderStatus = "备货",  # 默认状态
+      stringsAsFactors = FALSE
+    )
+  })
+
+  observe({
+    req(new_orders())  # 确保 new_orders 存在
+
+    # 动态渲染订单卡片
+    renderOrderInfo(output, "order_info_card", new_orders())
+
+    # 更新标题
+    output$order_items_title <- renderUI({
+      tags$h4(
+        HTML(paste0(as.character(icon("box")), " 订单号 ", new_orders()$OrderID, " 的物品")),
+        style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+      )
+    })
+  })
+
+
+
   # # 计算 SKU 的有效库存数量
   # stock_data <- reactive({
   #   unique_items_data() %>%
@@ -1673,10 +1673,10 @@ server <- function(input, output, session) {
   # 
   # observeEvent(input$us_shipping_sku_input, {
   #   req(input$us_shipping_sku_input)  # 确保输入不为空
-  #   
+  # 
   #   # 用户输入的 SKU
   #   new_sku <- trimws(input$us_shipping_sku_input)
-  #   
+  # 
   #   # 校验 SKU 是否有效
   #   valid_sku <- stock_data() %>% filter(SKU == new_sku)
   #   if (nrow(valid_sku) == 0) {
@@ -1684,10 +1684,10 @@ server <- function(input, output, session) {
   #     updateTextInput(session, "us_shipping_sku_input", value = "")
   #     return()
   #   }
-  #   
+  # 
   #   # 获取当前 SKU 列表
   #   current_items <- new_order_items()
-  #   
+  # 
   #   # 检查是否超过库存限制
   #   existing_count <- sum(current_items$SKU == new_sku)
   #   if (existing_count >= valid_sku$StockQuantity[1]) {
@@ -1695,23 +1695,23 @@ server <- function(input, output, session) {
   #     updateTextInput(session, "us_shipping_sku_input", value = "")
   #     return()
   #   }
-  #   
+  # 
   #   # 添加 SKU 到 new_order_items
   #   item_info <- unique_items_data() %>% filter(SKU == new_sku & Status == "美国入库") %>% slice(1)
   #   current_items <- rbind(current_items, item_info)
   #   new_order_items(current_items)  # 更新 new_order_items
-  #   
+  # 
   #   # 清空输入框
   #   updateTextInput(session, "us_shipping_sku_input", value = "")
   # })
   # 
   # observe({
   #   req(new_order_items())  # 确保 new_order_items 存在
-  #   
+  # 
   #   # 调用 renderOrderItems 渲染物品卡片
   #   renderOrderItems(output, "item_cards", new_order_items() %>% arrange(SKU))
   # })
-  # 
+
 ##########################################################################################  
 ##########################################################################################  
 ##########################################################################################    
