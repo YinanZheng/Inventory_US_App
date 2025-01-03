@@ -1751,7 +1751,7 @@ server <- function(input, output, session) {
     new_order_items_sort <- new_order_items() %>% arrange(SKU)
     
     # 调用 renderOrderItems 渲染物品卡片
-    renderOrderItems(output, "item_cards", new_order_items_sort)
+    renderOrderItems(output, "item_cards", unique_items_data() %>% filter(SKU == new_sku & Status == "美国入库"))
   })
 
 ##########################################################################################  
