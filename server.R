@@ -1748,7 +1748,7 @@ server <- function(input, output, session) {
     
     showNotification(nrow(orders_items))
     
-    renderOrderItems(output, "item_cards", orders_items)
+    renderOrderItems(output, "order_items_cards", orders_items)
   })
 
 ##########################################################################################  
