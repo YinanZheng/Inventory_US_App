@@ -1743,7 +1743,12 @@ server <- function(input, output, session) {
     new_sku <- trimws(input$us_shipping_sku_input)
     
     # 调用 renderOrderItems 渲染物品卡片
-    renderOrderItems(output, "item_cards", unique_items_data() %>% filter(SKU == new_sku & Status == "美国入库"))
+    
+    orders_items <- unique_items_data() %>% filter(SKU == new_sku & Status == "美国入库")
+    
+    showNotification(nrow(orders_items))
+    
+    renderOrderItems(output, "item_cards", orders_items)
   })
 
 ##########################################################################################  
