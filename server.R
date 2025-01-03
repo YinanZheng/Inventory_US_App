@@ -1465,10 +1465,6 @@ server <- function(input, output, session) {
           modalButton("关闭")
         )
       ))
-      
-      # 清空运单号和 SKU 输入框
-      updateTextInput(session, "shipping_bill_number", value = "")
-      updateTextInput(session, "sku_input", value = "")
     }
   })
   
@@ -1617,7 +1613,12 @@ server <- function(input, output, session) {
     })
   })
   
-  
+  observeEvent(input$clear_shipping_btn, {
+    # 清空运单号和 SKU 输入框
+    updateTextInput(session, "shipping_bill_number", value = "")
+    # 提示用户操作完成
+    showNotification("运单号和 SKU 输入框已清空！", type = "message")
+  })
   
 ##########################################################################################  
 ##########################################################################################  
