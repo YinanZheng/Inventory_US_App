@@ -1594,27 +1594,7 @@ server <- function(input, output, session) {
       ))
       
       showNotification(paste0("订单 ", current_order_id(), " 已成功装箱！"), type = "message")
-      
-      # 从队列中移除已完成的订单
-      remaining_queue <- order_queue()[-1]
-      order_queue(remaining_queue)
-      
-      if (length(remaining_queue) == 0) {
-        # 如果队列为空，提示操作完成
-        showNotification("所有匹配订单已完成操作！", type = "message")
-        updateTextInput(session, "shipping_bill_number", value = "")
-      } else {
-        # 处理下一个订单
-        next_order_id <- remaining_queue[1]
-        next_order <- orders() %>% filter(OrderID == next_order_id)
-        
-        # 渲染下一个订单的信息和物品
-        renderOrderInfo(output, "order_info_card", next_order_id, img_path, orders())
-        renderOrderItems(output, "order_items_cards", next_order_id, unique_items_data() %>% filter(OrderID == next_order_id))
-        
-        showNotification(paste0("开始处理订单 ", next_order_id), type = "message")
-      }
-      
+
       removeModal()
     }, error = function(e) {
       showNotification(paste("更新订单状态时发生错误：", e$message), type = "error")
