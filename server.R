@@ -18,17 +18,14 @@ server <- function(input, output, session) {
   # ReactiveVal 用于存储 orders 数据
   orders <- reactiveVal()
   
-  # ReactiveVal 用于存储 unique item 数据
-  unique_item_for_report <- reactiveVal()
+  # 存储目前数据库中存在的makers与item_names
+  makers_items_map <- reactiveVal(NULL)
   
   # 声明一个 reactiveVal 用于触发unique_items_data刷新
   unique_items_data_refresh_trigger <- reactiveVal(FALSE)
   
   # 用于存储 PDF 文件路径
   select_pdf_file_path <- reactiveVal(NULL)
-  
-  # 存储条形码是否已生成的状态
-  barcode_generated <- reactiveVal(FALSE)  # 初始化为 FALSE
   
   # 初始化货架和箱子内物品（售出分页）
   shelf_items <- reactiveVal(create_empty_shelf_box())
@@ -167,6 +164,16 @@ server <- function(input, output, session) {
     ORDER BY 
       unique_items.updated_at DESC
   ")
+  })
+  
+  # 加载 makers 和 item names
+  observe({
+    unique_data <- unique_items_data()  # 数据源
+    makers_items <- unique_data %>%
+      select(Maker, ItemName) %>%  # 选择需要的列
+      distinct()                   # 确保唯一性
+    
+    makers_items_map(makers_items)  # 更新 reactiveVal
   })
   
   # 入库页过滤
@@ -397,10 +404,7 @@ server <- function(input, output, session) {
   # 物品表过滤模块
   itemFilterServer(
     id = "inbound_filter",
-    makers_df = makers_df,
-    unique_items_data = unique_items_data,
-    filtered_unique_items_data = filtered_unique_items_data_inbound,
-    unique_items_table_selected_row = unique_items_table_inbound_selected_row
+    makers_items_map = makers_items_map
   )
   
   # 监听 SKU 输入
@@ -587,10 +591,7 @@ server <- function(input, output, session) {
         session$onFlushed(function() {
           itemFilterServer(
             id = "sold_filter",
-            makers_df = makers_df,
-            unique_items_data = unique_items_data,
-            filtered_unique_items_data = filtered_unique_items_data_sold,
-            unique_items_table_selected_row = unique_items_table_sold_selected_row
+            makers_items_map = makers_items_map
           )
         })
       }
