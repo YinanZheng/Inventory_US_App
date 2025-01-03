@@ -1434,16 +1434,19 @@ server <- function(input, output, session) {
     
     ############################################################
     
-    # 默认选择第一个订单
-    current_order_id <- matching_orders$OrderID[1]
-    
-    # 设置默认高亮样式
-    runjs(sprintf("
-      $('.order-card').css('border-color', '#ddd');  // 清除其他卡片高亮
-      $('.order-card').css('box-shadow', '0px 4px 8px rgba(0, 0, 0, 0.1)');  // 恢复默认阴影
-      $('#order_card_%s').css('border-color', '#007BFF');  // 高亮第一个订单卡片
-      $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');  // 添加高亮阴影
+    # 等待 UI 完全渲染后执行高亮逻辑
+    session$onFlushed(function() {
+      # 默认选择第一个订单
+      current_order_id <- matching_orders$OrderID[1]
+      
+      # 设置高亮
+      runjs(sprintf("
+      $('.order-card').css('border-color', '#ddd');
+      $('.order-card').css('box-shadow', '0px 4px 8px rgba(0, 0, 0, 0.1)');
+      $('#order_card_%s').css('border-color', '#007BFF');
+      $('#order_card_%s').css('box-shadow', '0px 4px 8px rgba(0, 123, 255, 0.5)');
     ", current_order_id, current_order_id))
+    })
     
     output$order_items_title <- renderUI({
       req(current_order_id)  # 确保当前订单 ID 存在
