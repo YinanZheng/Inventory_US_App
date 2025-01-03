@@ -1307,7 +1307,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
             column(
               6,  # 图片部分
               div(
-                style = "text-align: center;",
+                style = "text-align: center; padding-left: 0px; padding-right: 0px;",  # 去掉左右间距
                 img(
                   src = img_path,
                   height = "280px",
