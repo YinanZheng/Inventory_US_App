@@ -1677,8 +1677,13 @@ server <- function(input, output, session) {
     # 用户输入的 SKU
     new_sku <- trimws(input$us_shipping_sku_input)
 
+    showNotification(new_sku)
+    
     # 校验 SKU 是否有效
     valid_sku <- stock_data() %>% filter(SKU == new_sku)
+    
+    showNotification(nrow(valid_sku))
+    
     if (nrow(valid_sku) == 0) {
       showNotification("输入的 SKU 不存在或状态不为 '美国入库'！", type = "error")
       updateTextInput(session, "us_shipping_sku_input", value = "")
