@@ -1677,12 +1677,8 @@ server <- function(input, output, session) {
     # 用户输入的 SKU
     new_sku <- trimws(input$us_shipping_sku_input)
 
-    showNotification(new_sku)
-    
     # 校验 SKU 是否有效
     valid_sku <- stock_data() %>% filter(SKU == new_sku)
-    
-    showNotification(nrow(valid_sku))
     
     if (nrow(valid_sku) == 0) {
       showNotification("输入的 SKU 不存在或状态不为 '美国入库'！", type = "error")
@@ -1693,13 +1689,13 @@ server <- function(input, output, session) {
     # 获取当前 SKU 列表
     current_items <- new_order_items()
 
-    # 检查是否超过库存限制
-    existing_count <- sum(current_items$SKU == new_sku)
-    if (existing_count >= valid_sku$StockQuantity[1]) {
-      showNotification(paste0("输入的 SKU '", new_sku, "' 已达到库存上限！"), type = "error")
-      updateTextInput(session, "us_shipping_sku_input", value = "")
-      return()
-    }
+    # # 检查是否超过库存限制
+    # existing_count <- sum(current_items$SKU == new_sku)
+    # if (existing_count >= valid_sku$StockQuantity[1]) {
+    #   showNotification(paste0("输入的 SKU '", new_sku, "' 已达到库存上限！"), type = "error")
+    #   updateTextInput(session, "us_shipping_sku_input", value = "")
+    #   return()
+    # }
 
     # 添加 SKU 到 new_order_items
     item_info <- unique_items_data() %>% filter(SKU == new_sku & Status == "美国入库") %>% slice(1)
