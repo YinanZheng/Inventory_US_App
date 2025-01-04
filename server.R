@@ -1727,6 +1727,7 @@ server <- function(input, output, session) {
         observeEvent(input[[paste0("delete_item_", i)]], {
           updated_items <- new_order_items()[-i, ]  # 移除对应行
           new_order_items(updated_items)  # 更新 new_order_items
+          showNotification(i)
         }, ignoreInit = TRUE)
       }
     })
