@@ -1613,7 +1613,7 @@ server <- function(input, output, session) {
     })
   })
   
-  observeEvent(input$clear_shipping_btn, {
+  observeEvent(input$clear_shipping_bill_btn, {
     # 清空运单号和 SKU 输入框
     updateTextInput(session, "shipping_bill_number", value = "")
     # 提示用户操作完成

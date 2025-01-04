@@ -529,7 +529,7 @@ ui <- navbarPage(
             tags$h4("国内售出订单发货", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
             textInput("shipping_bill_number", "运单号:", placeholder = "请扫描运单号", width = "100%"),
             textInput("sku_input", "SKU:", placeholder = "请扫描SKU条形码", width = "100%"),
-            actionButton("clear_shipping_bill", "清空", icon = icon("trash-alt"), class = "btn-danger", style = "margin-top: 10px;")
+            actionButton("clear_shipping_bill_btn", "清空", icon = icon("trash-alt"), class = "btn-danger", style = "margin-top: 10px;")
         ),
         
         # 美国售出订单发货
