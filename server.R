@@ -1710,36 +1710,11 @@ server <- function(input, output, session) {
     # 清空输入框
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
-  
-  
-  observe({
-    req(new_order_items())  # 确保 new_order_items 存在
-    
-    # 删除按钮事件监听
-    order_items <- new_order_items()
-    ids <- seq_len(nrow(order_items))
-    
-    # 仅绑定未监听的事件
-    lapply(ids, function(i) {
-      if (!exists(paste0("delete_event_", i), envir = .GlobalEnv)) {
-        assign(paste0("delete_event_", i), TRUE, envir = .GlobalEnv)
-        
-        observeEvent(input[[paste0("delete_item_", i)]], {
-          updated_items <- new_order_items()[-i, ]  # 移除对应行
-          new_order_items(updated_items)  # 更新 new_order_items
-          showNotification(i)
-        }, ignoreInit = TRUE)
-      }
-    })
-    
-    showNotification(new_order_items()$SKU)
-    
-  })
 
   observeEvent(input$us_shipping_sku_input, {
     req(new_order_items())  # 确保 new_order_items 存在
     
-    renderOrderItems(output, "order_items_cards", new_order_items(), delete_btn = TRUE)
+    renderOrderItems(output, "order_items_cards", new_order_items())
   })
 
 ##########################################################################################  

@@ -1386,7 +1386,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
 
 
 # 动态渲染物品卡片
-renderOrderItems <- function(output, output_name, order_items, delete_btn = FALSE) {
+renderOrderItems <- function(output, output_name, order_items) {
   # 如果没有物品，返回提示信息
   if (nrow(order_items) == 0) {
     output[[output_name]] <- renderUI({
@@ -1423,25 +1423,12 @@ renderOrderItems <- function(output, output_name, order_items, delete_btn = FALS
         NULL
       }
       
-      # 删除按钮（根据 delete_btn 控制显示）
-      delete_button <- if (delete_btn) {
-        actionButton(
-          inputId = paste0("delete_item_", i),
-          label = icon("trash"),
-          class = "btn-danger btn-sm",
-          style = "position: absolute; top: 5px; right: 5px;"
-        )
-      } else {
-        NULL
-      }
-      
       # 渲染卡片
       div(
         class = "card",
         style = "position: relative; display: inline-block; padding: 10px; width: 230px; text-align: center; 
                  border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
         
-        delete_button,  # 删除按钮
         mask_overlay,  # 动态显示蒙版
         
         div(
