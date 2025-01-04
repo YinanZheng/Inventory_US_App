@@ -1475,20 +1475,24 @@ server <- function(input, output, session) {
     }
   })
   
-  # 渲染物品信息卡片  
+  # 渲染物品信息标题
   observe({
-    req(order_items())  # 确保 order_items 存在且有效
+    req(current_order_id())
 
-    # 渲染物品信息
-    renderOrderItems(output, "order_items_cards", order_items())
-    
-    # 更新标题
     output$order_items_title <- renderUI({
       tags$h4(
         HTML(paste0(as.character(icon("box")), " 订单号 ", current_order_id(), " 的物品")),
         style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
       )
     })
+  })
+  
+  # 渲染物品信息卡片  
+  observe({
+    req(order_items())  # 确保 order_items 存在且有效
+
+    # 渲染物品信息
+    renderOrderItems(output, "order_items_cards", order_items())
   })
   
   
