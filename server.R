@@ -1519,7 +1519,7 @@ server <- function(input, output, session) {
   
   # 判断选中订单状态，提示用户操作
   observe({
-    req(current_order_id())  # 确保当前订单 ID 存在
+    req(matching_orders(), current_order_id())
     
     # 获取当前选中订单信息
     current_order <- matching_orders() %>% filter(OrderID == current_order_id())
