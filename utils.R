@@ -1326,10 +1326,11 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
       
       # 渲染订单卡片
       div(
-        id = paste0("order_card_", order_info$OrderID),  # 唯一 ID
-        class = "order-card",  # 添加卡片样式
-        style = "position: relative; display: inline-block; width: 500px; height: 310px; background-color: #ffffff; 
-                 border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); margin-right: 15px; cursor: pointer;",
+        id = paste0("order_card_", order$OrderID),  # 设置唯一 ID
+        class = "order-card",
+        style = "position: relative; display: inline-block; width: 300px; padding: 15px; margin: 10px; 
+                 border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); 
+                 cursor: ", ifelse(clickable, "pointer", "default"), ";",  # 控制鼠标悬停样式
         onclick = onclick_script,  # 动态设置点击事件
         
         mask_overlay,  # 动态显示蒙版
