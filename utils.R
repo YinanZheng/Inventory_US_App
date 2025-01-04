@@ -1326,7 +1326,7 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
       
       # 渲染订单卡片
       div(
-        id = paste0("order_card_", order$OrderID),  # 设置唯一 ID
+        id = paste0("order_card_", order_info$OrderID),  # 设置唯一 ID
         class = "order-card",
         style = "position: relative; display: inline-block; width: 300px; padding: 15px; margin: 10px; 
                  border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); 
