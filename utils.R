@@ -1425,9 +1425,12 @@ renderOrderItems <- function(output, output_name, order_items) {
       
       # 渲染卡片
       div(
+        id = paste0("card_", i),  # 设置唯一 ID
         class = "card",
         style = "position: relative; display: inline-block; padding: 10px; width: 230px; text-align: center; 
-                 border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
+                 border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); 
+                 cursor: pointer;",  # 添加鼠标悬停效果
+        onclick = sprintf("Shiny.setInputValue('delete_card', '%s', {priority: 'event'})", item$UniqueID),  # 设置点击事件
         
         mask_overlay,  # 动态显示蒙版
         
