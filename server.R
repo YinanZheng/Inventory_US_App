@@ -1478,7 +1478,7 @@ server <- function(input, output, session) {
   
   # 渲染物品信息标题
   observe({
-    req(current_order_id())
+    req(current_order_id(), matching_orders())
 
     output$order_items_title <- renderUI({
       tags$h4(
