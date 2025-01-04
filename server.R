@@ -1490,7 +1490,7 @@ server <- function(input, output, session) {
   
   # 渲染物品信息卡片  
   observe({
-    req(order_items())
+    req(order_items(), matching_orders())
     
     if (nrow(order_items()) == 0) {
       renderOrderItems(output, "order_items_cards", data.frame())  # 清空物品卡片
