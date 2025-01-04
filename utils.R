@@ -1429,6 +1429,14 @@ renderOrderItems <- function(output, output_name, order_items) {
         style = "position: relative; display: inline-block; padding: 10px; width: 230px; text-align: center; 
                  border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
         
+        # 删除按钮
+        actionButton(
+          inputId = paste0("delete_item_", i),
+          label = icon("trash"),
+          class = "btn-danger btn-sm",
+          style = "position: absolute; top: 5px; right: 5px;"
+        ),
+        
         mask_overlay,  # 动态显示蒙版
         
         div(
