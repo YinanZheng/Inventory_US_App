@@ -1730,6 +1730,9 @@ server <- function(input, output, session) {
         }, ignoreInit = TRUE)
       }
     })
+    
+    showNotification(new_order_items()$SKU)
+    
   })
 
   observeEvent(input$us_shipping_sku_input, {
