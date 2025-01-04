@@ -1498,7 +1498,8 @@ server <- function(input, output, session) {
   observeEvent(input$shipping_bill_number, {
     # 如果运单号为空，清空内容
     if (trimws(input$shipping_bill_number) == "") {
-      output$order_items_title <- renderUI({ NULL })  # 清空标题
+      order_items(data.frame())
+      matching_orders(data.frame())
       updateTextInput(session, "sku_input", value = "")
       return()
     }
