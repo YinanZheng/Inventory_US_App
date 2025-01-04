@@ -1500,6 +1500,7 @@ server <- function(input, output, session) {
     if (trimws(input$shipping_bill_number) == "") {
       order_items(data.frame())
       matching_orders(data.frame())
+      current_order_id(NULL)
       updateTextInput(session, "sku_input", value = "")
       return()
     }
