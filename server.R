@@ -1455,13 +1455,7 @@ server <- function(input, output, session) {
   # 渲染订单信息卡片
   observe({
     req(matching_orders())  # 确保 matching_orders 存在且有效
-    
-    if (nrow(matching_orders()) == 0) {
-      output$order_info_card <- renderUI({ NULL })
-      showNotification("未找到与此运单号关联的订单！", type = "error")
-      return()
-    }
-    
+  
     # 渲染订单信息
     renderOrderInfo(output, "order_info_card", matching_orders())
     
@@ -1484,13 +1478,7 @@ server <- function(input, output, session) {
   # 渲染物品信息卡片  
   observe({
     req(order_items())  # 确保 order_items 存在且有效
-    
-    if (nrow(order_items()) == 0) {
-      output$order_items_cards <- renderUI({ NULL })
-      showNotification("当前订单没有匹配到物品！", type = "error")
-      return()
-    }
-    
+
     # 渲染物品信息
     renderOrderItems(output, "order_items_cards", order_items())
     
