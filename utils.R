@@ -983,9 +983,6 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
       )
       showNotification("订单已成功登记！", type = "message")
     }
-    
-    # 更新订单表格
-    orders(dbGetQuery(con, "SELECT * FROM orders"))
     return(TRUE)
   }, error = function(e) {
     showNotification(paste("登记订单时发生错误：", e$message), type = "error")

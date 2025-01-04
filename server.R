@@ -942,6 +942,9 @@ server <- function(input, output, session) {
       preorder_supplier = input$preorder_supplier
     )
     
+    # 更新订单表格
+    orders(dbGetQuery(con, "SELECT * FROM orders"))
+    
     # reset_order_form(session, image_sold)
   })
   
@@ -1139,12 +1142,14 @@ server <- function(input, output, session) {
         is_preorder = input$is_preorder,
         preorder_supplier = input$preorder_supplier
       )
-      
+
       # 如果订单登记失败，直接退出
       if (!order_registered) {
         showNotification("订单登记失败，无法完成售出操作！", type = "error")
         return()
       }
+      
+      orders(dbGetQuery(con, "SELECT * FROM orders"))
       
       # 遍历箱子内物品，减库存并更新物品状态
       lapply(1:nrow(box_items()), function(i) {
@@ -1158,8 +1163,6 @@ server <- function(input, output, session) {
           adjustment = -1  # 减少 1 的库存数量
         )
         
-        inventory(dbGetQuery(con, "SELECT * FROM inventory"))
-        
         if (!adjustment_result) {
           showNotification(paste("库存调整失败：SKU", sku, "，操作已终止！"), type = "error")
           stop("库存调整失败")
@@ -1170,7 +1173,7 @@ server <- function(input, output, session) {
           con = con,
           unique_id = item$UniqueID,
           new_status = "美国售出",
-          refresh_trigger = unique_items_data_refresh_trigger
+          refresh_trigger = NULL
         )
         
         # 更新订单号
@@ -1179,10 +1182,11 @@ server <- function(input, output, session) {
           unique_id = item$UniqueID,
           order_id = sanitized_order_id
         )
-      })
+      }) # end of lapply
       
-      # 更新 inventory, unique_items数据并触发 UI 刷新
+      # 刷新数据
       inventory(dbGetQuery(con, "SELECT * FROM inventory"))
+      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
       showNotification("订单已完成售出并更新状态！", type = "message")
       
@@ -1800,6 +1804,20 @@ server <- function(input, output, session) {
                         order$OrderID, unique_ids)
       )
 
+      # 调整库存数量
+      for (sku in unique(items$SKU)) {
+        adjustment_result <- adjust_inventory(
+          con = con,
+          sku = sku,
+          adjustment = -nrow(items %>% filter(SKU == sku))  # 减少该 SKU 的总数量
+        )
+        
+        if (!adjustment_result) {
+          showNotification(paste("库存调整失败：SKU", sku, "，操作已终止！"), type = "error")
+          stop("库存调整失败")
+        }
+      }
+      
       # 提交事务
       dbCommit(con)
       
