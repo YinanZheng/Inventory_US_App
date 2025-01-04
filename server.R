@@ -1507,7 +1507,7 @@ server <- function(input, output, session) {
   
   ### 逻辑
   
-  # 清空逻辑
+  # 清空运单号逻辑
   observeEvent(input$shipping_bill_number, {
     if (trimws(input$shipping_bill_number) == "") {
       current_order_id(NULL)  # 清空当前订单 ID
@@ -1518,7 +1518,7 @@ server <- function(input, output, session) {
   
   # 点击订单卡片逻辑
   observeEvent(input$selected_order_id, {
-    req(input$selected_order_id)  # 确保订单 ID 存在
+    req(input$selected_order_id, current_order_id())  # 确保订单 ID 存在
     
     # 获取选中的订单 ID
     current_order_id(input$selected_order_id)

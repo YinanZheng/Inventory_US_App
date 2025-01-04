@@ -1384,11 +1384,6 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
   })
 }
 
-
-
-
-
-
 # 动态渲染物品卡片
 renderOrderItems <- function(output, output_name, order_items) {
   # 如果没有物品，返回提示信息
