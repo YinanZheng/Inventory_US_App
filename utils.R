@@ -1478,6 +1478,29 @@ renderOrderItems <- function(output, output_name, order_items) {
   })
 }
 
+generate_order_id <- function(tracking_number, unique_ids) {
+  # 验证 tracking_number 是否有效
+  if (is.null(tracking_number) || tracking_number == "" || !is.character(tracking_number)) {
+    stop("无效的运单号：tracking_number 必须是非空字符串。")
+  }
+  
+  # 验证 unique_ids 是否为非空向量
+  if (is.null(unique_ids) || length(unique_ids) == 0 || any(unique_ids == "")) {
+    stop("无效的 unique_ids：必须是非空字符串向量。")
+  }
+  
+  # 将运单号和所有 UniqueID 拼接成字符串
+  input_string <- paste0(tracking_number, paste(unique_ids, collapse = ""))
+  
+  # 生成 SHA-256 哈希值
+  hashed <- digest::digest(input_string, algo = "sha256", serialize = FALSE)
+  
+  # 截取前九位作为订单 ID
+  order_id <- toupper(substr(hashed, 1, 9))
+  
+  return(order_id)
+}
+
 
 # 清理未被记录的图片 (每天运行一次)
 clean_untracked_images <- function() {

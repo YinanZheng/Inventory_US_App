@@ -1642,11 +1642,11 @@ server <- function(input, output, session) {
     # 如果平台未选择或运单号为空，返回 NULL
     if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
       return(NULL)
-    }
+    }j
 
     # 创建动态订单数据
     data.frame(
-      OrderID = "",
+      OrderID = new_order_id(),
       UsTrackingNumber = trimws(input$us_shipping_bill_number),
       CustomerName = "",  # 留空
       CustomerNickname = "",  # 留空
@@ -1667,13 +1667,11 @@ server <- function(input, output, session) {
     # 更新标题
     output$order_items_title <- renderUI({
       tags$h4(
-        HTML(paste0(as.character(icon("box")), " 订单号 ", new_orders()$OrderID, " 的物品")),
+        HTML(paste0(as.character(icon("box")), " 订单号 ", new_order_id(), " 的物品")),
         style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
       )
     })
   })
-
-
 
   # 计算 SKU 的有效库存数量
   stock_data <- reactive({
@@ -1686,6 +1684,8 @@ server <- function(input, output, session) {
 
 
   new_order_items <- reactiveVal()  # 初始化为空数据框
+  
+  new_order_id <- reactive(generate_order_id(new_orders()$UsTrackingNumber, new_order_items()$UniqueID))
   
   observe({
     req(new_order_items())  # 确保 new_order_items 存在
@@ -1725,6 +1725,8 @@ server <- function(input, output, session) {
     current_items <- rbind(current_items, item_info)
     new_order_items(current_items)  # 更新 new_order_items
 
+    new_order_id <- generate_order_id(new_orders()$UsTrackingNumber, new_order_items()$UniqueID)
+    
     # 清空输入框
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
@@ -1743,20 +1745,6 @@ server <- function(input, output, session) {
     showNotification("物品已删除。", type = "message")
   })
   
-  
-  generate_order_id <- function(tracking_number, unique_ids) {
-    # 将运单号和所有 UniqueID 拼接成字符串
-    input_string <- paste0(tracking_number, paste(unique_ids, collapse = ""))
-    
-    # 生成 SHA-256 哈希值
-    hashed <- digest::digest(input_string, algo = "sha256", serialize = FALSE)
-    
-    # 截取前九位作为订单 ID
-    order_id <- toupper(substr(hashed, 1, 9))
-    
-    return(order_id)
-  }
-  
   observeEvent(input$us_ship_order_btn, {
     req(new_orders(), new_order_items())  # 确保当前订单和物品存在
     
@@ -1769,9 +1757,6 @@ server <- function(input, output, session) {
       return()
     }
     
-    # 生成唯一订单 ID
-    generated_order_id <- generate_order_id(order$UsTrackingNumber, items$UniqueID)
-    
     tryCatch({
       # 开始数据库事务
       dbBegin(con)  # 假设 `con` 是数据库连接对象
@@ -1781,7 +1766,7 @@ server <- function(input, output, session) {
                 "INSERT INTO orders (OrderID, UsTrackingNumber, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderNotes, OrderStatus, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())", 
                 params = list(
-                  generated_order_id, 
+                  generated_order_id(), 
                   order$UsTrackingNumber, 
                   order$CustomerName, 
                   order$CustomerNickname, 
@@ -1801,7 +1786,7 @@ server <- function(input, output, session) {
                 sprintf("UPDATE unique_items 
            SET Status = '美国发货', OrderID = '%s' 
            WHERE UniqueID IN (%s)", 
-                        generated_order_id, unique_ids)
+                        generated_order_id(), unique_ids)
       )
 
       # 调整库存数量
@@ -1825,8 +1810,10 @@ server <- function(input, output, session) {
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
       # # 清空输入框和当前数据
+      new_orders(NULL)
       new_order_items(NULL)
-      current_order_id(NULL)
+      new_order_id(NULL)
+      
       updateTextInput(session, "us_shipping_bill_number", value = "")
       updateTextInput(session, "us_shipping_sku_input", value = "")
       updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
