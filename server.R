@@ -1518,7 +1518,7 @@ server <- function(input, output, session) {
   
   # 点击订单卡片逻辑
   observeEvent(input$selected_order_id, {
-    req(input$selected_order_id, current_order_id())  # 确保订单 ID 存在
+    req(input$selected_order_id, matching_orders())  # 确保订单 ID 存在
     
     # 获取选中的订单 ID
     current_order_id(input$selected_order_id)
@@ -1740,6 +1740,64 @@ server <- function(input, output, session) {
     # 提示删除成功
     showNotification("物品已删除。", type = "message")
   })
+  
+  
+  observeEvent(input$confirm_shipping, {
+    req(new_orders(), order_items())  # 确保当前订单和物品存在
+    
+    # 获取当前订单信息和物品
+    order <- new_orders()
+    items <- order_items()
+    
+    tryCatch({
+      # 开始数据库事务
+      dbBegin(con)  # 假设 `con` 是数据库连接对象
+      
+      # 1. 添加订单到 `orders` 表，并更新状态为 "装箱"
+      dbExecute(con, 
+                "INSERT INTO orders (OrderID, UsTrackingNumber, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderNotes, OrderStatus, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())", 
+                params = list(
+                  order$OrderID, 
+                  order$UsTrackingNumber, 
+                  order$CustomerName, 
+                  order$CustomerNickname, 
+                  order$Platform, 
+                  order$OrderImagePath, 
+                  order$OrderNotes, 
+                  "装箱"
+                )
+      )
+      
+      # 2. 更新 `unique_items` 表中的物品状态和订单 ID
+      dbExecute(con, 
+                "UPDATE unique_items 
+       SET OrderID = ?, Status = '美国发货' 
+       WHERE UniqueID IN (?)", 
+                params = list(order$OrderID, paste(items$UniqueID, collapse = ","))
+      )
+      
+      # 提交事务
+      dbCommit(con)
+      
+      # # 清空输入框和当前数据
+      # new_order_items(NULL)
+      # current_order_id(NULL)
+      # updateTextInput(session, "us_shipping_bill_number", value = "")
+      # updateTextInput(session, "us_shipping_sku_input", value = "")
+      # updateTextAreaInput(session, "us_shipping_order_notes", value = "")
+      
+      # 显示成功通知
+      showNotification("订单已成功发货！", type = "message")
+      
+    }, error = function(e) {
+      # 回滚事务
+      dbRollback(con)
+      showNotification(paste("发货失败：", e$message), type = "error")
+    })
+  })
+  
+  
   
 ##########################################################################################  
 ##########################################################################################  
