@@ -1518,7 +1518,7 @@ server <- function(input, output, session) {
   
   # 点击订单卡片逻辑
   observeEvent(input$selected_order_id, {
-    req(input$selected_order_id, matching_orders())  # 确保订单 ID 存在
+    req(input$selected_order_id)  # 确保订单 ID 存在
     
     # 获取选中的订单 ID
     current_order_id(input$selected_order_id)
@@ -1687,7 +1687,7 @@ server <- function(input, output, session) {
   
   observe({
     req(new_order_items())  # 确保 new_order_items 存在
-    renderOrderItems(output, "order_items_cards", new_order_items())
+    renderOrderItems(output, "order_items_cards", new_order_items(), clickable = FALSE)
   })
   
   observeEvent(input$us_shipping_sku_input, {

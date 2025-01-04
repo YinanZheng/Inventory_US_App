@@ -1280,7 +1280,7 @@ createSearchableDropdown <- function(input_id, label, data, placeholder = "搜�
 }
 
 
-renderOrderInfo <- function(output, output_name, matching_orders) {
+renderOrderInfo <- function(output, output_name, matching_orders, clickable = TRUE) {
   # 如果没有物品，返回提示信息
   if (nrow(matching_orders) == 0) {
     output[[output_name]] <- renderUI({
@@ -1317,6 +1317,13 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
         NULL
       }
       
+      # 如果卡片不可点击，不设置 onclick 事件
+      onclick_script <- if (clickable) {
+        sprintf("Shiny.setInputValue('selected_order_id', '%s', {priority: 'event'})", order$OrderID)
+      } else {
+        NULL
+      }
+      
       # 渲染订单卡片
       div(
         id = paste0("order_card_", order_info$OrderID),  # 唯一 ID
@@ -1324,7 +1331,7 @@ renderOrderInfo <- function(output, output_name, matching_orders) {
         style = "position: relative; display: inline-block; width: 500px; height: 310px; background-color: #ffffff; 
                  border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); margin-right: 15px; cursor: pointer;",
         `data-order-id` = order_info$OrderID,  # 传递订单 ID
-        onclick = paste0("Shiny.setInputValue('selected_order_id', '", order_info$OrderID, "', {priority: 'event'})"),  # 点击事件
+        onclick = onclick_script,  # 动态设置点击事件
         
         mask_overlay,  # 动态显示蒙版
         
