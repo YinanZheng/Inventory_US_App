@@ -1801,7 +1801,7 @@ server <- function(input, output, session) {
                 sprintf("UPDATE unique_items 
            SET Status = '美国发货', OrderID = '%s' 
            WHERE UniqueID IN (%s)", 
-                        order$OrderID, unique_ids)
+                        generated_order_id, unique_ids)
       )
 
       # 调整库存数量
