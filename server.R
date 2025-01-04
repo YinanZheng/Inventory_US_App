@@ -1612,9 +1612,7 @@ server <- function(input, output, session) {
     # 更新当前订单状态
     tryCatch({
       dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(current_order_id()))
-      orders(orders() %>% mutate(
-        OrderStatus = ifelse(OrderID == current_order_id(), "装箱", OrderStatus)
-      ))
+      orders(dbGetQuery(con, "SELECT * FROM orders"))
       
       showNotification(paste0("订单 ", current_order_id(), " 已成功装箱！"), type = "message")
 
@@ -1743,11 +1741,11 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$us_ship_order_btn, {
-    req(new_orders(), order_items())  # 确保当前订单和物品存在
+    req(new_orders(), new_order_items())  # 确保当前订单和物品存在
     
     # 获取当前订单信息和物品
     order <- new_orders()
-    items <- order_items()
+    items <- new_order_items()
     
     tryCatch({
       # 开始数据库事务
@@ -1776,9 +1774,12 @@ server <- function(input, output, session) {
        WHERE UniqueID IN (?)", 
                 params = list(order$OrderID, paste(items$UniqueID, collapse = ","))
       )
-      
+
       # 提交事务
       dbCommit(con)
+      
+      orders(dbGetQuery(con, "SELECT * FROM orders"))
+      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
       # # 清空输入框和当前数据
       # new_order_items(NULL)
