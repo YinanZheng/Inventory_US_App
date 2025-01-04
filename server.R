@@ -1494,14 +1494,6 @@ server <- function(input, output, session) {
   
   ### 逻辑
   
-  # 运单号输入初始逻辑
-  observeEvent(input$shipping_bill_number, {
-    if (trimws(input$shipping_bill_number) == "") {
-      updateTextInput(session, "sku_input", value = "")
-      return()
-    }
-  })
-  
   # 点击订单卡片逻辑
   observeEvent(input$selected_order_id, {
     req(input$selected_order_id)  # 确保订单 ID 存在
