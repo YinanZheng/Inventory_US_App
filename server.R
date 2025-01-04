@@ -1476,10 +1476,14 @@ server <- function(input, output, session) {
     }
   })
   
-  # 渲染物品信息标题
   observe({
-    req(current_order_id(), matching_orders())
-
+    # 如果 current_order_id 为空，清空标题
+    if (is.null(current_order_id()) || trimws(current_order_id()) == "") {
+      output$order_items_title <- renderUI({ NULL })  # 清空标题
+      return()  # 停止后续逻辑
+    }
+    
+    # 渲染标题
     output$order_items_title <- renderUI({
       tags$h4(
         HTML(paste0(as.character(icon("box")), " 订单号 ", current_order_id(), " 的物品")),
