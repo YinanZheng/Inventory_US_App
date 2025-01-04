@@ -1747,6 +1747,8 @@ server <- function(input, output, session) {
     order <- new_orders()
     items <- new_order_items()
     
+    showNotification(items$UniqueID)
+    
     tryCatch({
       # 开始数据库事务
       dbBegin(con)  # 假设 `con` 是数据库连接对象
