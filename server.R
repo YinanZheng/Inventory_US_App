@@ -1622,6 +1622,7 @@ server <- function(input, output, session) {
   
   ##############################################################################################
 
+
   new_orders <- reactive({
     req(input$us_shipping_bill_number, input$us_shipping_platform)  # 确保运单号和平台存在
 
@@ -1710,11 +1711,24 @@ server <- function(input, output, session) {
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
   
+  
+  observe({
+    req(new_order_items())
+    
+    order_items <- new_order_items()
+    for (i in 1:nrow(order_items)) {
+      observeEvent(input[[paste0("delete_item_", i)]], {
+        updated_items <- order_items[-i, ]  # 移除对应行
+        new_order_items(updated_items)  # 更新 new_order_items
+      }, ignoreInit = TRUE)
+    }
+  })
+  
 
   observeEvent(input$us_shipping_sku_input, {
     req(new_order_items())  # 确保 new_order_items 存在
     
-    renderOrderItems(output, "order_items_cards", new_order_items())
+    renderOrderItems(output, "order_items_cards", new_order_items(), delete_btn = TRUE)
   })
 
 ##########################################################################################  
