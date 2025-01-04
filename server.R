@@ -1496,11 +1496,7 @@ server <- function(input, output, session) {
   
   # 运单号输入初始逻辑
   observeEvent(input$shipping_bill_number, {
-    # 如果运单号为空，清空内容
     if (trimws(input$shipping_bill_number) == "") {
-      order_items(data.frame())
-      matching_orders(data.frame())
-      current_order_id(NULL)
       updateTextInput(session, "sku_input", value = "")
       return()
     }
