@@ -1431,6 +1431,7 @@ renderOrderItems <- function(output, output_name, order_items, delete_btn = FALS
           class = "btn-danger btn-sm",
           style = "position: absolute; top: 5px; right: 5px;"
         )
+        showNotification(paste0("delete_item_", i))
       } else {
         NULL
       }
