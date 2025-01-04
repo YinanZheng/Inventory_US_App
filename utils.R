@@ -1330,7 +1330,6 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
         class = "order-card",  # 添加卡片样式
         style = "position: relative; display: inline-block; width: 500px; height: 310px; background-color: #ffffff; 
                  border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); margin-right: 15px; cursor: pointer;",
-        `data-order-id` = order_info$OrderID,  # 传递订单 ID
         onclick = onclick_script,  # 动态设置点击事件
         
         mask_overlay,  # 动态显示蒙版
