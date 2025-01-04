@@ -1770,12 +1770,24 @@ server <- function(input, output, session) {
       )
       
       # 2. 更新 `unique_items` 表中的物品状态和订单 ID
-      dbExecute(con, 
-                "UPDATE unique_items 
-       SET OrderID = ?, Status = '美国发货' 
-       WHERE UniqueID IN (?)", 
-                params = list(order$OrderID, paste(items$UniqueID, collapse = ","))
-      )
+      for (i in seq_len(nrow(items))) {
+        item <- items[i, ]
+        
+        # 更新物品状态
+        update_status(
+          con = con,
+          unique_id = item$UniqueID,
+          new_status = "美国发货",
+          refresh_trigger = NULL  # 不立即触发数据刷新
+        )
+        
+        # 更新订单号
+        update_order_id(
+          con = con,
+          unique_id = item$UniqueID,
+          order_id = order$OrderID
+        )
+      }
 
       # 提交事务
       dbCommit(con)
