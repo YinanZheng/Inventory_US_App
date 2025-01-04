@@ -1747,8 +1747,6 @@ server <- function(input, output, session) {
     order <- new_orders()
     items <- new_order_items()
     
-    showNotification(items$UniqueID)
-    
     tryCatch({
       # 开始数据库事务
       dbBegin(con)  # 假设 `con` 是数据库连接对象
@@ -1768,26 +1766,18 @@ server <- function(input, output, session) {
                   "装箱"
                 )
       )
-      
+
       # 2. 更新 `unique_items` 表中的物品状态和订单 ID
-      for (i in seq_len(nrow(items))) {
-        item <- items[i, ]
-        
-        # 更新物品状态
-        update_status(
-          con = con,
-          unique_id = item$UniqueID,
-          new_status = "美国发货",
-          refresh_trigger = NULL  # 不立即触发数据刷新
-        )
-        
-        # 更新订单号
-        update_order_id(
-          con = con,
-          unique_id = item$UniqueID,
-          order_id = order$OrderID
-        )
-      }
+      # 拼接 UniqueID 列表
+      unique_ids <- paste0("'", paste(items$UniqueID, collapse = "','"), "'")
+      
+      # 批量更新物品状态
+      dbExecute(con, 
+                sprintf("UPDATE unique_items 
+           SET Status = '美国发货', OrderID = '%s' 
+           WHERE UniqueID IN (%s)", 
+                        order$OrderID, unique_ids)
+      )
 
       # 提交事务
       dbCommit(con)
