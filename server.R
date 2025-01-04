@@ -1660,7 +1660,7 @@ server <- function(input, output, session) {
     req(new_orders())  # 确保 new_orders 存在
 
     # 动态渲染订单卡片
-    renderOrderInfo(output, "order_info_card", new_orders())
+    renderOrderInfo(output, "order_info_card", new_orders(), clickable = FALSE)
 
     # 更新标题
     output$order_items_title <- renderUI({
@@ -1687,7 +1687,7 @@ server <- function(input, output, session) {
   
   observe({
     req(new_order_items())  # 确保 new_order_items 存在
-    renderOrderItems(output, "order_items_cards", new_order_items(), clickable = FALSE)
+    renderOrderItems(output, "order_items_cards", new_order_items())
   })
   
   observeEvent(input$us_shipping_sku_input, {
