@@ -1281,11 +1281,15 @@ createSearchableDropdown <- function(input_id, label, data, placeholder = "搜�
 
 
 renderOrderInfo <- function(output, output_name, matching_orders) {
+  # 如果没有物品，返回提示信息
+  if (nrow(matching_orders) == 0) {
+    output[[output_name]] <- renderUI({
+      div("没有找到匹配的订单")
+    })
+    return()
+  }
+  
   output[[output_name]] <- renderUI({
-    if (nrow(matching_orders) == 0) {
-      return(NULL)
-    }
-    
     # 动态渲染订单卡片
     order_cards <- lapply(1:nrow(matching_orders), function(i) {
       order_info <- matching_orders[i, ]
@@ -1390,7 +1394,7 @@ renderOrderItems <- function(output, output_name, order_items) {
   # 如果没有物品，返回提示信息
   if (nrow(order_items) == 0) {
     output[[output_name]] <- renderUI({
-      div("没有找到该订单内的物品。")
+      div("没有找到订单内物品")
     })
     return()
   }

@@ -1421,7 +1421,14 @@ server <- function(input, output, session) {
   
   # 运单号输入逻辑
   matching_orders <- reactive({
-    req(input$shipping_bill_number)
+    # 如果运单号为空，返回空数据框
+    if (is.null(input$shipping_bill_number) || trimws(input$shipping_bill_number) == "") {
+      return(data.frame())  # 返回空数据框
+    }
+    
+    req(input$shipping_bill_number)  # 确保运单号不为空
+    
+    # 筛选并排序订单
     orders() %>% 
       filter(UsTrackingNumber == trimws(input$shipping_bill_number)) %>% 
       arrange(OrderStatus == "装箱")  # 非“装箱”的排在前面，“装箱”的排在后面
@@ -1430,9 +1437,15 @@ server <- function(input, output, session) {
   # 当前订单ID
   current_order_id <- reactiveVal()
   
-  # 当前订单的物品
   order_items <- reactive({
-    req(current_order_id())
+    # 如果当前订单 ID 为空，返回空数据框
+    if (is.null(current_order_id()) || trimws(current_order_id()) == "") {
+      return(data.frame())  # 返回空数据框
+    }
+    
+    req(current_order_id())  # 确保当前订单 ID 不为空
+    
+    # 筛选当前订单的物品
     unique_items_data() %>% filter(OrderID == current_order_id())
   })
   
