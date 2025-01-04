@@ -1713,17 +1713,24 @@ server <- function(input, output, session) {
   
   
   observe({
-    req(new_order_items())
+    req(new_order_items())  # 确保 new_order_items 存在
     
+    # 删除按钮事件监听
     order_items <- new_order_items()
-    for (i in 1:nrow(order_items)) {
-      observeEvent(input[[paste0("delete_item_", i)]], {
-        updated_items <- order_items[-i, ]  # 移除对应行
-        new_order_items(updated_items)  # 更新 new_order_items
-      }, ignoreInit = TRUE)
-    }
+    ids <- seq_len(nrow(order_items))
+    
+    # 仅绑定未监听的事件
+    lapply(ids, function(i) {
+      if (!exists(paste0("delete_event_", i), envir = .GlobalEnv)) {
+        assign(paste0("delete_event_", i), TRUE, envir = .GlobalEnv)
+        
+        observeEvent(input[[paste0("delete_item_", i)]], {
+          updated_items <- new_order_items()[-i, ]  # 移除对应行
+          new_order_items(updated_items)  # 更新 new_order_items
+        }, ignoreInit = TRUE)
+      }
+    })
   })
-  
 
   observeEvent(input$us_shipping_sku_input, {
     req(new_order_items())  # 确保 new_order_items 存在
