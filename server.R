@@ -1674,6 +1674,11 @@ server <- function(input, output, session) {
 
   new_order_items <- reactiveVal()  # 初始化为空数据框
   
+  observe({
+    req(new_order_items())  # 确保 new_order_items 存在
+    renderOrderItems(output, "order_items_cards", new_order_items())
+  })
+  
   observeEvent(input$us_shipping_sku_input, {
     req(input$us_shipping_sku_input)  # 确保输入不为空
 
@@ -1709,12 +1714,6 @@ server <- function(input, output, session) {
 
     # 清空输入框
     updateTextInput(session, "us_shipping_sku_input", value = "")
-  })
-
-  observeEvent(input$us_shipping_sku_input, {
-    req(new_order_items())  # 确保 new_order_items 存在
-    
-    renderOrderItems(output, "order_items_cards", new_order_items())
   })
 
   observeEvent(input$delete_card, {
