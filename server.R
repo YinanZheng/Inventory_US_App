@@ -1742,7 +1742,7 @@ server <- function(input, output, session) {
   })
   
   
-  observeEvent(input$confirm_shipping, {
+  observeEvent(input$us_ship_order_btn, {
     req(new_orders(), order_items())  # 确保当前订单和物品存在
     
     # 获取当前订单信息和物品
