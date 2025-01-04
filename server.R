@@ -1642,7 +1642,7 @@ server <- function(input, output, session) {
 
     # 创建动态订单数据
     data.frame(
-      OrderID = trimws(input$us_shipping_bill_number),  # 运单号即订单号
+      OrderID = "",
       UsTrackingNumber = trimws(input$us_shipping_bill_number),
       CustomerName = "",  # 留空
       CustomerNickname = "",  # 留空
@@ -1740,12 +1740,33 @@ server <- function(input, output, session) {
   })
   
   
+  generate_order_id <- function(tracking_number, unique_ids) {
+    # 将运单号和所有 UniqueID 拼接成字符串
+    input_string <- paste0(tracking_number, paste(unique_ids, collapse = ""))
+    
+    # 生成 SHA-256 哈希值
+    hashed <- digest::digest(input_string, algo = "sha256", serialize = FALSE)
+    
+    # 截取前九位作为订单 ID
+    order_id <- toupper(substr(hashed, 1, 9))
+    
+    return(order_id)
+  }
+  
   observeEvent(input$us_ship_order_btn, {
     req(new_orders(), new_order_items())  # 确保当前订单和物品存在
     
     # 获取当前订单信息和物品
     order <- new_orders()
     items <- new_order_items()
+    
+    if (nrow(items) == 0) {
+      showNotification("没有物品需要发货！", type = "error")
+      return()
+    }
+    
+    # 生成唯一订单 ID
+    generated_order_id <- generate_order_id(order$UsTrackingNumber, items$UniqueID)
     
     tryCatch({
       # 开始数据库事务
@@ -1756,7 +1777,7 @@ server <- function(input, output, session) {
                 "INSERT INTO orders (OrderID, UsTrackingNumber, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderNotes, OrderStatus, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())", 
                 params = list(
-                  order$OrderID, 
+                  generated_order_id, 
                   order$UsTrackingNumber, 
                   order$CustomerName, 
                   order$CustomerNickname, 
@@ -1786,15 +1807,21 @@ server <- function(input, output, session) {
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
       # # 清空输入框和当前数据
-      # new_order_items(NULL)
-      # current_order_id(NULL)
-      # updateTextInput(session, "us_shipping_bill_number", value = "")
-      # updateTextInput(session, "us_shipping_sku_input", value = "")
-      # updateTextAreaInput(session, "us_shipping_order_notes", value = "")
+      new_order_items(NULL)
+      current_order_id(NULL)
+      updateTextInput(session, "us_shipping_bill_number", value = "")
+      updateTextInput(session, "us_shipping_sku_input", value = "")
+      updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
+      updateTextAreaInput(session, "us_shipping_order_notes", value = "")
       
       # 显示成功通知
-      showNotification("订单已成功发货！", type = "message")
-      
+      showNotification(
+        paste0(
+          "订单已成功发货！订单号为：", generated_order_id, 
+          "，总计发货物品：", nrow(items), " 件。"
+        ),
+        type = "message"
+      )      
     }, error = function(e) {
       # 回滚事务
       dbRollback(con)
