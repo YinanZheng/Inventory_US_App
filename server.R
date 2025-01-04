@@ -1449,27 +1449,22 @@ server <- function(input, output, session) {
     unique_items_data() %>% filter(OrderID == current_order_id())
   })
   
-  
   ### 渲染
   
   # 渲染订单信息卡片
   observe({
-    req(matching_orders())  # 确保 matching_orders 存在
+    req(matching_orders())
     
-    # 如果 matching_orders 为空，则清空渲染
     if (nrow(matching_orders()) == 0) {
       renderOrderInfo(output, "order_info_card", data.frame())  # 清空订单信息卡片
       current_order_id(NULL)  # 清空当前订单 ID
       return()
     }
     
-    # 渲染订单信息
     renderOrderInfo(output, "order_info_card", matching_orders())
     
-    # 检查是否所有订单状态均为“装箱”
     all_packed <- all(matching_orders()$OrderStatus == "装箱")
-    
-    if (nrow(matching_orders()) > 0 && all_packed) {
+    if (all_packed) {
       showModal(modalDialog(
         title = "运单完成提示",
         "当前运单号所对应的所有订单已完成装箱操作！",
@@ -1494,16 +1489,21 @@ server <- function(input, output, session) {
   })
   
   # 渲染物品信息卡片  
-  order_items <- reactive({
-    if (is.null(current_order_id()) || trimws(current_order_id()) == "") {
-      return(data.frame())  # 返回空数据框
+  observe({
+    req(order_items())
+    
+    if (nrow(order_items()) == 0) {
+      renderOrderItems(output, "order_items_cards", data.frame())  # 清空物品卡片
+      return()
     }
-    req(current_order_id())
-    unique_items_data() %>% filter(OrderID == current_order_id())
+    
+    renderOrderItems(output, "order_items_cards", order_items())
   })
   
   
   ### 逻辑
+  
+  # 清空逻辑
   observeEvent(input$shipping_bill_number, {
     if (trimws(input$shipping_bill_number) == "") {
       current_order_id(NULL)  # 清空当前订单 ID
