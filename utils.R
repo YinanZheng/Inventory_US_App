@@ -1319,7 +1319,7 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
       
       # 如果卡片不可点击，不设置 onclick 事件
       onclick_script <- if (clickable) {
-        sprintf("Shiny.setInputValue('selected_order_id', '%s', {priority: 'event'})", order$OrderID)
+        sprintf("Shiny.setInputValue('selected_order_id', '%s', {priority: 'event'})", order_info$OrderID)
       } else {
         NULL
       }
