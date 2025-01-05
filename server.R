@@ -1575,7 +1575,6 @@ server <- function(input, output, session) {
         ),
         footer = tagList(
           modalButton("取消"),
-          actionButton("confirm_ship_empty_order_btn", "确认手动发货", class = "btn-primary")
         ),
         easyClose = FALSE
       ))
