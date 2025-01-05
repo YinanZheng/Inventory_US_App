@@ -1734,20 +1734,6 @@ server <- function(input, output, session) {
     
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
-
-  observeEvent(input$delete_card, {
-    req(input$delete_card, new_order_items())  # 确保输入和数据存在
-    
-    # 获取当前数据
-    current_items <- new_order_items()
-    
-    # 移除被点击的物品
-    updated_items <- current_items %>% filter(UniqueID != input$delete_card)
-    new_order_items(updated_items)  # 更新数据
-    
-    # 提示删除成功
-    showNotification("物品已删除。", type = "message")
-  })
   
   observeEvent(input$us_ship_order_btn, {
     req(new_order(), new_order_items())
