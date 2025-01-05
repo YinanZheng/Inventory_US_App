@@ -1834,6 +1834,9 @@ server <- function(input, output, session) {
       dbRollback(con)
       showNotification(paste("发货失败：", e$message), type = "error")
     })
+    
+    # 发完货清空
+    updateTextInput(session, "us_shipping_bill_number", value = "")
   })
 
   # 订单物品删除逻辑 （美国售出only）
