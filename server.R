@@ -1651,7 +1651,7 @@ server <- function(input, output, session) {
     if (is.null(current_order_id()) || nrow(order_items()) > 0) {
       return(NULL)  # 如果订单内有物品或没有订单，隐藏按钮
     }
-    actionButton("ship_order_btn", "发货", icon = icon("paper-plane"), class = "btn-success", style = "width: 50%;")
+    actionButton("ship_order_btn", "发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;", width = "50%")
   })
   
   # “发货”按钮功能
