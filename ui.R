@@ -373,19 +373,7 @@ ui <- navbarPage(
             column(6, textInput("customer_name", "顾客姓名", placeholder = "请输入", width = "100%")),
             column(6, textInput("customer_netname", "顾客网名", placeholder = "请输入", width = "100%"))
           ),
-          
-          fluidRow(
-            column(3, checkboxInput("is_transfer_order", "调货", value = FALSE)),
-            column(3, checkboxInput("is_preorder", "预订", value = FALSE)),
-            column(6, selectizeInput(
-              "preorder_supplier",
-              "预订单供应商:",
-              choices = NULL,
-              width = "100%",
-              options = list(placeholder = '填选供应商...', maxOptions = 500)
-            ))
-          ),
-          
+
           # 运单号
           textInput("tracking_number", "运单号", placeholder = "请输入运单号", width = "100%"),
           

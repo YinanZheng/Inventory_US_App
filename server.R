@@ -800,38 +800,6 @@ server <- function(input, output, session) {
         updateTextInput(session, "customer_name", value = existing_order$CustomerName[1])
         updateTextInput(session, "customer_netname", value = existing_order$CustomerNetName[1])
         
-        if (!is.null(existing_order$OrderStatus[1]) && !is.na(existing_order$OrderStatus[1])) {
-          if (existing_order$OrderStatus[1] == "调货") {
-            updateCheckboxInput(session, "is_transfer_order", value = TRUE)
-            updateCheckboxInput(session, "is_preorder", value = FALSE)  # 确保互斥
-          } else if (existing_order$OrderStatus[1] == "预定") {
-            updateCheckboxInput(session, "is_transfer_order", value = FALSE)  # 确保互斥
-            updateCheckboxInput(session, "is_preorder", value = TRUE)
-            
-            # 从备注中提取预定供应商
-            if (!is.null(existing_order$OrderNotes[1]) && !is.na(existing_order$OrderNotes[1])) {
-              supplier_prefix <- "【供应商】"
-              # 使用正则表达式提取供应商信息
-              supplier_match <- regmatches(existing_order$OrderNotes[1], 
-                                           regexpr(paste0(supplier_prefix, "(.*?)；"), existing_order$OrderNotes[1]))
-              if (length(supplier_match) > 0) {
-                supplier_name <- sub(paste0(supplier_prefix, "(.*?)；"), "\\1", supplier_match)  # 提取中间的供应商名称
-                updateSelectizeInput(session, "preorder_supplier", selected = supplier_name)  # 更新下拉菜单
-              }
-            }
-          } else {
-            # 其他情况，全部复选框设为 FALSE
-            updateCheckboxInput(session, "is_transfer_order", value = FALSE)
-            updateCheckboxInput(session, "is_preorder", value = FALSE)
-            updateSelectizeInput(session, "preorder_supplier", selected = NULL)  # 清空供应商下拉菜单
-          }
-        } else {
-          # 如果 OrderStatus 为空或 NULL，清空复选框和下拉菜单
-          updateCheckboxInput(session, "is_transfer_order", value = FALSE)
-          updateCheckboxInput(session, "is_preorder", value = FALSE)
-          updateSelectizeInput(session, "preorder_supplier", selected = NULL)
-        }
-        
         updateTextInput(session, "tracking_number", value = existing_order$UsTrackingNumber[1])
         updateTextAreaInput(session, "order_notes", value = existing_order$OrderNotes[1])
         
@@ -876,37 +844,6 @@ server <- function(input, output, session) {
       # 捕获错误并通知用户
       showNotification(paste("检查订单时发生错误：", e$message), type = "error")
     })
-  })
-  
-  # 确保调货和预定两个勾选框互斥
-  observeEvent(input$is_transfer_order, {
-    if (input$is_transfer_order) {
-      updateCheckboxInput(session, "is_preorder", value = FALSE)
-    }
-  })
-  
-  # 确保调货和预定两个勾选框互斥
-  observeEvent(input$is_preorder, {
-    if (input$is_preorder) {
-      updateCheckboxInput(session, "is_transfer_order", value = FALSE)
-    }
-  })
-  
-  # 动态填充供应商选择器
-  observe({
-    update_maker_choices(session, "preorder_supplier", maker_list())
-  })
-  
-  # 控制预订单供应商选择器的显示
-  observeEvent(input$is_preorder, {
-    if (input$is_preorder) {
-      # 显示供应商选择器
-      shinyjs::show("preorder_supplier")
-    } else {
-      # 隐藏供应商选择器并清空选择
-      shinyjs::hide("preorder_supplier")
-      updateSelectizeInput(session, "preorder_supplier", selected = NULL)
-    }
   })
   
   # 登记订单逻辑
