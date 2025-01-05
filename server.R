@@ -1725,10 +1725,18 @@ server <- function(input, output, session) {
       }
     }
 
-    # 添加 SKU 到物品列表
-    item_info <- unique_items_data() %>%
-      filter(SKU == new_sku & Status == "美国入库") %>%
-      slice(1)
+    # 筛选未被选择的物品
+    available_items <- unique_items_data() %>%
+      filter(SKU == new_sku & Status == "美国入库" & !(UniqueID %in% current_items$UniqueID))
+    
+    if (nrow(available_items) == 0) {
+      showNotification("该 SKU 的库存已用尽！", type = "error")
+      updateTextInput(session, "us_shipping_sku_input", value = "")
+      return()
+    }
+    
+    # 添加未被选择的第一件物品
+    item_info <- available_items %>% slice(1)
     current_items <- rbind(current_items, item_info)
     new_order_items(current_items)
 
