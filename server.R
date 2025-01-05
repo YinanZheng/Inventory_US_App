@@ -1735,6 +1735,14 @@ server <- function(input, output, session) {
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
 
+  # 清空运单号逻辑
+  observeEvent(input$us_shipping_bill_number, {
+    if (trimws(input$us_shipping_bill_number) == "") {
+      output$order_items_title <- renderUI({ NULL })  # 清空标题
+      renderOrderItems(output, "order_items_cards", data.frame())  # 清空物品卡片
+    }
+  })
+  
   observeEvent(input$us_ship_order_btn, {
     req(new_order(), new_order_items())
 
