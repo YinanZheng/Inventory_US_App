@@ -463,6 +463,10 @@ server <- function(input, output, session) {
         showNotification("自动入库失败，可能物品已全部入库或数据异常！", type = "error")
       }
       
+      # 刷新 UI 和数据
+      inventory(dbGetQuery(con, "SELECT * FROM inventory"))
+      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
+      
       # 清空 SKU 输入框
       updateTextInput(session, "inbound_sku", value = "")
     } else {
