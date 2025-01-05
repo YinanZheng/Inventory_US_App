@@ -1646,38 +1646,38 @@ server <- function(input, output, session) {
       group_by(SKU) %>%
       summarise(StockQuantity = n(), .groups = "drop")
   })
-  
-  # 动态生成订单
-  new_order <- reactive({
-    req(input$us_shipping_bill_number, input$us_shipping_platform)
-    
-    # 如果平台未选择或运单号为空，返回 NULL
-    if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
-      return(NULL)
-    }
-    
-    # 确保 new_order_items 存在
-    req(new_order_items())
-    
-    # 生成订单 ID
-    generated_order_id <- generate_order_id(
-      trimws(input$us_shipping_bill_number),
-      new_order_items()$UniqueID
-    )
-    
-    # 创建动态订单数据
-    data.frame(
-      OrderID = generated_order_id,
-      UsTrackingNumber = trimws(input$us_shipping_bill_number),
-      CustomerName = "",
-      CustomerNickname = "",
-      Platform = input$us_shipping_platform,
-      OrderImagePath = "",
-      OrderNotes = trimws(input$us_shipping_order_notes),
-      OrderStatus = "备货",
-      stringsAsFactors = FALSE
-    )
-  })
+  # 
+  # # 动态生成订单
+  # new_order <- reactive({
+  #   req(input$us_shipping_bill_number, input$us_shipping_platform)
+  #   
+  #   # 如果平台未选择或运单号为空，返回 NULL
+  #   if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
+  #     return(NULL)
+  #   }
+  #   
+  #   # 确保 new_order_items 存在
+  #   req(new_order_items())
+  #   
+  #   # 生成订单 ID
+  #   generated_order_id <- generate_order_id(
+  #     trimws(input$us_shipping_bill_number),
+  #     new_order_items()$UniqueID
+  #   )
+  #   
+  #   # 创建动态订单数据
+  #   data.frame(
+  #     OrderID = generated_order_id,
+  #     UsTrackingNumber = trimws(input$us_shipping_bill_number),
+  #     CustomerName = "",
+  #     CustomerNickname = "",
+  #     Platform = input$us_shipping_platform,
+  #     OrderImagePath = "",
+  #     OrderNotes = trimws(input$us_shipping_order_notes),
+  #     OrderStatus = "备货",
+  #     stringsAsFactors = FALSE
+  #   )
+  # })
 # 
 #   # 动态渲染订单卡片
 #   observe({
