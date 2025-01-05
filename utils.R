@@ -453,6 +453,18 @@ update_order_id <- function(con, unique_id, order_id) {
   })
 }
 
+# 定义确认框
+deleteConfirmationModal <- function(item_count) {
+  modalDialog(
+    title = "确认删除",
+    paste0("您已选择 ", item_count, " 件物品。这些物品删除后将无法恢复。是否继续？"),
+    footer = tagList(
+      modalButton("取消"),
+      actionButton("confirm_delete_final", "确认删除", class = "btn-danger")
+    )
+  )
+}
+
 fetchSkuData <- function(sku, con) {
   query <- "
     SELECT 
