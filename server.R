@@ -873,8 +873,6 @@ server <- function(input, output, session) {
         updateSelectInput(session, "platform", selected = "")
         updateTextInput(session, "customer_name", value = "")
         updateTextInput(session, "customer_netname", value = "")
-        updateCheckboxInput(session, "is_preorder", value = FALSE)
-        updateCheckboxInput(session, "is_transfer_order", value = FALSE)
         updateTextInput(session, "tracking_number", value = "")
         image_sold$reset()
         updateTextAreaInput(session, "order_notes", value = "")
@@ -923,10 +921,7 @@ server <- function(input, output, session) {
       con = con,
       orders = orders,
       box_items = box_items,
-      unique_items_data = unique_items_data,
-      is_transfer_order = input$is_transfer_order,
-      is_preorder = input$is_preorder,
-      preorder_supplier = input$preorder_supplier
+      unique_items_data = unique_items_data
     )
     
     # 更新订单表格
@@ -1124,10 +1119,7 @@ server <- function(input, output, session) {
         con = con,
         orders = orders,
         box_items = box_items,
-        unique_items_data = unique_items_data,
-        is_transfer_order = input$is_transfer_order,
-        is_preorder = input$is_preorder,
-        preorder_supplier = input$preorder_supplier
+        unique_items_data = unique_items_data
       )
 
       # 如果订单登记失败，直接退出

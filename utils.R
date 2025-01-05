@@ -860,8 +860,12 @@ add_defective_note <- function(con, unique_id, note_content, status_label = "瑕
 
 register_order <- function(order_id, customer_name, customer_netname, platform, order_notes, tracking_number, 
                            image_data, con, orders, box_items, unique_items_data, 
-                           is_transfer_order, is_preorder, preorder_supplier = NULL) {
+                           is_transfer_order = NULL, is_preorder = NULL, preorder_supplier = NULL) {
   tryCatch({
+    # 将 NULL 的 is_transfer_order 和 is_preorder 设置为默认值 FALSE
+    is_transfer_order <- is_transfer_order %||% FALSE
+    is_preorder <- is_preorder %||% FALSE
+    
     # 查询是否已有相同订单号的记录
     existing_order <- orders() %>% filter(OrderID == order_id)
     
