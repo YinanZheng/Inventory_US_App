@@ -1805,12 +1805,20 @@ server <- function(input, output, session) {
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
 
-  # 清空运单号逻辑
-  observeEvent(input$us_shipping_bill_number, {
-    if (trimws(input$us_shipping_bill_number) == "") {
+  # 运单号输入、清空后的反应逻辑
+  debounced_us_shipping_bill_number <- debounce(reactive(input$us_shipping_bill_number), 500)
+  
+  observe({
+    # 获取延迟后的输入值
+    bill_number <- trimws(debounced_us_shipping_bill_number())
+    
+    if (bill_number == "") {
       renderOrderInfo(output, "order_info_card", data.frame())  # 清空订单信息卡片
       output$order_items_title <- renderUI({ NULL })  # 清空标题
       renderOrderItems(output, "order_items_cards", data.frame())  # 清空物品卡片
+    } else {
+      # 延迟后执行的逻辑
+      runjs("document.getElementById('us_shipping_sku_input').focus();")
     }
   })
   
