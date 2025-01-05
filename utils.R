@@ -1392,8 +1392,7 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
   })
 }
 
-# 动态渲染物品卡片
-renderOrderItems <- function(output, output_name, order_items) {
+renderOrderItems <- function(output, output_name, order_items, deletable = FALSE) {
   # 如果没有物品，返回提示信息
   if (nrow(order_items) == 0) {
     output[[output_name]] <- renderUI({
@@ -1435,19 +1434,29 @@ renderOrderItems <- function(output, output_name, order_items) {
         id = paste0("card_", i),  # 设置唯一 ID
         class = "card",
         style = "position: relative; display: inline-block; padding: 10px; width: 230px; text-align: center; 
-                 border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1); 
-                 cursor: pointer;",  # 添加鼠标悬停效果
-        onclick = sprintf("Shiny.setInputValue('delete_card', '%s', {priority: 'event'})", item$UniqueID),  # 设置点击事件
+                 border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);",
         
         mask_overlay,  # 动态显示蒙版
         
         div(
-          style = "margin-bottom: 10px;",
+          style = "margin-bottom: 10px; position: relative;",
           tags$img(
             src = item_img_path,
             style = "height: 150px; object-fit: cover; border-radius: 8px;"  # 图片高度固定为150px
-          )
+          ),
+          if (deletable) {
+            tags$button(
+              class = "btn btn-danger btn-sm delete-btn",
+              type = "button",
+              style = "position: absolute; top: 5px; right: 5px;",
+              onclick = sprintf("Shiny.setInputValue('delete_card', '%s', {priority: 'event'})", item$UniqueID),
+              tags$i(class = "fas fa-trash-alt")
+            )
+          } else {
+            NULL
+          }
         ),
+        
         tags$table(
           style = "width: 100%; font-size: 12px; color: #333;",
           tags$tr(
