@@ -1697,7 +1697,7 @@ server <- function(input, output, session) {
   # 动态渲染订单物品卡片
   observe({
     req(new_order_items())
-    renderOrderItems(output, "order_items_cards", new_order_items())
+    renderOrderItems(output, "order_items_cards", new_order_items(), deletable = TRUE)
   })
 
   observeEvent(input$us_shipping_sku_input, {
