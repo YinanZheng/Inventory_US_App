@@ -33,6 +33,8 @@ source("./modules/imageModuleServer.R", local = TRUE)
 source("./modules/orderTableServer.R", local = TRUE)
 source("./modules/itemFilterServer.R", local = TRUE)
 
+source("utils.R", local = TRUE)
+
 # 定义轮询间隔（以毫秒为单位）
 poll_interval <<- 10000  # 每 10 秒检查一次
 
