@@ -1635,44 +1635,9 @@ server <- function(input, output, session) {
   
   ##############################################################################################
 
-
-  new_orders <- reactive({
-    req(input$us_shipping_bill_number, input$us_shipping_platform)  # 确保运单号和平台存在
-
-    # 如果平台未选择或运单号为空，返回 NULL
-    if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
-      return(NULL)
-    }j
-
-    # 创建动态订单数据
-    data.frame(
-      OrderID = new_order_id(),
-      UsTrackingNumber = trimws(input$us_shipping_bill_number),
-      CustomerName = "",  # 留空
-      CustomerNickname = "",  # 留空
-      Platform = input$us_shipping_platform,
-      OrderImagePath = "",  # 默认空
-      OrderNotes = trimws(input$us_shipping_order_notes),  # 填写的备注
-      OrderStatus = "备货",  # 默认状态
-      stringsAsFactors = FALSE
-    )
-  })
-
-  observe({
-    req(new_orders())  # 确保 new_orders 存在
-
-    # 动态渲染订单卡片
-    renderOrderInfo(output, "order_info_card", new_orders(), clickable = FALSE)
-
-    # 更新标题
-    output$order_items_title <- renderUI({
-      tags$h4(
-        HTML(paste0(as.character(icon("box")), " 订单号 ", new_order_id(), " 的物品")),
-        style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
-      )
-    })
-  })
-
+  # 
+  new_order_items <- reavtiveVal()
+  
   # 计算 SKU 的有效库存数量
   stock_data <- reactive({
     req(unique_items_data())  # 确保数据存在
@@ -1681,37 +1646,77 @@ server <- function(input, output, session) {
       group_by(SKU) %>%
       summarise(StockQuantity = n(), .groups = "drop")
   })
-
-
-  new_order_items <- reactiveVal()  # 初始化为空数据框
   
-  new_order_id <- reactive(generate_order_id(new_orders()$UsTrackingNumber, new_order_items()$UniqueID))
-  
+  # 动态生成订单
+  new_order <- reactive({
+    req(input$us_shipping_bill_number, input$us_shipping_platform)
+    
+    # 如果平台未选择或运单号为空，返回 NULL
+    if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
+      return(NULL)
+    }
+    
+    # 确保 new_order_items 存在
+    req(new_order_items())
+    
+    # 生成订单 ID
+    generated_order_id <- generate_order_id(
+      trimws(input$us_shipping_bill_number),
+      new_order_items()$UniqueID
+    )
+    
+    # 创建动态订单数据
+    data.frame(
+      OrderID = generated_order_id,
+      UsTrackingNumber = trimws(input$us_shipping_bill_number),
+      CustomerName = "",
+      CustomerNickname = "",
+      Platform = input$us_shipping_platform,
+      OrderImagePath = "",
+      OrderNotes = trimws(input$us_shipping_order_notes),
+      OrderStatus = "备货",
+      stringsAsFactors = FALSE
+    )
+  })
+
+  # 动态渲染订单卡片
   observe({
-    req(new_order_items())  # 确保 new_order_items 存在
-    renderOrderItems(output, "order_items_cards", new_order_items())
+    req(new_order())
+    
+    renderOrderInfo(output, "order_info_card", new_order(), clickable = FALSE)
+    
+    # 更新标题
+    output$order_items_title <- renderUI({
+      tags$h4(
+        HTML(paste0(as.character(icon("box")), " 订单号 ", new_order()$OrderID, " 的物品")),
+        style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+      )
+    })
   })
   
+  # 动态渲染订单物品卡片
+  observe({
+    req(new_order_items())
+    renderOrderItems(output, "order_items_cards", new_order_items())
+  })
+
   observeEvent(input$us_shipping_sku_input, {
-    req(input$us_shipping_sku_input)  # 确保输入不为空
-
-    # 用户输入的 SKU
+    req(input$us_shipping_sku_input)
+    
+    # 获取输入 SKU
     new_sku <- trimws(input$us_shipping_sku_input)
-
+    
     # 校验 SKU 是否有效
     valid_sku <- stock_data() %>% filter(SKU == new_sku)
-
     if (nrow(valid_sku) == 0) {
       showNotification("输入的 SKU 不存在或状态不为 '美国入库'！", type = "error")
       updateTextInput(session, "us_shipping_sku_input", value = "")
       return()
     }
-
-    # 获取当前 SKU 列表
-    current_items <- new_order_items()
-
+    
+    # 获取当前物品
+    current_items <- new_order_items() %>% replace_na(list())
     if (!is.null(current_items)) {
-      # 检查是否超过库存限制
       existing_count <- sum(current_items$SKU == new_sku)
       if (existing_count >= valid_sku$StockQuantity[1]) {
         showNotification(paste0("输入的 SKU '", new_sku, "' 已达到库存上限！"), type = "error")
@@ -1720,14 +1725,13 @@ server <- function(input, output, session) {
       }
     }
     
-    # 添加 SKU 到 new_order_items
-    item_info <- unique_items_data() %>% filter(SKU == new_sku & Status == "美国入库") %>% slice(1)
+    # 添加 SKU 到物品列表
+    item_info <- unique_items_data() %>%
+      filter(SKU == new_sku & Status == "美国入库") %>%
+      slice(1)
     current_items <- rbind(current_items, item_info)
-    new_order_items(current_items)  # 更新 new_order_items
-
-    new_order_id <- generate_order_id(new_orders()$UsTrackingNumber, new_order_items()$UniqueID)
+    new_order_items(current_items)
     
-    # 清空输入框
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
 
@@ -1746,10 +1750,9 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$us_ship_order_btn, {
-    req(new_orders(), new_order_items())  # 确保当前订单和物品存在
+    req(new_order(), new_order_items())
     
-    # 获取当前订单信息和物品
-    order <- new_orders()
+    order <- new_order()
     items <- new_order_items()
     
     if (nrow(items) == 0) {
@@ -1758,77 +1761,54 @@ server <- function(input, output, session) {
     }
     
     tryCatch({
-      # 开始数据库事务
-      dbBegin(con)  # 假设 `con` 是数据库连接对象
+      dbBegin(con)
       
-      # 1. 添加订单到 `orders` 表，并更新状态为 "装箱"
+      # 插入订单到 `orders` 表
       dbExecute(con, 
                 "INSERT INTO orders (OrderID, UsTrackingNumber, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderNotes, OrderStatus, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())", 
                 params = list(
-                  generated_order_id(), 
-                  order$UsTrackingNumber, 
-                  order$CustomerName, 
-                  order$CustomerNickname, 
-                  order$Platform, 
-                  order$OrderImagePath, 
-                  order$OrderNotes, 
+                  order$OrderID,
+                  order$UsTrackingNumber,
+                  order$CustomerName,
+                  order$CustomerNickname,
+                  order$Platform,
+                  order$OrderImagePath,
+                  order$OrderNotes,
                   "装箱"
                 )
       )
-
-      # 2. 更新 `unique_items` 表中的物品状态和订单 ID
-      # 拼接 UniqueID 列表
-      unique_ids <- paste0("'", paste(items$UniqueID, collapse = "','"), "'")
       
-      # 批量更新物品状态
+      # 更新物品状态和订单号
+      unique_ids <- paste0("'", paste(items$UniqueID, collapse = "','"), "'")
       dbExecute(con, 
                 sprintf("UPDATE unique_items 
-           SET Status = '美国发货', OrderID = '%s' 
-           WHERE UniqueID IN (%s)", 
-                        generated_order_id(), unique_ids)
+               SET Status = '美国发货', OrderID = '%s' 
+               WHERE UniqueID IN (%s)", 
+                        order$OrderID, unique_ids)
       )
-
-      # 调整库存数量
+      
+      # 调整库存
       for (sku in unique(items$SKU)) {
         adjustment_result <- adjust_inventory(
           con = con,
           sku = sku,
-          adjustment = -nrow(items %>% filter(SKU == sku))  # 减少该 SKU 的总数量
+          adjustment = -nrow(items %>% filter(SKU == sku))
         )
-        
-        if (!adjustment_result) {
-          showNotification(paste("库存调整失败：SKU", sku, "，操作已终止！"), type = "error")
-          stop("库存调整失败")
-        }
+        if (!adjustment_result) stop("库存调整失败")
       }
       
-      # 提交事务
       dbCommit(con)
       
+      # 刷新数据
       orders(dbGetQuery(con, "SELECT * FROM orders"))
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
-      # # 清空输入框和当前数据
-      new_orders(NULL)
-      new_order_items(NULL)
-      new_order_id(NULL)
-      
-      updateTextInput(session, "us_shipping_bill_number", value = "")
-      updateTextInput(session, "us_shipping_sku_input", value = "")
-      updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
-      updateTextAreaInput(session, "us_shipping_order_notes", value = "")
-      
-      # 显示成功通知
       showNotification(
-        paste0(
-          "订单已成功发货！订单号为：", generated_order_id, 
-          "，总计发货物品：", nrow(items), " 件。"
-        ),
+        paste0("订单已成功发货！订单号：", order$OrderID, "，共发货 ", nrow(items), " 件。"),
         type = "message"
-      )      
+      )
     }, error = function(e) {
-      # 回滚事务
       dbRollback(con)
       showNotification(paste("发货失败：", e$message), type = "error")
     })
