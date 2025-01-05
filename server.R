@@ -1858,6 +1858,7 @@ server <- function(input, output, session) {
   observeEvent(input$clear_us_shipping_bill_btn, {
     updateTextInput(session, "us_shipping_bill_number", value = "")
     updateTextInput(session, "us_shipping_sku_input", value = "")
+    updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
   })
   
   
