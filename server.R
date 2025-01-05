@@ -1817,7 +1817,20 @@ server <- function(input, output, session) {
     })
   })
 
-  
+  # 订单物品删除逻辑 （美国售出only）
+  observeEvent(input$delete_card, {
+    req(input$delete_card, new_order_items())  # 确保输入和物品列表存在
+    
+    # 当前物品列表
+    current_items <- new_order_items()
+    
+    # 移除对应的物品
+    updated_items <- current_items %>% filter(UniqueID != input$delete_card)
+    new_order_items(updated_items)  # 更新物品列表
+    
+    # 提示删除成功
+    showNotification("物品已删除。", type = "message")
+  })
   
 ##########################################################################################  
 ##########################################################################################  
