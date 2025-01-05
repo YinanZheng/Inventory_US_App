@@ -2859,6 +2859,11 @@ server <- function(input, output, session) {
       )
   })
   
+  # 清空sku输入框
+  observeEvent(input$clear_query_sku_btn, {
+    updateTextInput(session, "query_sku", value = "")
+  })
+  
   # 监听查询页选中inventory table (for SKU query and chart summary)
   observeEvent(input$filtered_inventory_table_query_rows_selected, {
     selected_row <- input$filtered_inventory_table_query_rows_selected
@@ -2928,10 +2933,10 @@ server <- function(input, output, session) {
     updateDateRangeInput(session, "download_date_range", start = Sys.Date() - 365, end = Sys.Date())
   })
   
-  # 下载物品表为 Excel
-  output$download_unique_items_xlsx <- downloadHandler(
+  # 下载物品明细表为 Excel
+  output$download_summary_xlsx <- downloadHandler(
     filename = function() {
-      paste("unique_items-", format(Sys.time(), "%Y%m%d-%H%M%S", tz = "Asia/Shanghai"), ".xlsx", sep = "")
+      paste("物品明细表-", format(Sys.time(), "%Y%m%d-%H%M%S", tz = "Asia/Shanghai"), ".xlsx", sep = "")
     },
     content = function(file) {
       # 创建 Excel 文件
@@ -2939,55 +2944,7 @@ server <- function(input, output, session) {
       addWorksheet(wb, "物品明细表")
       
       # 获取数据
-      data <- filtered_unique_items_data_download()
-      req(!is.null(data) && nrow(data) > 0)  # 确保数据非空
-      
-      data <- map_column_names(data, column_mapping = list(
-        SKU = "条形码",
-        ItemName = "商品名",
-        ItemImagePath = "商品图片",
-        Maker = "供应商",
-        MajorType = "大类",
-        MinorType = "小类",
-        ProductCost = "单价",
-        DomesticShippingCost = "平摊运费",
-        PurchaseTime = "采购日期",
-        Status = "库存状态",
-        Defect = "物品状态"
-      ))
-      
-      # 按 SKU 计算全局库存统计
-      sku_inventory_stats <- data %>%
-        group_by(`条形码`) %>%
-        summarize(
-          总剩余库存数 = sum(`库存状态` %in% c("国内入库", "国内出库", "美国入库")),
-          国内库存数 = sum(`库存状态` == "国内入库"),
-          在途库存数 = sum(`库存状态` == "国内出库"),
-          美国库存数 = sum(`库存状态` == "美国入库"),
-          无瑕 = sum(`物品状态` == "无瑕"),
-          瑕疵 = sum(`物品状态` == "瑕疵"),
-          修复 = sum(`物品状态` == "修复"),
-          .groups = "drop"
-        )
-      
-      # 按条形码和采购日期分组，统计其他信息
-      grouped_data <- data %>%
-        group_by(`条形码`, `采购日期`) %>%
-        summarize(
-          商品名 = first(`商品名`),
-          商品图片 = first(`商品图片`),
-          供应商 = first(`供应商`),
-          大类 = first(`大类`),
-          小类 = first(`小类`),
-          批次单价 = mean(`单价`, na.rm = TRUE),
-          批次平摊运费 = mean(`平摊运费`, na.rm = TRUE),
-          批次采购数 = n(),  # 记录数
-          .groups = "drop"
-        )
-      
-      # 合并全局统计到分组数据
-      final_data <- grouped_data %>%
-        left_join(sku_inventory_stats, by = "条形码")
+      final_data <- filtered_unique_items_data_download()
       
       n_col <- ncol(final_data)
       
@@ -2995,7 +2952,7 @@ server <- function(input, output, session) {
       writeData(wb, "物品明细表", final_data, startCol = 1, startRow = 1)
       
       # 图片插入的列号
-      col_to_insert <- which(colnames(final_data) == "商品图片")
+      col_to_insert <- which(colnames(final_data) == "ItemImagePath")
       
       # 设置固定高度 1 inch，计算动态宽度
       image_height <- 1

@@ -788,7 +788,8 @@ ui <- navbarPage(
           class = "card",
           style = "margin-bottom: 20px; padding: 20px; border: 1px solid #007BFF; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
           tags$h4("查询商品", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
-          textInput("query_sku", NULL, placeholder = "请扫描或输入SKU", width = "100%")
+          textInput("query_sku", NULL, placeholder = "请扫描或输入SKU", width = "100%"),
+          actionButton("clear_query_sku_btn", "清空", icon = icon("eraser"), class = "btn btn-warning")
         )
       ),
       div(
@@ -942,8 +943,12 @@ ui <- navbarPage(
         
         tags$hr(),
         
-        downloadButton("download_unique_items_xlsx", "下载物品明细表 (Excel)", 
-                       class = "btn-primary", style = "width: 100%;")
+        downloadButton(
+          outputId = "download_details_xlsx",
+          label = "下载物品明细表",
+          class = "btn-primary",
+          style = "width: 100%; margin-top: 10px;"
+        )
         
       ),
       div(
