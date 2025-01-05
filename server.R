@@ -2933,6 +2933,133 @@ server <- function(input, output, session) {
     updateDateRangeInput(session, "download_date_range", start = Sys.Date() - 365, end = Sys.Date())
   })
   
+  
+  # 下载物品汇总表为 Excel
+  output$download_details_xlsx <- downloadHandler(
+    filename = function() {
+      paste("物品汇总表（按采购日期）-", format(Sys.time(), "%Y%m%d-%H%M%S", tz = "Asia/Shanghai"), ".xlsx", sep = "")
+    },
+    content = function(file) {
+      # 创建 Excel 文件
+      wb <- createWorkbook()
+      addWorksheet(wb, "物品汇总表")
+      
+      # 获取数据
+      data <- filtered_unique_items_data_download()
+      req(!is.null(data) && nrow(data) > 0)  # 确保数据非空
+      
+      data <- map_column_names(data, column_mapping = list(
+        SKU = "条形码",
+        ItemName = "商品名",
+        ItemImagePath = "商品图片",
+        Maker = "供应商",
+        MajorType = "大类",
+        MinorType = "小类",
+        ProductCost = "单价",
+        DomesticShippingCost = "平摊运费",
+        PurchaseTime = "采购日期",
+        Status = "库存状态",
+        Defect = "物品状态"
+      ))
+      
+      # 按 SKU 计算全局库存统计
+      sku_inventory_stats <- data %>%
+        group_by(`条形码`) %>%
+        summarize(
+          总剩余库存数 = sum(`库存状态` %in% c("国内入库", "国内出库", "美国入库")),
+          国内库存数 = sum(`库存状态` == "国内入库"),
+          在途库存数 = sum(`库存状态` == "国内出库"),
+          美国库存数 = sum(`库存状态` == "美国入库"),
+          无瑕 = sum(`物品状态` == "无瑕"),
+          瑕疵 = sum(`物品状态` == "瑕疵"),
+          修复 = sum(`物品状态` == "修复"),
+          .groups = "drop"
+        )
+      
+      # 按条形码和采购日期分组，统计其他信息
+      grouped_data <- data %>%
+        group_by(`条形码`, `采购日期`) %>%
+        summarize(
+          商品名 = first(`商品名`),
+          商品图片 = first(`商品图片`),
+          供应商 = first(`供应商`),
+          大类 = first(`大类`),
+          小类 = first(`小类`),
+          批次单价 = mean(`单价`, na.rm = TRUE),
+          批次平摊运费 = mean(`平摊运费`, na.rm = TRUE),
+          批次采购数 = n(),  # 记录数
+          .groups = "drop"
+        )
+      
+      # 合并全局统计到分组数据
+      final_data <- grouped_data %>%
+        left_join(sku_inventory_stats, by = "条形码")
+      
+      n_col <- ncol(final_data)
+      
+      # 写入数据到 Excel
+      writeData(wb, "物品汇总表", final_data, startCol = 1, startRow = 1)
+      
+      # 图片插入的列号
+      col_to_insert <- which(colnames(final_data) == "商品图片")
+      
+      # 设置固定高度 1 inch，计算动态宽度
+      image_height <- 1
+      
+      # 插入图片到 Excel
+      for (i in seq_len(nrow(final_data))) {
+        image_path <- as.character(final_data[i, col_to_insert])
+        
+        image_width_max <- 1
+        
+        if (!is.na(image_path) && file.exists(image_path)) {
+          
+          # 获取图片的实际宽高比
+          dims <- get_image_dimensions(image_path)
+          width_ratio <- dims$width / dims$height  # 宽高比
+          
+          row_to_insert <- i + 1  # 对应数据的行号
+          
+          image_width <- image_height * width_ratio  # 动态宽度（英寸）
+          
+          # 更新最大宽度
+          image_width_max <- max(image_width_max, image_width)
+          
+          insertImage(
+            wb = wb,
+            sheet = "物品汇总表",
+            file = normalizePath(image_path),
+            startRow = row_to_insert,
+            startCol = col_to_insert,
+            width = image_width,
+            height = image_height,
+            units = "in"
+          )
+          
+          # 清空路径数据
+          writeData(wb, "物品汇总表", "", startCol = col_to_insert, startRow = i + 1)
+          
+          # 调整行高和列宽
+          setRowHeights(wb, "物品汇总表", rows = row_to_insert, heights = image_height * 78)
+          
+        } else {
+          showNotification(paste("跳过不存在的图片:", image_path), type = "warning", duration = 5)
+        }
+      }
+      
+      # 最终设置列宽，保证所有图片适配最大宽度
+      setColWidths(wb, "物品汇总表", cols = col_to_insert, widths = image_width_max * 16)
+      
+      # 自动调整其他列的宽度
+      setColWidths(wb, "物品汇总表", cols = seq_len(n_col)[-col_to_insert], widths = "auto")
+      
+      # 保存 Excel 文件
+      saveWorkbook(wb, file, overwrite = TRUE)
+      showNotification("Excel 文件已成功下载", type = "message", duration = 5)
+    }
+  )
+  
+  
   # 下载物品明细表为 Excel
   output$download_summary_xlsx <- downloadHandler(
     filename = function() {

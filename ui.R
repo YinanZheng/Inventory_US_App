@@ -944,11 +944,19 @@ ui <- navbarPage(
         tags$hr(),
         
         downloadButton(
+          outputId = "download_summary_xlsx",
+          label = "下载物品汇总表（按采购日期）",
+          class = "btn-primary",
+          style = "width: 100%; margin-top: 10px;"
+        ),
+        
+        downloadButton(
           outputId = "download_details_xlsx",
           label = "下载物品明细表",
           class = "btn-primary",
           style = "width: 100%; margin-top: 10px;"
         )
+        
         
       ),
       div(
