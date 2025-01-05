@@ -1434,7 +1434,7 @@ renderOrderItems <- function(output, output_name, order_items, deletable = FALSE
         div(
           style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
                   background: rgba(128, 128, 128, 0.6); display: flex; justify-content: center; align-items: center;
-                  border-radius: 8px;",
+                  border-radius: 8px; z-index: 2;",
           tags$div(
             style = "width: 50px; height: 50px; background: #28a745; border-radius: 50%; display: flex; 
                      justify-content: center; align-items: center;",
