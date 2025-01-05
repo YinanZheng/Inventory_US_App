@@ -1558,7 +1558,7 @@ server <- function(input, output, session) {
   
   # SKU 输入逻辑
   observeEvent(input$sku_input, {
-    req(matching_orders(), input$sku_input)
+    req(input$shipping_bill_number, input$sku_input)
     
     sku <- trimws(input$sku_input)
     
