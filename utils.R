@@ -1279,7 +1279,7 @@ createSearchableDropdown <- function(input_id, label, data, placeholder = "搜�
 
 renderOrderInfo <- function(output, output_name, matching_orders, clickable = TRUE) {
   # 如果没有物品，返回提示信息
-  if (nrow(matching_orders) == 0) {
+  if (is.null(matching_orders) || nrow(matching_orders) == 0) {
     output[[output_name]] <- renderUI({
       div("没有找到匹配的订单")
     })
@@ -1394,7 +1394,7 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
 
 renderOrderItems <- function(output, output_name, order_items, deletable = FALSE) {
   # 如果没有物品，返回提示信息
-  if (nrow(order_items) == 0) {
+  if (is.null(order_items) || nrow(order_items) == 0) {
     output[[output_name]] <- renderUI({
       div("没有找到订单内物品")
     })

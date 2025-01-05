@@ -1633,9 +1633,10 @@ server <- function(input, output, session) {
     showNotification("运单号和 SKU 输入框已清空！", type = "message")
   })
   
+  
   ##############################################################################################
 
-  # 
+  
   new_order_items <- reactiveVal()
   
   # 计算 SKU 的有效库存数量
