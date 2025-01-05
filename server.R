@@ -408,6 +408,13 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # 监听 tab 切换事件
+  observeEvent(input$tabs, {
+    if (input$tabs == "入库") {  # 检测当前是否切换到“入库”页
+      runjs("document.getElementById('inbound_sku').focus();")  # 聚焦到 inbound_sku 输入框
+    }
+  })
+  
   # 物品表过滤模块
   itemFilterServer(
     id = "inbound_filter",
@@ -428,12 +435,44 @@ server <- function(input, output, session) {
       host_url = host_url
     )
     
-    # 设置入库数量最大值
-    if (!is.null(pending_quantity) && pending_quantity > 0) {
-      updateNumericInput(session, "inbound_quantity", max = pending_quantity, value = 1)
-      showNotification(paste0("已更新待入库数量最大值为 ", pending_quantity, "！"), type = "message")
+    # 如果启用自动入库功能，直接执行入库逻辑
+    if (input$auto_inbound && !is.null(pending_quantity) && pending_quantity > 0) {
+      unique_ID <- handleOperation(
+        operation_name = "入库",
+        sku_input = input$inbound_sku,
+        output_name = "inbound_item_info",
+        query_status = "采购",
+        update_status_value = "国内入库",
+        count_label = "待入库数",
+        count_field = "PendingQuantity",
+        con = con,
+        output = output,
+        refresh_trigger = NULL,
+        session = session,
+        input = input
+      )
+      
+      # 检查是否成功处理
+      if (!is.null(unique_ID) && unique_ID != "") {
+        # 更新库存数据
+        adjust_inventory(con, input$inbound_sku, adjustment = 1)
+        
+        # 显示成功通知
+        showNotification(paste0("SKU ", input$inbound_sku, " 的一个物品已自动入库！"), type = "message")
+      } else {
+        showNotification("自动入库失败，可能物品已全部入库或数据异常！", type = "error")
+      }
+      
+      # 清空 SKU 输入框
+      updateTextInput(session, "inbound_sku", value = "")
     } else {
-      updateNumericInput(session, "inbound_quantity", max = 0, value = 0)
+      # 未启用自动入库时更新待入库数量最大值
+      if (!is.null(pending_quantity) && pending_quantity > 0) {
+        updateNumericInput(session, "inbound_quantity", max = pending_quantity, value = 1)
+        showNotification(paste0("已更新待入库数量最大值为 ", pending_quantity, "！"), type = "message")
+      } else {
+        updateNumericInput(session, "inbound_quantity", max = 0, value = 0)
+      }
     }
   })
   
