@@ -1854,6 +1854,12 @@ server <- function(input, output, session) {
     showNotification("物品已删除。", type = "message")
   })
 
+  # 清空逻辑
+  observeEvent(input$clear_us_shipping_bill_btn, {
+    updateTextInput(session, "us_shipping_bill_number", value = "")
+    updateTextInput(session, "us_shipping_sku_input", value = "")
+  })
+  
   
 ##########################################################################################  
 ##########################################################################################  
