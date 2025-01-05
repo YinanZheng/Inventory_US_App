@@ -1574,7 +1574,7 @@ server <- function(input, output, session) {
           style = "font-size: 16px; margin-bottom: 10px;"
         ),
         footer = tagList(
-          modalButton("取消"),
+          modalButton("确认"),
         ),
         easyClose = FALSE
       ))
