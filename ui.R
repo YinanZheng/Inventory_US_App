@@ -206,7 +206,7 @@ ui <- navbarPage(
                 ),
                 checkboxInput(
                   "auto_inbound",  # 勾选框的 inputId
-                  label = "自动入库", 
+                  label = "自动入库（瑕疵信息不会采用）", 
                   value = TRUE  # 默认勾选
                 ),
               ),

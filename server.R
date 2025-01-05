@@ -408,13 +408,6 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  # 监听 tab 切换事件
-  observeEvent(input$tabs, {
-    if (input$tabs == "入库") {  # 检测当前是否切换到“入库”页
-      runjs("document.getElementById('inbound_sku').focus();")  # 聚焦到 inbound_sku 输入框
-    }
-  })
-  
   # 物品表过滤模块
   itemFilterServer(
     id = "inbound_filter",
