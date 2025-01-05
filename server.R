@@ -1784,7 +1784,17 @@ server <- function(input, output, session) {
 
     tryCatch({
       dbBegin(con)
-
+      
+      # 生成拼图路径
+      combined_image_paths <- items$ItemImagePath[!is.na(items$ItemImagePath) & items$ItemImagePath != ""]
+      if (length(combined_image_paths) == 0) {
+        showNotification("无法生成订单图片：没有有效的物品图片路径", type = "warning")
+        order_image_path <- ""
+      } else {
+        montage_path <- paste0("/var/www/images/", order$OrderID, "_montage_", format(Sys.time(), "%Y%m%d%H%M%S"), ".jpg")
+        order_image_path <- generate_montage(combined_image_paths, montage_path)
+      }
+      
       # 插入订单到 `orders` 表
       dbExecute(con,
                 "INSERT INTO orders (OrderID, UsTrackingNumber, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderNotes, OrderStatus, created_at, updated_at)
@@ -1795,7 +1805,7 @@ server <- function(input, output, session) {
                   order$CustomerName,
                   order$CustomerNickname,
                   order$Platform,
-                  order$OrderImagePath,
+                  order_image_path,
                   order$OrderNotes,
                   "装箱"
                 )
