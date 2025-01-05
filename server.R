@@ -1634,50 +1634,50 @@ server <- function(input, output, session) {
   })
   
   ##############################################################################################
-# 
-#   # 
-#   new_order_items <- reavtiveVal()
-#   
-#   # 计算 SKU 的有效库存数量
-#   stock_data <- reactive({
-#     req(unique_items_data())  # 确保数据存在
-#     unique_items_data() %>%
-#       filter(Status == "美国入库", is.na(Defect) | Defect != "瑕疵") %>%  # 确保过滤条件有效
-#       group_by(SKU) %>%
-#       summarise(StockQuantity = n(), .groups = "drop")
-#   })
-#   
-#   # 动态生成订单
-#   new_order <- reactive({
-#     req(input$us_shipping_bill_number, input$us_shipping_platform)
-#     
-#     # 如果平台未选择或运单号为空，返回 NULL
-#     if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
-#       return(NULL)
-#     }
-#     
-#     # 确保 new_order_items 存在
-#     req(new_order_items())
-#     
-#     # 生成订单 ID
-#     generated_order_id <- generate_order_id(
-#       trimws(input$us_shipping_bill_number),
-#       new_order_items()$UniqueID
-#     )
-#     
-#     # 创建动态订单数据
-#     data.frame(
-#       OrderID = generated_order_id,
-#       UsTrackingNumber = trimws(input$us_shipping_bill_number),
-#       CustomerName = "",
-#       CustomerNickname = "",
-#       Platform = input$us_shipping_platform,
-#       OrderImagePath = "",
-#       OrderNotes = trimws(input$us_shipping_order_notes),
-#       OrderStatus = "备货",
-#       stringsAsFactors = FALSE
-#     )
-#   })
+
+  # 
+  new_order_items <- reavtiveVal()
+  
+  # 计算 SKU 的有效库存数量
+  stock_data <- reactive({
+    req(unique_items_data())  # 确保数据存在
+    unique_items_data() %>%
+      filter(Status == "美国入库", is.na(Defect) | Defect != "瑕疵") %>%  # 确保过滤条件有效
+      group_by(SKU) %>%
+      summarise(StockQuantity = n(), .groups = "drop")
+  })
+  
+  # 动态生成订单
+  new_order <- reactive({
+    req(input$us_shipping_bill_number, input$us_shipping_platform)
+    
+    # 如果平台未选择或运单号为空，返回 NULL
+    if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
+      return(NULL)
+    }
+    
+    # 确保 new_order_items 存在
+    req(new_order_items())
+    
+    # 生成订单 ID
+    generated_order_id <- generate_order_id(
+      trimws(input$us_shipping_bill_number),
+      new_order_items()$UniqueID
+    )
+    
+    # 创建动态订单数据
+    data.frame(
+      OrderID = generated_order_id,
+      UsTrackingNumber = trimws(input$us_shipping_bill_number),
+      CustomerName = "",
+      CustomerNickname = "",
+      Platform = input$us_shipping_platform,
+      OrderImagePath = "",
+      OrderNotes = trimws(input$us_shipping_order_notes),
+      OrderStatus = "备货",
+      stringsAsFactors = FALSE
+    )
+  })
 # 
 #   # 动态渲染订单卡片
 #   observe({
