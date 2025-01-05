@@ -1423,6 +1423,9 @@ server <- function(input, output, session) {
 
   ### 数据准备
   
+  # 当前订单ID
+  current_order_id <- reactiveVal()
+  
   # 运单号输入逻辑
   matching_orders <- reactive({
     # 如果运单号为空，返回空数据框
@@ -1438,9 +1441,19 @@ server <- function(input, output, session) {
       arrange(OrderStatus == "装箱")  # 非“装箱”的排在前面，“装箱”的排在后面
   })
   
-  # 当前订单ID
-  current_order_id <- reactiveVal()
-  
+  # 自动设置 current_order_id
+  observe({
+    req(matching_orders())  # 确保 matching_orders 存在
+    
+    if (nrow(matching_orders()) > 0) {
+      # 设置第一个订单的 OrderID 为当前订单 ID
+      current_order_id(matching_orders()$OrderID[1])
+    } else {
+      # 如果没有订单，清空 current_order_id
+      current_order_id(NULL)
+    }
+  })
+
   order_items <- reactive({
     # 如果当前订单 ID 为空，返回空数据框
     if (is.null(current_order_id()) || trimws(current_order_id()) == "") {
