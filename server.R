@@ -1660,6 +1660,11 @@ server <- function(input, output, session) {
     # 确保 new_order_items 存在
     req(new_order_items())
     
+    # 检查物品列表是否为空
+    if (nrow(new_order_items()) == 0) {
+      return(NULL)  # 如果没有物品，返回 NULL
+    }
+    
     # 生成订单 ID
     generated_order_id <- generate_order_id(
       trimws(input$us_shipping_bill_number),
