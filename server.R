@@ -1562,6 +1562,26 @@ server <- function(input, output, session) {
     # 确保选中订单存在
     req(nrow(current_order) > 0)
     
+    # 获取当前订单内的物品
+    current_items <- order_items()
+    
+    if (nrow(current_items) == 0) {
+      # 如果订单内没有物品
+      showModal(modalDialog(
+        title = "订单内无物品",
+        div(
+          "当前订单内未检测到任何物品，请核对订单信息无误后手动发货",
+          style = "font-size: 16px; margin-bottom: 10px;"
+        ),
+        footer = tagList(
+          modalButton("取消"),
+          actionButton("confirm_ship_empty_order_btn", "确认手动发货", class = "btn-primary")
+        ),
+        easyClose = FALSE
+      ))
+      return()  # 停止后续逻辑
+    }
+    
     # 检查订单状态
     if (current_order$OrderStatus[1] != "装箱") {
       runjs("document.getElementById('sku_input').focus();")
