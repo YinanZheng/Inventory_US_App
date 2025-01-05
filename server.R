@@ -1863,6 +1863,7 @@ server <- function(input, output, session) {
       dbCommit(con)
 
       # 刷新数据
+      inventory(dbGetQuery(con, "SELECT * FROM inventory"))
       orders(dbGetQuery(con, "SELECT * FROM orders"))
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
 
