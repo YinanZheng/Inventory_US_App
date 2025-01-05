@@ -540,7 +540,7 @@ ui <- navbarPage(
             selectInput("us_shipping_platform", "平台:", choices = c("请选择" = "", "Etsy" = "Etsy", "Shopify" = "Shopify", "TikTok" = "TikTok"), selected = "TikTok", width = "100%"),
             textAreaInput("us_shipping_order_notes", "订单备注:", placeholder = "请输入订单备注", width = "100%", height = "80px"),
             actionButton("us_ship_order_btn", "发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;"),
-            actionButton("clear_us_shipping_bill_btn", "清空", icon = icon("trash-alt"), class = "btn-danger", style = "margin-top: 10px;")
+            actionButton("clear_us_shipping_bill_btn", "重置", icon = icon("rotate-right"), class = "btn-danger", style = "margin-top: 10px;")
         ),
       ),
         
