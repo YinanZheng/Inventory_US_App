@@ -1852,8 +1852,20 @@ server <- function(input, output, session) {
       orders(dbGetQuery(con, "SELECT * FROM orders"))
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
 
-      # 保存当前订单ID
-      current_order_id(order$OrderID)
+      # 结果展示
+      
+      added_order <- orders() %>% filter(OrderID == order$OrderID)
+      renderOrderInfo(output, "order_info_card", added_order)
+      
+      output$order_items_title <- renderUI({
+        tags$h4(
+          HTML(paste0(as.character(icon("box")), " 订单号 ", order$OrderID, " 的物品")),
+          style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
+        )
+      })
+      
+      added_order_items <- unique_items_data() %>% filter(OrderID == order$OrderID)
+      renderOrderItems(output, "order_items_card", added_order_items)
       
       showNotification(
         paste0("订单已成功发货！订单号：", order$OrderID, "，共发货 ", nrow(items), " 件。"),
@@ -1865,16 +1877,8 @@ server <- function(input, output, session) {
     })
   })
   
-  # 动态刷新当前订单
-  observe({
-    req(current_order_id())
-    
-    added_order <- orders() %>% filter(OrderID == current_order_id())
-    renderOrderInfo(output, "order_info_card", added_order)
-    
-    added_order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
-    renderOrderItems(output, "order_items_card", added_order_items)
-  })
+
+
 
   # 订单物品删除逻辑 （美国售出only）
   observeEvent(input$delete_card, {
