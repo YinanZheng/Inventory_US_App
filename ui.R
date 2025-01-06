@@ -533,7 +533,7 @@ ui <- navbarPage(
             column(6, 
                    actionButton("reset_filter_btn", "清空筛选条件", class = "btn-secondary", style = "width: 100%;"))
           )
-        )
+        ),
         
         tags$hr(style = "margin: 5px 0; border: none;"),
 
@@ -617,7 +617,7 @@ ui <- navbarPage(
         )
       )
     )
-  ), # End of 售出
+  ), # End of 订单管理
   
   
   tabPanel(
