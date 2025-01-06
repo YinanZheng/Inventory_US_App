@@ -1868,12 +1868,12 @@ server <- function(input, output, session) {
   # 动态刷新当前订单
   observe({
     req(current_order_id())
-    matching_orders <- orders() %>% filter(OrderID == current_order_id())
     
-    renderOrderInfo(output, "order_info_card", matching_orders)
+    added_order <- orders() %>% filter(OrderID == current_order_id())
+    renderOrderInfo(output, "order_info_card", added_order)
     
-    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
-    renderOrderItems(output, "order_items_card", order_items)
+    added_order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
+    renderOrderItems(output, "order_items_card", added_order_items)
   })
 
   # 订单物品删除逻辑 （美国售出only）
