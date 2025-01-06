@@ -1451,10 +1451,11 @@ server <- function(input, output, session) {
         title = "运单完成提示",
         "当前运单号所对应的所有订单已完成装箱操作！",
         easyClose = TRUE,
-        footer = tagList(
-          modalButton("关闭")
-        )
+        footer = NULL  # 不需要关闭按钮
       ))
+      
+      # 延迟 3 秒后自动关闭弹窗
+      shinyjs::delay(3000, removeModal())
     }
   })
   
@@ -1539,11 +1540,13 @@ server <- function(input, output, session) {
           "当前订单内未检测到任何物品，请核对订单信息无误后手动发货",
           style = "font-size: 16px; margin-bottom: 10px;"
         ),
-        footer = tagList(
-          modalButton("确认"),
-        ),
-        easyClose = FALSE
+        footer = NULL,  # 移除确认按钮，避免多余交互
+        easyClose = TRUE  # 允许点击背景关闭，但主要通过自动关闭处理
       ))
+      
+      # 延迟 3 秒后自动关闭弹窗
+      shinyjs::delay(3000, removeModal())
+      
       return()  # 停止后续逻辑
     }
     
