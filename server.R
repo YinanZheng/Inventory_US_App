@@ -1393,15 +1393,20 @@ server <- function(input, output, session) {
   # 运单号输入逻辑
   matching_orders <- reactive({
     # 如果运单号为空，返回空数据框
-    if (is.null(input$shipping_bill_number) || trimws(input$shipping_bill_number) == "") {
+    if (is.null(input$shipping_bill_number) || input$shipping_bill_number == "") {
       return(data.frame())  # 返回空数据框
     }
     
     req(input$shipping_bill_number)  # 确保运单号不为空
     
+    # 去除空格并提取数字部分
+    cleaned_bill_number <- gsub("[^0-9]", "", trimws(input$shipping_bill_number))
+    
+    showNotification(cleaned_bill_number)
+    
     # 筛选并排序订单
     orders() %>% 
-      filter(UsTrackingNumber == trimws(input$shipping_bill_number)) %>% 
+      filter(UsTrackingNumber == cleaned_bill_number) %>% 
       arrange(OrderStatus == "装箱")  # 非“装箱”的排在前面，“装箱”的排在后面
   })
   
@@ -1490,7 +1495,7 @@ server <- function(input, output, session) {
   
   # 清空运单号逻辑
   observeEvent(input$shipping_bill_number, {
-    if (trimws(input$shipping_bill_number) == "") {
+    if (is.null(input$shipping_bill_number) || input$shipping_bill_number == "") {
       current_order_id(NULL)  # 清空当前订单 ID
       output$order_items_title <- renderUI({ NULL })  # 清空标题
       renderOrderItems(output, "order_items_cards", data.frame())  # 清空物品卡片
