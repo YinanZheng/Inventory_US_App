@@ -1855,7 +1855,7 @@ server <- function(input, output, session) {
       # 结果展示
       
       added_order <- orders() %>% filter(OrderID == order$OrderID)
-      renderOrderInfo(output, "order_info_card", added_order)
+      renderOrderInfo(output, "order_info_card", added_order, clickable = FALSE)
       
       output$order_items_title <- renderUI({
         tags$h4(
@@ -1865,7 +1865,7 @@ server <- function(input, output, session) {
       })
       
       added_order_items <- unique_items_data() %>% filter(OrderID == order$OrderID)
-      renderOrderItems(output, "order_items_card", added_order_items)
+      renderOrderItems(output, "order_items_cards", added_order_items, deletable = FALSE)
       
       showNotification(
         paste0("订单已成功发货！订单号：", order$OrderID, "，共发货 ", nrow(items), " 件。"),
