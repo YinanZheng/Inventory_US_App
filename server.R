@@ -94,6 +94,16 @@ server <- function(input, output, session) {
       return(create_empty_inventory())
     }
     
+    # 按供应商筛选
+    if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
+      result <- result %>% filter(Maker %in% input[["query_filter-maker"]])
+    }
+    
+    # 按商品名称筛选
+    if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
+      result <- result %>% filter(ItemName == input[["query_filter-name"]])
+    }
+    
     result <- result[order(result$updated_at, decreasing = TRUE), ]
     
     return(result)
@@ -2204,11 +2214,12 @@ server <- function(input, output, session) {
   
   
   
-  ################################################################
-  ##                                                            ##
-  ## 查询分页                                                   ##
-  ##                                                            ##
-  ################################################################
+  
+  # 物品表过滤模块
+  itemFilterServer(
+    id = "query_filter",
+    makers_items_map = makers_items_map
+  )
   
   # 根据SKU产生图表
   observe({
@@ -2510,6 +2521,7 @@ server <- function(input, output, session) {
         paper_bgcolor = "#F9F9F9" # 设置整个图表容器背景色
       )
   })
+  
   
   # 清空sku输入框
   observeEvent(input$clear_query_sku_btn, {

@@ -891,6 +891,11 @@ ui <- navbarPage(
       class = "layout-container",  # Flexbox 容器
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
+        
+        itemFilterUI(id = "query_filter", border_color = "#28A745", text_color = "#28A745", use_purchase_date = FALSE),
+        
+        tags$hr(),
+        
         div(
           class = "card",
           style = "margin-bottom: 20px; padding: 20px; border: 1px solid #007BFF; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
