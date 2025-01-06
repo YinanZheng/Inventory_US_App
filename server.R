@@ -2828,7 +2828,7 @@ server <- function(input, output, session) {
     if (admin_logged_in()) {
       tagList(
         
-        tags$h4("修改库存状态", style = "font-weight: bold; color: #007BFF;"),
+        tags$h4("修改库存状态", style = "font-weight: bold; color: #28A745;"),
         
         # 目标状态选择
         selectInput("admin_target_status", "目标库存状态改为：", 
@@ -2846,12 +2846,12 @@ server <- function(input, output, session) {
         tags$h4("修改瑕疵品状态", style = "font-weight: bold; color: #007BFF;"),
         
         # 目标状态选择
-        selectInput("admin_target_defect", "目标下次状态改为：", 
+        selectInput("admin_target_defect", "目标瑕疵状态改为：", 
                     choices = c('未知','无瑕','瑕疵','修复'), 
                     selected = NULL, width = "100%"),
         
         # 更新选中物品瑕疵品状态
-        actionButton("admin_update_defect_btn", "更新瑕疵品状态", class = "btn-success", style = "width: 100%; margin-top: 10px;"),
+        actionButton("admin_update_defect_btn", "更新瑕疵品状态", class = "btn-info", style = "width: 100%; margin-top: 10px;"),
         
         tags$hr(),
         
