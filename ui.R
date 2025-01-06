@@ -484,7 +484,7 @@ ui <- navbarPage(
   # ), # End of 售出
   
   tabPanel(
-    "订单管理", icon = icon("clipboard-list")
+    "订单管理", icon = icon("clipboard-list"),
     div(
       class = "layout-container",
 
