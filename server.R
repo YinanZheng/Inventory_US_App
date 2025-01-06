@@ -1404,6 +1404,8 @@ server <- function(input, output, session) {
     orders() %>% 
       filter(stri_detect_fixed(cleaned_bill_number, UsTrackingNumber)) %>% 
       arrange(OrderStatus == "装箱")  # 非“装箱”的排在前面，“装箱”的排在后面
+    
+    runjs("document.getElementById('sku_input').focus();")
   })
   
   # 自动设置 current_order_id
