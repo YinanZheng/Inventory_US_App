@@ -804,8 +804,11 @@ handleOperation <- function(
         title = paste0(operation_name, "完成"),
         paste0("此 SKU 的商品已全部完成 ", operation_name, "！"),
         easyClose = TRUE,
-        footer = modalButton("确定")
+        footer = NULL  # 不需要关闭按钮
       ))
+      
+      # 延迟 2 秒后自动关闭弹窗
+      shinyjs::delay(2000, removeModal())
     }
     
     # 重置输入框和其他控件

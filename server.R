@@ -1454,8 +1454,8 @@ server <- function(input, output, session) {
         footer = NULL  # 不需要关闭按钮
       ))
       
-      # 延迟 3 秒后自动关闭弹窗
-      shinyjs::delay(3000, removeModal())
+      # 延迟 2 秒后自动关闭弹窗
+      shinyjs::delay(2000, removeModal())
     }
   })
   
@@ -1544,8 +1544,8 @@ server <- function(input, output, session) {
         easyClose = TRUE  # 允许点击背景关闭，但主要通过自动关闭处理
       ))
       
-      # 延迟 3 秒后自动关闭弹窗
-      shinyjs::delay(3000, removeModal())
+      # 延迟 2 秒后自动关闭弹窗
+      shinyjs::delay(2000, removeModal())
       
       return()  # 停止后续逻辑
     }
