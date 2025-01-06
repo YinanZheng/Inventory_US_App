@@ -439,10 +439,6 @@ server <- function(input, output, session) {
       
       # 检查是否成功处理
       if (!is.null(unique_ID) && unique_ID != "") {
-        # 更新库存数据
-        adjust_inventory(con, input$inbound_sku, adjustment = 1)
-        
-        # 显示成功通知
         showNotification(paste0("SKU ", input$inbound_sku, " 的一个物品已自动入库！"), type = "message")
       } else {
         showNotification("自动入库失败，可能物品已全部入库或数据异常！", type = "error")
