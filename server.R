@@ -1402,11 +1402,11 @@ server <- function(input, output, session) {
     # 去除空格并提取数字部分
     cleaned_bill_number <- gsub("[^0-9]", "", trimws(input$shipping_bill_number))
     
-    showNotification(cleaned_bill_number)
+    # showNotification(cleaned_bill_number)
     
     # 筛选并排序订单
     orders() %>% 
-      filter(UsTrackingNumber == cleaned_bill_number) %>% 
+      filter(grepl(cleaned_bill_number, UsTrackingNumber)) %>% 
       arrange(OrderStatus == "装箱")  # 非“装箱”的排在前面，“装箱”的排在后面
   })
   
@@ -1661,8 +1661,11 @@ server <- function(input, output, session) {
   
   ##############################################################################################
 
-  
+  # 创建新加订单物品容器
   new_order_items <- reactiveVal()
+  
+  # 运单号输入、清空后的反应逻辑
+  debounced_us_shipping_bill_number <- debounce(reactive(gsub("[^0-9]", "", trimws(input$us_shipping_bill_number))), 500)
   
   # 计算 SKU 的有效库存数量
   stock_data <- reactive({
@@ -1678,7 +1681,7 @@ server <- function(input, output, session) {
     req(input$us_shipping_bill_number, input$us_shipping_platform)
     
     # 如果平台未选择或运单号为空，返回 NULL
-    if (trimws(input$us_shipping_platform) == "" || trimws(input$us_shipping_bill_number) == "") {
+    if (input$us_shipping_platform == "" || input$us_shipping_bill_number == "") {
       return(NULL)
     }
     
@@ -1690,16 +1693,19 @@ server <- function(input, output, session) {
       return(NULL)  # 如果没有物品，返回 NULL
     }
     
+    # 去除空格并提取数字部分
+    cleaned_us_bill_number <- debounced_us_shipping_bill_number()
+    
     # 生成订单 ID
     generated_order_id <- generate_order_id(
-      trimws(input$us_shipping_bill_number),
+      cleaned_us_bill_number,
       new_order_items()$UniqueID
     )
     
     # 创建动态订单数据
     data.frame(
       OrderID = generated_order_id,
-      UsTrackingNumber = trimws(input$us_shipping_bill_number),
+      UsTrackingNumber = cleaned_us_bill_number,
       CustomerName = "",
       CustomerNickname = "",
       Platform = input$us_shipping_platform,
@@ -1774,12 +1780,10 @@ server <- function(input, output, session) {
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
 
-  # 运单号输入、清空后的反应逻辑
-  debounced_us_shipping_bill_number <- debounce(reactive(input$us_shipping_bill_number), 500)
-  
+
   observe({
     # 获取延迟后的输入值
-    bill_number <- trimws(debounced_us_shipping_bill_number())
+    bill_number <- debounced_us_shipping_bill_number()
     
     if (bill_number == "") {
       renderOrderInfo(output, "order_info_card", data.frame())  # 清空订单信息卡片
