@@ -1406,7 +1406,7 @@ server <- function(input, output, session) {
     
     # 筛选并排序订单
     orders() %>% 
-      filter(grepl(cleaned_bill_number, UsTrackingNumber)) %>% 
+      filter(grepl(UsTrackingNumber, cleaned_bill_number)) %>% 
       arrange(OrderStatus == "装箱")  # 非“装箱”的排在前面，“装箱”的排在后面
   })
   
