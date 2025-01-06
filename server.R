@@ -1852,6 +1852,9 @@ server <- function(input, output, session) {
       orders(dbGetQuery(con, "SELECT * FROM orders"))
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
 
+      # 保存当前订单ID
+      current_order_id(order$OrderID)
+      
       showNotification(
         paste0("订单已成功发货！订单号：", order$OrderID, "，共发货 ", nrow(items), " 件。"),
         type = "message"
@@ -1860,9 +1863,17 @@ server <- function(input, output, session) {
       dbRollback(con)
       showNotification(paste("发货失败：", e$message), type = "error")
     })
+  })
+  
+  # 动态刷新当前订单
+  observe({
+    req(current_order_id())
+    matching_orders <- orders() %>% filter(OrderID == current_order_id())
     
-    # 发完货清空
-    updateTextInput(session, "us_shipping_bill_number", value = "")
+    renderOrderInfo(output, "order_info_card", matching_orders)
+    
+    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
+    renderOrderItems(output, "order_items_card", order_items)
   })
 
   # 订单物品删除逻辑 （美国售出only）
