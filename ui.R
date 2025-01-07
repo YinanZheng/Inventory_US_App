@@ -483,7 +483,7 @@ ui <- navbarPage(
         )
       ),
       
-      # 主面板：售出和订单管理的分页
+      # 主面板：订单管理
       div(
         class = "main-panel",
         tabsetPanel(
