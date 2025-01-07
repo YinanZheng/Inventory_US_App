@@ -1543,11 +1543,11 @@ renderOrderItems <- function(output, output_name, order_items, deletable = FALSE
             tags$td(item$Status)
           ),
           tags$tr(
-            tags$td(tags$strong("瑕疵状态:"), style = "padding: 0px;"),
+            tags$td(tags$strong("瑕疵态:"), style = "padding: 0px;"),
             tags$td(ifelse(is.na(item$Defect), "无", item$Defect))  # 显示瑕疵状态
           ),
           tags$tr(
-            tags$td(tags$strong("瑕疵备注:"), style = "padding: 0px;"),
+            tags$td(tags$strong("瑕疵注:"), style = "padding: 0px;"),
             tags$td(ifelse(is.na(item$DefectNotes) || item$DefectNotes == "", "无备注", item$DefectNotes))  # 显示瑕疵备注
           )
         )
