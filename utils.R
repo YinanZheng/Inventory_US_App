@@ -861,6 +861,58 @@ add_defective_note <- function(con, unique_id, note_content, status_label = "瑕
 }
 
 
+apply_dynamic_styles <- function(table, column_names) {
+  # 库存态样式
+  if ("库存态" %in% column_names) {
+    table <- table %>%
+      formatStyle(
+        "库存态",
+        backgroundColor = styleEqual(
+          c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国调货", "美国售出", "美国发货", "退货"),
+          c("lightgray", "#c7e89b", "#9ca695", "#46a80d", "#6f52ff", "#529aff", "#869bb8", "#faf0d4", "red")
+        ),
+        color = styleEqual(
+          c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国调货", "美国售出", "美国发货", "退货"),
+          c("black", "black", "black", "white", "white", "black", "black", "black", "white")
+        )
+      )
+  }
+  
+  # 瑕疵态样式
+  if ("瑕疵态" %in% column_names) {
+    table <- table %>%
+      formatStyle(
+        "瑕疵态",
+        backgroundColor = styleEqual(
+          c("未知", "无瑕", "瑕疵", "修复"),
+          c("darkgray", "green", "red", "orange")
+        ),
+        color = styleEqual(
+          c("未知", "无瑕", "瑕疵", "修复"),
+          c("black", "white", "white", "white")
+        )
+      )
+  }
+  
+  # 国际运输样式
+  if ("国际运输" %in% column_names) {
+    table <- table %>%
+      formatStyle(
+        "国际运输",
+        backgroundColor = styleEqual(
+          c("空运", "海运"),
+          c("lightblue", "darkblue")
+        ),
+        color = styleEqual(
+          c("空运", "海运"),
+          c("black", "white")
+        )
+      )
+  }
+  
+  return(table)
+}
+
 register_order <- function(order_id, customer_name, customer_netname, platform, order_notes, tracking_number, 
                            image_data, con, orders, box_items, unique_items_data, 
                            is_transfer_order = NULL, is_preorder = NULL, preorder_supplier = NULL) {

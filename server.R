@@ -191,37 +191,29 @@ server <- function(input, output, session) {
     req(unique_items_data())
     data <- unique_items_data()
     
-    data <- data[data$Status %in% c("国内出库", "美国入库"), ]
+    # 只显示本页相关状态
+    data <- data %>%
+      filter(Status %in% c("国内出库", "美国入库"))
     
     data <- filter_unique_items_data_by_inputs(
       data = data,
       input = input,
       maker_input_id = "inbound_filter-maker",
-      item_name_input_id = "inbound_filter-name",
-      purchase_date_range_id = "inbound_filter-purchase_date_range"
-    )
+      item_name_input_id = "inbound_filter-name"    
+      )
     
-    # 将 "国内出库" 状态的商品放到最前
-    data %>% arrange(desc(Status == "国内出库"))
-  })
-  
-  # 售出页过滤
-  filtered_unique_items_data_sold <- reactive({
-    req(unique_items_data())
-    data <- unique_items_data()
-
-    data <- data[data$Status %in% c("美国入库", "美国售出"), ]
-
-    data <- filter_unique_items_data_by_inputs(
-      data = data,
-      input = input,
-      maker_input_id = "sold_filter-maker",
-      item_name_input_id = "sold_filter-name",
-      purchase_date_range_id = "sold_filter-purchase_date_range"
-    )
+    # 统计 SKU, Status, Defect, 和 PurchaseTime 下的数量
+    data <- data %>%
+      group_by(SKU, Status, Defect) %>%
+      mutate(ItemCount = n()) %>%  # 条件统计数量
+      ungroup()
     
-    # 将 "美国入库" 状态的商品放到最前
-    data %>% arrange(desc(Status == "美国入库"))
+    # 去重：仅保留每个 SKU 和组合的第一条记录
+    data <- data %>%
+      arrange(desc(Status == "国内出库"), desc(Defect == "无瑕")) %>%  # 按需求排序
+      distinct(SKU, Status, Defect, .keep_all = TRUE)         # 去重，保留所有列
+    
+    data
   })
   
   # 瑕疵品管理页过滤
@@ -340,37 +332,38 @@ server <- function(input, output, session) {
   # 渲染物品追踪数据表
   unique_items_table_inbound_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_inbound",
                                                         column_mapping <- c(common_columns, list(
-                                                          UsEntryTime = "入库日期",
+                                                          UsEntryTime = "入库日",
                                                           DefectNotes = "瑕疵品备注",
                                                           IntlTracking = "国际物流单号")
                                                         ), selection = "multiple", data = filtered_unique_items_data_inbound)
   
+  unique_items_table_sold_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_sold",
+                                                     column_mapping <- c(common_columns, list(
+                                                       UsEntryTime = "入库日",
+                                                       UsSoldTime = "售出日",
+                                                       UsShippingTime = "发货日",
+                                                       OrderID = "订单号")
+                                                     ), data = filtered_unique_items_data_sold)
+  
+  
   unique_items_table_manage_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_manage",
                                                        column_mapping <- c(common_columns, list(
-                                                         UsEntryTime = "入库日期",
-                                                         UsSoldTime = "售出日期",
-                                                         UsShippingTime = "发货日期")
+                                                         UsEntryTime = "入库日",
+                                                         UsSoldTime = "售出日",
+                                                         UsShippingTime = "发货日")
                                                        ), selection = "multiple", data = unique_items_data)
   
   unique_items_table_defect_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_defect",
                                                        column_mapping <- c(common_columns, list(
-                                                         UsEntryTime = "入库日期",
+                                                         UsEntryTime = "入库日",
                                                          DefectNotes = "瑕疵品备注")
                                                        ), selection = "multiple", data = filtered_unique_items_data_defect)
-  
-  unique_items_table_sold_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_sold",
-                                                     column_mapping <- c(common_columns, list(
-                                                       UsEntryTime = "入库日期",
-                                                       UsSoldTime = "售出日期",
-                                                       UsShippingTime = "发货日期",
-                                                       OrderID = "订单号")
-                                                     ), data = filtered_unique_items_data_sold)
   
   unique_items_table_logistics_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_logistics",
                                                           column_mapping = c(common_columns, list(
                                                             IntlShippingMethod = "国际运输",
-                                                            DomesticSoldTime = "售出日期",
-                                                            DomesticExitTime = "出库日期",
+                                                            DomesticSoldTime = "售出日",
+                                                            DomesticExitTime = "出库日",
                                                             IntlShippingCost = "平摊国际运费",
                                                             IntlTracking = "国际物流单号"
                                                           )), selection = "multiple",
@@ -378,9 +371,9 @@ server <- function(input, output, session) {
   
   unique_items_table_download_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_download",
                                                          column_mapping <- c(common_columns, list(
-                                                           UsEntryTime = "入库日期",
-                                                           UsSoldTime = "售出日期",
-                                                           UsShippingTime = "发货日期")
+                                                           UsEntryTime = "入库日",
+                                                           UsSoldTime = "售出日",
+                                                           UsShippingTime = "发货日")
                                                          ), data = filtered_unique_items_data_download)
   
 
@@ -1378,8 +1371,8 @@ server <- function(input, output, session) {
     # 渲染关联订单物品表
     callModule(uniqueItemsTableServer, "associated_items_table_module",
                column_mapping = c(common_columns, list(
-                 UsEntryTime = "入库日期",
-                 UsSoldTime = "售出日期",
+                 UsEntryTime = "入库日",
+                 UsSoldTime = "售出日",
                  DefectNotes = "瑕疵品备注"
                )),
                data = associated_items,
@@ -2621,28 +2614,28 @@ server <- function(input, output, session) {
         MinorType = "小类",
         ProductCost = "单价",
         DomesticShippingCost = "平摊运费",
-        PurchaseTime = "采购日期",
-        Status = "库存状态",
-        Defect = "物品状态"
+        PurchaseTime = "采购日",
+        Status = "库存态",
+        Defect = "瑕疵态"
       ))
       
       # 按 SKU 计算全局库存统计
       sku_inventory_stats <- data %>%
         group_by(`条形码`) %>%
         summarize(
-          总剩余库存数 = sum(`库存状态` %in% c("国内入库", "国内出库", "美国入库")),
-          国内库存数 = sum(`库存状态` == "国内入库"),
-          在途库存数 = sum(`库存状态` == "国内出库"),
-          美国库存数 = sum(`库存状态` == "美国入库"),
-          无瑕 = sum(`物品状态` == "无瑕"),
-          瑕疵 = sum(`物品状态` == "瑕疵"),
-          修复 = sum(`物品状态` == "修复"),
+          总剩余库存数 = sum(`库存态` %in% c("国内入库", "国内出库", "美国入库")),
+          国内库存数 = sum(`库存态` == "国内入库"),
+          在途库存数 = sum(`库存态` == "国内出库"),
+          美国库存数 = sum(`库存态` == "美国入库"),
+          无瑕 = sum(`瑕疵态` == "无瑕"),
+          瑕疵 = sum(`瑕疵态` == "瑕疵"),
+          修复 = sum(`瑕疵态` == "修复"),
           .groups = "drop"
         )
       
       # 按条形码和采购日期分组，统计其他信息
       grouped_data <- data %>%
-        group_by(`条形码`, `采购日期`) %>%
+        group_by(`条形码`, `采购日`) %>%
         summarize(
           商品名 = first(`商品名`),
           商品图片 = first(`商品图片`),
@@ -2871,10 +2864,10 @@ server <- function(input, output, session) {
   # 使用 uniqueItemsTableServer 渲染表格
   unique_items_table_admin_selected_row <- callModule(uniqueItemsTableServer, "admin_items_table", 
                                                       column_mapping = c(common_columns, list(
-                                                        PurchaseTime = "采购日期",
-                                                        DomesticEntryTime = "入库日期",
-                                                        DomesticExitTime = "出库日期",
-                                                        DomesticSoldTime = "出售日期",
+                                                        PurchaseTime = "采购日",
+                                                        DomesticEntryTime = "入库日",
+                                                        DomesticExitTime = "出库日",
+                                                        DomesticSoldTime = "出售日",
                                                         IntlShippingMethod = "国际运输",
                                                         OrderID = "订单号"
                                                       )), 

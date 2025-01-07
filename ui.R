@@ -178,7 +178,7 @@ ui <- navbarPage(
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
 
-        itemFilterUI(id = "inbound_filter", border_color = "#28A745", text_color = "#28A745"),
+        itemFilterUI(id = "inbound_filter", border_color = "#28A745", text_color = "#28A745", use_purchase_date = FALSE),
         
         tags$hr(style = "margin: 5px 0; border: none;"),
         

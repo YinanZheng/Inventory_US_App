@@ -61,8 +61,8 @@ common_columns <<- list(
   # MinorType = "小类",
   ProductCost = "单价",
   # DomesticShippingCost = "平摊运费",
-  Status = "库存状态",
-  Defect = "物品状态"
+  Status = "库存态"
+  # Defect = "物品状态"
 )
 
 # 定义需要记录时间的状态
