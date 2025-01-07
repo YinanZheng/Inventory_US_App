@@ -332,19 +332,10 @@ server <- function(input, output, session) {
   # 渲染物品追踪数据表
   unique_items_table_inbound_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_inbound",
                                                         column_mapping <- c(common_columns, list(
-                                                          UsEntryTime = "入库日",
-                                                          DefectNotes = "瑕疵品备注",
-                                                          IntlTracking = "国际物流单号")
+                                                          ItemCount = "数量")
                                                         ), selection = "multiple", data = filtered_unique_items_data_inbound)
   
-  unique_items_table_sold_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_sold",
-                                                     column_mapping <- c(common_columns, list(
-                                                       UsEntryTime = "入库日",
-                                                       UsSoldTime = "售出日",
-                                                       UsShippingTime = "发货日",
-                                                       OrderID = "订单号")
-                                                     ), data = filtered_unique_items_data_sold)
-  
+  ##################
   
   unique_items_table_manage_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_manage",
                                                        column_mapping <- c(common_columns, list(
