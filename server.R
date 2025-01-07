@@ -1315,12 +1315,14 @@ server <- function(input, output, session) {
     showNotification("已清空所有输入！", type = "message")
   })
   
-  # 选择某个订单后，渲染关联物品表
+  # 订单关联物品容器
+  associated_items <- reactiveVal()
+  
+  # 监听订单选择事件
   observeEvent(selected_order_row(), {
     selected_row <- selected_order_row()
-    req(selected_row)  # 确保用户选择了一行
     
-    # 获取选中的订单数据
+    # 如果用户选择了订单，获取选中的订单数据
     selected_order <- filtered_orders()[selected_row, ]
     order_id <- selected_order$OrderID
     customer_name <- selected_order$CustomerName
@@ -1329,7 +1331,7 @@ server <- function(input, output, session) {
     # 填充左侧订单信息栏
     updateTextInput(session, "order_id", value = order_id)
     
-    # 动态更新标题，若状态为“调货”，添加“已完成调货”按钮
+    # 动态更新标题
     output$associated_items_title <- renderUI({
       div(
         style = "display: flex; align-items: center; justify-content: space-between;",
@@ -1340,11 +1342,11 @@ server <- function(input, output, session) {
           style = "color: #007BFF; font-weight: bold; margin: 0;"
         ),
         
-        # 右侧按钮（仅在订单状态为“调货”时显示）
-        if (order_status == "调货") {
+        # 右侧按钮（仅在订单状态为“预定”时显示）
+        if (order_status == "预定") {
           actionButton(
-            inputId = "complete_transfer",
-            label = "已完成调货",
+            inputId = "complete_preorder",
+            label = "已完成预定",
             class = "btn-success",
             style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
           )
@@ -1352,29 +1354,8 @@ server <- function(input, output, session) {
       )
     })
     
-    # 渲染关联物品表
-    associated_items <- reactive({
-      # 根据订单号筛选关联物品
-      items <- unique_items_data() %>% filter(OrderID == order_id)
-      items
-    })
-    
-    # 渲染关联订单物品表
-    callModule(uniqueItemsTableServer, "associated_items_table_module",
-               column_mapping = c(common_columns, list(
-                 UsEntryTime = "入库日",
-                 UsSoldTime = "售出日",
-                 DefectNotes = "瑕疵品备注"
-               )),
-               data = associated_items,
-               options = list(
-                 scrollY = "235px",  # 根据内容动态调整滚动高度
-                 scrollX = TRUE,  # 支持水平滚动
-                 fixedHeader = TRUE,  # 启用表头固定
-                 dom = 't',  # 隐藏搜索框和分页等控件
-                 paging = FALSE,  # 禁用分页
-                 searching = FALSE  # 禁用搜索
-               ))
+    # 更新关联物品数据
+    associated_items <- associated_items(unique_items_data() %>% filter(OrderID == order_id))
   })
   
   observeEvent(input$complete_transfer, {
@@ -1410,6 +1391,15 @@ server <- function(input, output, session) {
     })
   })
 
+  # 渲染物品信息卡片  
+  observe({
+    req(associated_items())
+    if (nrow(associated_items()) == 0) {
+      renderOrderItems(output, "order_items_cards", data.frame())  # 清空物品卡片
+      return()
+    }
+    renderOrderItems(output, "order_items_cards", associated_items(), deletable = FALSE)
+  })
   
   # 清空筛选条件逻辑
   observeEvent(input$reset_filter_btn, {
