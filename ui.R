@@ -495,9 +495,9 @@ ui <- navbarPage(
           ),
           div(
             class = "card",
-            style = "height: 325px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
+            style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
             uiOutput("associated_items_title"),  # 动态标题
-            uniqueItemsTableUI("associated_items_table_module")
+            uiOutput("order_items_cards")  # 动态显示订单内物品卡片
           )
         )
       )
