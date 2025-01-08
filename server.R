@@ -2185,6 +2185,21 @@ server <- function(input, output, session) {
   
   
   
+  ################################################################
+  ##                                                            ##
+  ## 查询分页                                                   ##
+  ##                                                            ##
+  ################################################################
+  
+  # 监听主页面和子页面的切换
+  observeEvent({
+    list(input$inventory_us, input$query_tabs)  # 仅在这些输入发生变化时触发
+  }, {
+    if (input$inventory_us == "查询" && input$query_tabs == "商品状态") {
+      inventory_refresh_trigger(!inventory_refresh_trigger())
+      showNotification("库存表已更新！", type = "message")
+    }
+  }, ignoreInit = TRUE)  # 忽略初始值
   
   # 物品表过滤模块
   itemFilterServer(
@@ -2204,14 +2219,7 @@ server <- function(input, output, session) {
     }
     
     tryCatch({
-      # 查询 SKU 数据
-      sku_query <- "
-      SELECT
-        ItemName, Maker, MajorType, MinorType, Quantity,
-        ProductCost, ShippingCost, ItemImagePath
-      FROM inventory
-      WHERE SKU = ?"
-      sku_data <- dbGetQuery(con, sku_query, params = list(sku))
+      sku_data <- inventory() %>% filter(SKU == sku)
       
       if (nrow(sku_data) == 0) {
         output$query_item_info <- renderUI({
@@ -2226,17 +2234,39 @@ server <- function(input, output, session) {
           placeholder_150px_path,
           paste0(host_url, "/images/", basename(sku_data$ItemImagePath[1]))
         )
+        
+        # 从 unique_items_data() 中计算额外信息
+        sku_stats <- unique_items_data() %>%
+          filter(SKU == sku) %>%
+          summarise(
+            美国库存数 = sum(Status == "美国入库", na.rm = TRUE),
+            在途库存数 = sum(Status == "国内出库", na.rm = TRUE),
+            国内库存数 = sum(Status == "国内入库", na.rm = TRUE),
+            已售库存数 = sum(Status %in% c("国内售出", "美国售出", "美国调货", "美国发货"), na.rm = TRUE)
+          )
+        
+        # 渲染图片和表格信息
         div(
-          style = "display: flex; align-items: center; padding: 10px;",
-          div(style = "flex: 1; text-align: center; margin-right: 20px;",
-              tags$img(src = img_path, height = "150px", style = "border: 1px solid #ddd; border-radius: 8px;")),
-          div(style = "flex: 2; display: flex; flex-direction: column; justify-content: center;",
-              tags$p(tags$b("商品名称："), sku_data$ItemName[1]),
-              tags$p(tags$b("供应商："), sku_data$Maker[1]),
-              tags$p(tags$b("分类："), paste(sku_data$MajorType[1], "/", sku_data$MinorType[1])),
-              tags$p(tags$b("总库存数："), sku_data$Quantity[1]),
-              tags$p(tags$b("平均单价："), sprintf("¥%.2f", sku_data$ProductCost[1])),
-              tags$p(tags$b("平均运费："), sprintf("¥%.2f", sku_data$ShippingCost[1]))
+          style = "display: flex; flex-direction: column; align-items: center; padding: 10px;",
+          div(
+            style = "text-align: center; margin-bottom: 10px;",
+            tags$img(src = img_path, height = "150px", style = "border: 1px solid #ddd; border-radius: 8px;")
+          ),
+          div(
+            style = "width: 100%; padding-left: 10px;",
+            tags$table(
+              style = "width: 100%; border-collapse: collapse;",
+              tags$tr(tags$td(tags$b("商品名称：")), tags$td(sku_data$ItemName[1])),
+              tags$tr(tags$td(tags$b("供应商：")), tags$td(sku_data$Maker[1])),
+              tags$tr(tags$td(tags$b("分类：")), tags$td(paste(sku_data$MajorType[1], "/", sku_data$MinorType[1]))),
+              tags$tr(tags$td(tags$b("平均成本：")), tags$td(sprintf("¥%.2f", sku_data$ProductCost[1]))),
+              tags$tr(tags$td(tags$b("平均运费：")), tags$td(sprintf("¥%.2f", sku_data$ShippingCost[1]))),
+              tags$tr(tags$td(tags$b("国内库存数：")), tags$td(sku_stats$国内库存数)),
+              tags$tr(tags$td(tags$b("在途库存数：")), tags$td(sku_stats$在途库存数)),
+              tags$tr(tags$td(tags$b("美国库存数：")), tags$td(sku_stats$美国库存数)),
+              tags$tr(tags$td(tags$b("已售库存数：")), tags$td(sku_stats$已售库存数)),
+              tags$tr(tags$td(tags$b("总库存数：")), tags$td(sku_data$Quantity[1]))
+            )
           )
         )
       })
@@ -2289,7 +2319,7 @@ server <- function(input, output, session) {
               marker = list(colors = status_colors) # 按固定颜色映射
             ) %>%
               layout(
-                showlegend = TRUE, # 显示图例
+                showlegend = FALSE, # 隐藏图例
                 margin = list(l = 20, r = 20, t = 30, b = 30), # 增加边距
                 uniformtext = list(minsize = 10, mode = "hide") # 统一文本大小
               )
@@ -2348,7 +2378,7 @@ server <- function(input, output, session) {
               marker = list(colors = defect_colors) # 按固定颜色映射
             ) %>%
               layout(
-                showlegend = TRUE, # 显示图例
+                showlegend = FALSE, # 隐藏图例
                 margin = list(l = 20, r = 20, t = 30, b = 30), # 增加边距
                 uniformtext = list(minsize = 10, mode = "hide") # 统一文本大小
               )
