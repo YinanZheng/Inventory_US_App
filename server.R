@@ -201,15 +201,18 @@ server <- function(input, output, session) {
     data <- orders()  # 获取所有订单数据
     
     # 根据订单号筛选
-    cleaned_filter_order_id <- trimws(input$filter_order_id)
-    if (!is.null(cleaned_filter_order_id) && cleaned_filter_order_id != "") {
-      data <- data %>% filter(grepl(cleaned_filter_order_id, OrderID, ignore.case = TRUE))
+    if (!is.null(input$filter_order_id) && input$filter_order_id != "") {
+      data <- data %>% filter(grepl(trimws(input$filter_order_id), OrderID, ignore.case = TRUE))
     }
     
-    # 根据运单号筛选
-    cleaned_filter_tracking_id <- gsub("[^0-9]", "", trimws(input$filter_tracking_id))
-    if (!is.null(cleaned_filter_tracking_id) && cleaned_filter_tracking_id != "") {
-      data <- data %>% filter(stri_detect_fixed(cleaned_filter_tracking_id, UsTrackingNumber))
+    # 根据运单号筛选，处理前缀多余情况
+    if (!is.null(input$filter_tracking_id) && input$filter_tracking_id != "") {
+      cleaned_filter_tracking_id <- gsub("[^0-9]", "", trimws(input$filter_tracking_id))
+      # 如果运单号长度超过 22，则去掉前 8 位
+      if (nchar(cleaned_filter_tracking_id) > 22) {
+        cleaned_filter_tracking_id <- substr(cleaned_filter_tracking_id, 9, nchar(cleaned_filter_tracking_id))
+      }
+      data <- data %>% filter(UsTrackingNumber == cleaned_filter_tracking_id)  # 完全匹配
     }
     
     # 根据顾客姓名筛选
@@ -245,12 +248,12 @@ server <- function(input, output, session) {
       data <- data %>% filter(OrderID %in% sku_orders)
     }
     
-    if (!is.null(debounced_item_name()) && debounced_item_name() != "") {
+    item_name <- debounced_item_name()
+    if (!is.null(item_name) && length(item_name) > 0 && nzchar(item_name)) {
       item_orders <- unique_items_data() %>%
         filter(grepl(debounced_item_name(), ItemName, ignore.case = TRUE)) %>%
         pull(OrderID) %>%  # 提取与商品名相关的订单号
         unique()
-      
       data <- data %>% filter(OrderID %in% item_orders)
     }
     
@@ -681,11 +684,14 @@ server <- function(input, output, session) {
     # 去除空格并提取数字部分
     cleaned_bill_number <- gsub("[^0-9]", "", trimws(input$shipping_bill_number))
     
-    # showNotification(cleaned_bill_number)
+    # 如果运单号长度超过 22，则去掉前 8 位
+    if (nchar(cleaned_bill_number) > 22) {
+      cleaned_bill_number <- substr(cleaned_bill_number, 9, nchar(cleaned_bill_number))
+    }
     
     # 筛选并排序订单
     orders() %>% 
-      filter(stri_detect_fixed(cleaned_bill_number, UsTrackingNumber)) %>% 
+      filter(UsTrackingNumber == cleaned_filter_tracking_id) %>% 
       arrange(OrderStatus == "装箱")  # 非“装箱”的排在前面，“装箱”的排在后面
   })
   
