@@ -398,6 +398,13 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # 监听标签页切换事件
+  observeEvent(input$inventory_china, {
+    if (input$inventory_us == "入库") {
+      runjs("document.getElementById('inbound_sku').focus();")
+    }
+  })
+  
   # 物品表过滤模块
   itemFilterServer(
     id = "inbound_filter",
