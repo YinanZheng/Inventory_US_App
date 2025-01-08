@@ -691,7 +691,7 @@ server <- function(input, output, session) {
     
     # 筛选并排序订单
     orders() %>% 
-      filter(UsTrackingNumber == cleaned_filter_tracking_id) %>% 
+      filter(UsTrackingNumber == cleaned_bill_number) %>% 
       arrange(OrderStatus == "装箱")  # 非“装箱”的排在前面，“装箱”的排在后面
   })
   
