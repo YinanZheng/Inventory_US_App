@@ -717,7 +717,7 @@ server <- function(input, output, session) {
       return()
     }
     
-    showNotification(order_items()$SKU)
+    showNotification(paste0(order_items()$SKU, collapose = ", "))
     
     renderOrderItems(output, "order_items_cards", order_items())
     runjs("document.getElementById('sku_input').focus();")
