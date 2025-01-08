@@ -717,6 +717,8 @@ server <- function(input, output, session) {
       return()
     }
     
+    showNotification("Render Order Items...")
+    
     renderOrderItems(output, "order_items_cards", order_items())
     runjs("document.getElementById('sku_input').focus();")
   })
