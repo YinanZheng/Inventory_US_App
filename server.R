@@ -336,13 +336,15 @@ server <- function(input, output, session) {
                                                        column_mapping <- c(common_columns, list(
                                                          UsEntryTime = "入库日",
                                                          UsSoldTime = "售出日",
-                                                         UsShippingTime = "发货日")
+                                                         UsShippingTime = "发货日",
+                                                         OrderID = "订单号")
                                                        ), selection = "multiple", data = unique_items_data,
                                                        option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
   
   unique_items_table_defect_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_defect",
                                                        column_mapping <- c(common_columns, list(
                                                          UsEntryTime = "入库日",
+                                                         Defect = "瑕疵态",
                                                          DefectNotes = "瑕疵品备注")
                                                        ), selection = "multiple", data = filtered_unique_items_data_defect,
                                                        option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
