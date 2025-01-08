@@ -849,11 +849,18 @@ server <- function(input, output, session) {
     }
     
     # 查找SKU对应的物品
-    matching_item <- order_items() %>% filter(SKU == sku, Status != "美国发货")
+    matching_item <- order_items() %>% filter(SKU == sku)
     
+    # 如果未找到对应的 SKU
     if (nrow(matching_item) == 0) {
-      showNotification("未找到对应SKU或该SKU已完成操作！", type = "error")
-      # 清空输入框
+      showNotification("未找到商品，请检查输入的商品是否存在于本订单！", type = "error")
+      updateTextInput(session, "sku_input", value = "")
+      return()
+    }
+    
+    # 检查是否状态已为“美国发货”
+    if (all(matching_item$Status == "美国发货")) {
+      showNotification("该商品已完成操作（状态为 '美国发货'）！", type = "message")
       updateTextInput(session, "sku_input", value = "")
       return()
     }
@@ -866,21 +873,42 @@ server <- function(input, output, session) {
         new_status = "美国发货",
         refresh_trigger = unique_items_data_refresh_trigger
       )
-      showNotification(paste0("SKU ", sku, " 已成功操作完成！"), type = "message")
       
       # 检查是否所有物品状态均为“美国发货”
       if (all(order_items()$Status == "美国发货")) {
-        showModal(modalDialog(
-          title = "确认装箱",
-          easyClose = FALSE,
-          div(
-            style = "padding: 10px; font-size: 16px;",
-            paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
-          ),
-          footer = tagList(
-            actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
-          )
-        ))
+        # 获取当前订单备注
+        order_notes <- matching_orders() %>% 
+          filter(OrderID == current_order_id()) %>% 
+          pull(OrderNotes)
+        
+        # 判断备注中是否包含“调货”字样
+        if (grepl("调货", order_notes, fixed = TRUE)) {
+          # 弹窗提示用户订单涉及调货
+          showModal(modalDialog(
+            title = "订单涉及调货",
+            easyClose = FALSE,
+            div(
+              style = "padding: 10px; font-size: 16px; color: #FF0000;",
+              paste0("订单 ", current_order_id(), " 涉及调货物品，请核对物品无误后手动发货。")
+            ),
+            footer = tagList(
+              modalButton("关闭", class = "btn-secondary")
+            )
+          ))
+        } else {
+          # 弹窗提示订单已完成装箱
+          showModal(modalDialog(
+            title = "确认装箱",
+            easyClose = FALSE,
+            div(
+              style = "padding: 10px; font-size: 16px;",
+              paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
+            ),
+            footer = tagList(
+              actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
+            )
+          ))
+        }
       }
       
       # 清空输入框
@@ -945,7 +973,7 @@ server <- function(input, output, session) {
     actionButton("ship_order_btn", "手动发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;", width = "100%")
   })
   
-  # “发货”按钮功能
+  # 手动发货按钮功能
   observeEvent(input$ship_order_btn, {
     req(current_order_id())  # 确保当前订单ID存在
     
