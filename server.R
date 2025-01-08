@@ -1478,6 +1478,13 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$complete_transfer, {
+    # 检查是否选择了订单行
+    if (is.null(selected_order_row())) {
+      # 提示用户未选择订单
+      showNotification("请先点选订单行再执行调货操作！", type = "warning")
+      return()
+    }
+    
     req(selected_order_row())
     
     # 获取选中订单
