@@ -210,7 +210,7 @@ server <- function(input, output, session) {
     
     # 去重：仅保留每个 SKU 和组合的第一条记录
     data <- data %>%
-      arrange(desc(Status == "美国入库"), desc(Defect == "无瑕"), desc(updated_at)) %>%  # 按需求排序
+      arrange(desc(updated_at)) %>%  # 按需求排序
       distinct(SKU, Status, Defect, .keep_all = TRUE)         # 去重，保留所有列
     
     data
