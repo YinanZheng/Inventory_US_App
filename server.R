@@ -2847,6 +2847,7 @@ server <- function(input, output, session) {
   # 使用 uniqueItemsTableServer 渲染表格
   unique_items_table_admin_selected_row <- callModule(uniqueItemsTableServer, "admin_items_table", 
                                                       column_mapping = c(common_columns, list(
+                                                        Defect = "瑕疵态",
                                                         PurchaseTime = "采购日",
                                                         DomesticEntryTime = "入库日",
                                                         DomesticExitTime = "出库日",
