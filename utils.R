@@ -1385,7 +1385,7 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
                 tags$td(tags$strong("备注:"), style = "padding: 5px; vertical-align: top;"),
                 tags$td(
                   div(
-                    style = "color: #007BFF; background-color: #FFFFE0; padding: 5px; white-space: normal; word-wrap: break-word; border-radius: 5px;",
+                    style = "color: #FF0000; background-color: #FFFFAA; padding: 8px; white-space: normal; word-wrap: break-word; border-radius: 5px; font-weight: bold; font-size: 16px; border: 2px solid #FF0000;",
                     order_info$OrderNotes
                   )
                 )
