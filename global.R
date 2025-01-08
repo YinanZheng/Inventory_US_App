@@ -78,6 +78,16 @@ status_columns <<- list(
   "退货" = "ReturnTime"
 )
 
+table_default_options <<- list(
+  scrollY = "730px",
+  scrollX = TRUE,
+  fixedHeader = TRUE,
+  paging = TRUE,
+  pageLength = 30,
+  dom = 'frtip',
+  searching = FALSE
+)
+
 # 定义瑕疵和修复的状态
 defect_statuses <<- c("瑕疵", "修复", "无瑕")
 

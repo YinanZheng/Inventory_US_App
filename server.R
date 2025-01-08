@@ -5,24 +5,24 @@ server <- function(input, output, session) {
   
   # Database
   con <- db_connection()
-
+  
   # ReactiveVal 存储 item_type_data 数据
   item_type_data <- reactiveVal()
   
-  # ReactiveVal 存储 maker_list 数据
+  # ReactiveVal 存储 完整 maker_list 数据
   maker_list <- reactiveVal()
-  
-  # ReactiveVal 用于存储 inventory 数据
-  inventory <- reactiveVal(NULL)  # 初始为 NULL，安全处理未加载数据的情况
-  
-  # ReactiveVal 用于存储 orders 数据
-  orders <- reactiveVal()
   
   # 存储目前数据库中存在的makers与item_names
   makers_items_map <- reactiveVal(NULL)
   
-  # 声明一个 reactiveVal 用于触发unique_items_data刷新
+  # 触发unique_items_data刷新
   unique_items_data_refresh_trigger <- reactiveVal(FALSE)
+  
+  # 触发inventory刷新
+  inventory_refresh_trigger <- reactiveVal(FALSE)
+  
+  # 触发order刷新
+  orders_refresh_trigger <- reactiveVal(FALSE)
   
   # 用于存储 PDF 文件路径
   select_pdf_file_path <- reactiveVal(NULL)
@@ -53,84 +53,42 @@ server <- function(input, output, session) {
     })
   })
   
-  # 应用启动时加载数据: inventory
-  observe({
+  ####################################################################################################################################
+  
+  # 库存表
+  inventory <- reactive({
+    # 当 refresh_trigger 改变时触发更新
+    inventory_refresh_trigger()
+    
     tryCatch({
-      inventory(dbGetQuery(con, "SELECT * FROM inventory"))  # 存储到 reactiveVal
+      # 从 unique_items 表中计算聚合数据并一次性更新
+      dbExecute(
+        con,
+        "
+        UPDATE inventory i
+        JOIN (
+          SELECT 
+            SKU,
+            AVG(ProductCost) AS AvgProductCost,
+            AVG(DomesticShippingCost + IntlShippingCost) AS AvgShippingCost
+          FROM unique_items
+          GROUP BY SKU
+        ) u ON i.SKU = u.SKU
+        SET 
+          i.ProductCost = ROUND(u.AvgProductCost, 2),
+          i.ShippingCost = ROUND(u.AvgShippingCost, 2)
+        "
+      )
+      
+      # 从 inventory 表中加载最新数据
+      updated_inventory <- dbGetQuery(con, "SELECT * FROM inventory")
+      return(updated_inventory)
+      
     }, error = function(e) {
-      inventory(NULL)  # 如果失败，设为空
-      showNotification("Initiation: Failed to load inventory data.", type = "error")
+      showNotification(paste("更新库存表时发生错误：", e$message), type = "error")
+      return(create_empty_inventory())  # 返回空的 inventory 数据表
     })
   })
-  
-  # 应用启动时加载数据: orders
-  observe({
-    tryCatch({
-      orders(dbGetQuery(con, "SELECT * FROM orders"))  # 存储到 reactiveVal
-    }, error = function(e) {
-      orders(NULL)  # 如果失败，设为空
-      showNotification("Initiation: Failed to load orders data.", type = "error")
-    })
-  })
-  
-  # PDF下载按钮默认禁用
-  session$onFlushed(function() {
-    shinyjs::disable("download_select_pdf")
-  })
-  
-  ####################################################################################################################################
-  ###################################################                              ###################################################
-  ###################################################             渲染             ###################################################
-  ###################################################                              ###################################################
-  ####################################################################################################################################
-  
-  # 查询页-库存表 （过滤）
-  filtered_inventory <- reactive({
-    
-    result <- inventory()
-    
-    # Return empty inventory if no results
-    if (nrow(result) == 0) {
-      return(create_empty_inventory())
-    }
-    
-    # 按供应商筛选
-    if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
-      result <- result %>% filter(Maker %in% input[["query_filter-maker"]])
-    }
-    
-    # 按商品名称筛选
-    if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
-      result <- result %>% filter(ItemName == input[["query_filter-name"]])
-    }
-    
-    result <- result[order(result$updated_at, decreasing = TRUE), ]
-    
-    return(result)
-  })
-  
-  # 查询页-库存表渲染
-  output$filtered_inventory_table_query <- renderDT({
-    column_mapping <- list(
-      SKU = "条形码",
-      ItemName = "商品名",
-      ItemImagePath = "商品图片",
-      Maker = "供应商",
-      MajorType = "大类",
-      MinorType = "小类",
-      Quantity = "总库存数",
-      ProductCost = "平均单价",
-      ShippingCost = "平均运费"
-    )
-    
-    render_table_with_images(
-      data = filtered_inventory(),
-      column_mapping = column_mapping,
-      image_column = "ItemImagePath"  # Specify the image column
-    )$datatable
-  })
-  
-  ####################################################################################################################################
   
   # 物品追踪表
   unique_items_data <- reactive({
@@ -176,7 +134,7 @@ server <- function(input, output, session) {
   ")
   })
   
-  # 加载 makers 和 item names
+  # 加载当前已有的 makers 和 item names 的对应关系
   observe({
     unique_data <- unique_items_data()  # 数据源
     makers_items <- unique_data %>%
@@ -185,6 +143,15 @@ server <- function(input, output, session) {
     
     makers_items_map(makers_items)  # 更新 reactiveVal
   })
+  
+  # 订单表
+  orders <- reactive({
+    # 当 refresh_trigger 改变时触发更新
+    orders_refresh_trigger()
+    dbGetQuery(con, "SELECT * FROM orders")
+  })
+  
+  ####################################################################################################################################
   
   # 入库页过滤
   filtered_unique_items_data_inbound <- reactive({
@@ -212,6 +179,50 @@ server <- function(input, output, session) {
     data <- data %>%
       arrange(desc(updated_at)) %>%  # 按需求排序
       distinct(SKU, Status, Defect, .keep_all = TRUE)         # 去重，保留所有列
+    
+    data
+  })
+  
+  # 订单管理页订单过滤
+  filtered_orders <- reactive({
+    req(orders())  # 确保订单数据存在
+    
+    data <- orders()  # 获取所有订单数据
+    
+    # 根据订单号筛选
+    cleaned_filter_order_id <- trimws(input$filter_order_id)
+    if (!is.null(cleaned_filter_order_id) && cleaned_filter_order_id != "") {
+      data <- data %>% filter(grepl(cleaned_filter_order_id, OrderID, ignore.case = TRUE))
+    }
+    
+    # 根据运单号筛选
+    cleaned_filter_tracking_id <- trimws(input$filter_tracking_id)
+    if (!is.null(cleaned_filter_tracking_id) && cleaned_filter_tracking_id != "") {
+      data <- data %>% filter(grepl(cleaned_filter_tracking_id, UsTrackingNumber, ignore.case = TRUE))
+    }
+    
+    # 根据顾客姓名筛选
+    if (!is.null(input$filter_customer_name) && input$filter_customer_name != "") {
+      data <- data %>% filter(grepl(input$filter_customer_name, CustomerName, ignore.case = TRUE))
+    }
+    
+    # 根据顾客网名筛选
+    if (!is.null(input$filter_customer_netname) && input$filter_customer_netname != "") {
+      data <- data %>% filter(grepl(input$filter_customer_netname, CustomerNetName, ignore.case = TRUE))
+    }
+    
+    # 根据电商平台筛选
+    if (!is.null(input$filter_platform) && input$filter_platform != "") {
+      data <- data %>% filter(Platform == input$filter_platform)
+    }
+    
+    # 根据订单状态筛选
+    if (!is.null(input$filter_order_status) && input$filter_order_status != "") {
+      data <- data %>% filter(OrderStatus == input$filter_order_status)
+    }
+    
+    # 按更新时间倒序排列
+    data <- data %>% arrange(desc(updated_at))
     
     data
   })
@@ -260,6 +271,30 @@ server <- function(input, output, session) {
     data
   })
   
+  # 查询页过滤-库存表
+  filtered_inventory <- reactive({
+    req(inventory())
+    result <- inventory()
+    
+    # Return empty inventory if no results
+    if (nrow(result) == 0) {
+      return(create_empty_inventory())
+    }
+    
+    # 按供应商筛选
+    if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
+      result <- result %>% filter(Maker %in% input[["query_filter-maker"]])
+    }
+    
+    # 按商品名称筛选
+    if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
+      result <- result %>% filter(ItemName == input[["query_filter-name"]])
+    }
+    
+    result <- result[order(result$updated_at, decreasing = TRUE), ]
+    
+    return(result)
+  })
   
   # 下载页过滤
   filtered_unique_items_data_download <- reactive({
@@ -273,101 +308,14 @@ server <- function(input, output, session) {
   })
   
   
-  # 缓存目前数据库已有物品的makers：makers_df
-  makers_df <- reactive({
-    makers <- unique_items_data() %>% pull(Maker) %>% unique()
-    
-    if (!is.null(makers) && length(makers) > 0) {
-      data.frame(Maker = makers, stringsAsFactors = FALSE) %>%
-        mutate(Pinyin = remove_tone(stringi::stri_trans_general(Maker, "Latin")))
-    } else {
-      data.frame(Maker = character(), Pinyin = character(), stringsAsFactors = FALSE)
-    }
-  })
-  
-  # 订单管理页订单过滤
-  filtered_orders <- reactive({
-    req(orders())  # 确保订单数据存在
-    
-    data <- orders()  # 获取所有订单数据
-    
-    # 根据订单号筛选
-    cleaned_filter_order_id <- trimws(input$filter_order_id)
-    if (!is.null(cleaned_filter_order_id) && cleaned_filter_order_id != "") {
-      data <- data %>% filter(grepl(cleaned_filter_order_id, OrderID, ignore.case = TRUE))
-    }
-    
-    # 根据运单号筛选
-    cleaned_filter_tracking_id <- trimws(input$filter_tracking_id)
-    if (!is.null(cleaned_filter_tracking_id) && cleaned_filter_tracking_id != "") {
-      data <- data %>% filter(grepl(cleaned_filter_tracking_id, UsTrackingNumber, ignore.case = TRUE))
-    }
-    
-    # 根据顾客姓名筛选
-    if (!is.null(input$filter_customer_name) && input$filter_customer_name != "") {
-      data <- data %>% filter(grepl(input$filter_customer_name, CustomerName, ignore.case = TRUE))
-    }
-    
-    # 根据顾客网名筛选
-    if (!is.null(input$filter_customer_netname) && input$filter_customer_netname != "") {
-      data <- data %>% filter(grepl(input$filter_customer_netname, CustomerNetName, ignore.case = TRUE))
-    }
-    
-    # 根据电商平台筛选
-    if (!is.null(input$filter_platform) && input$filter_platform != "") {
-      data <- data %>% filter(Platform == input$filter_platform)
-    }
-    
-    # 根据订单状态筛选
-    if (!is.null(input$filter_order_status) && input$filter_order_status != "") {
-      data <- data %>% filter(OrderStatus == input$filter_order_status)
-    }
-    
-    # 按更新时间倒序排列
-    data <- data %>% arrange(desc(updated_at))
-    
-    data
-  })
-  
   # 渲染物品追踪数据表
   unique_items_table_inbound_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_inbound",
                                                         column_mapping <- c(common_columns, list(
                                                           ItemCount = "数量")
                                                         ), selection = "multiple", data = filtered_unique_items_data_inbound)
   
-  ##################
+  ####################################################################################################################################
   
-  unique_items_table_manage_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_manage",
-                                                       column_mapping <- c(common_columns, list(
-                                                         UsEntryTime = "入库日",
-                                                         UsSoldTime = "售出日",
-                                                         UsShippingTime = "发货日")
-                                                       ), selection = "multiple", data = unique_items_data)
-  
-  unique_items_table_defect_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_defect",
-                                                       column_mapping <- c(common_columns, list(
-                                                         UsEntryTime = "入库日",
-                                                         DefectNotes = "瑕疵品备注")
-                                                       ), selection = "multiple", data = filtered_unique_items_data_defect)
-  
-  unique_items_table_logistics_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_logistics",
-                                                          column_mapping = c(common_columns, list(
-                                                            IntlShippingMethod = "国际运输",
-                                                            DomesticSoldTime = "售出日",
-                                                            DomesticExitTime = "出库日",
-                                                            IntlShippingCost = "平摊国际运费",
-                                                            IntlTracking = "国际物流单号"
-                                                          )), selection = "multiple",
-                                                          data = filtered_unique_items_data_logistics)
-  
-  unique_items_table_download_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_download",
-                                                         column_mapping <- c(common_columns, list(
-                                                           UsEntryTime = "入库日",
-                                                           UsSoldTime = "售出日",
-                                                           UsShippingTime = "发货日")
-                                                         ), data = filtered_unique_items_data_download)
-  
-
   # 订单管理分页订单表
   selected_order_row <- callModule(orderTableServer, "orders_table_module",
                                    column_mapping = list(
@@ -383,6 +331,62 @@ server <- function(input, output, session) {
                                    data = filtered_orders,  # 数据源
                                    selection = "single" # 单选模式
   )
+  
+  unique_items_table_manage_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_manage",
+                                                       column_mapping <- c(common_columns, list(
+                                                         UsEntryTime = "入库日",
+                                                         UsSoldTime = "售出日",
+                                                         UsShippingTime = "发货日")
+                                                       ), selection = "multiple", data = unique_items_data,
+                                                       option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
+  
+  unique_items_table_defect_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_defect",
+                                                       column_mapping <- c(common_columns, list(
+                                                         UsEntryTime = "入库日",
+                                                         DefectNotes = "瑕疵品备注")
+                                                       ), selection = "multiple", data = filtered_unique_items_data_defect,
+                                                       option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
+  
+  unique_items_table_logistics_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_logistics",
+                                                          column_mapping = c(common_columns, list(
+                                                            IntlShippingMethod = "国际运输",
+                                                            DomesticSoldTime = "售出日",
+                                                            DomesticExitTime = "出库日",
+                                                            IntlShippingCost = "平摊国际运费",
+                                                            IntlTracking = "国际物流单号"
+                                                          )), selection = "multiple",
+                                                          data = filtered_unique_items_data_logistics,
+                                                          option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
+  
+  output$filtered_inventory_table_query <- renderDT({  # input$filtered_inventory_table_query_rows_selected
+    column_mapping <- list(
+      SKU = "条形码",
+      ItemName = "商品名",
+      ItemImagePath = "商品图",
+      Maker = "供应商",
+      MajorType = "大类",
+      MinorType = "小类",
+      Quantity = "总库存数",
+      ProductCost = "平均成本",
+      ShippingCost = "平均运费"
+    )
+    
+    render_table_with_images(
+      data = filtered_inventory(),
+      column_mapping = column_mapping,
+      image_column = "ItemImagePath"  # Specify the image column
+    )$datatable
+  })
+  
+  unique_items_table_download_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_download",
+                                                         column_mapping <- c(common_columns, list(
+                                                           UsEntryTime = "入库日",
+                                                           UsSoldTime = "售出日",
+                                                           UsShippingTime = "发货日")
+                                                         ), data = filtered_unique_items_data_download)
+  
+
+  
   
   ####################################################################################################################################
   
@@ -438,8 +442,7 @@ server <- function(input, output, session) {
         showNotification("自动入库失败，可能物品已全部入库或数据异常！", type = "error")
       }
       
-      # 刷新 UI 和数据
-      inventory(dbGetQuery(con, "SELECT * FROM inventory"))
+      # 更新数据并触发 UI 刷新
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
       # 清空 SKU 输入框
@@ -509,8 +512,7 @@ server <- function(input, output, session) {
       }
     }
     
-    # 刷新 UI 和数据
-    inventory(dbGetQuery(con, "SELECT * FROM inventory"))
+    # 更新数据并触发 UI 刷新
     unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
     
     # 重置输入
@@ -539,6 +541,11 @@ server <- function(input, output, session) {
       shinyjs::hide("defective_notes_container")
       updateTextInput(session, "defective_notes", value = "") # 清空备注
     }
+  })
+  
+  # PDF下载按钮默认禁用
+  session$onFlushed(function() {
+    shinyjs::disable("download_select_pdf")
   })
   
   # 生成选中商品条形码 PDF
@@ -834,7 +841,8 @@ server <- function(input, output, session) {
     # 更新当前订单状态
     tryCatch({
       dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(current_order_id()))
-      orders(dbGetQuery(con, "SELECT * FROM orders"))
+      
+      orders_refresh_trigger(!orders_refresh_trigger())
       
       showNotification(paste0("订单 ", current_order_id(), " 已成功装箱！"), type = "message")
       
@@ -866,7 +874,9 @@ server <- function(input, output, session) {
     tryCatch({
       # 更新订单状态为“装箱”
       dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(current_order_id()))
-      orders(dbGetQuery(con, "SELECT * FROM orders"))  # 刷新订单数据
+      
+      orders_refresh_trigger(!orders_refresh_trigger())
+      
       showNotification(paste0("订单 ", current_order_id(), " 已手动登记为装箱状态！"), type = "message")
       
       # 清空订单ID
@@ -1063,19 +1073,17 @@ server <- function(input, output, session) {
       
       # 调整库存
       for (sku in unique(items$SKU)) {
-        adjustment_result <- adjust_inventory(
+        adjust_inventory_quantity(
           con = con,
           sku = sku,
           adjustment = -nrow(items %>% filter(SKU == sku))
         )
-        if (!adjustment_result) stop("库存调整失败")
       }
       
       dbCommit(con)
       
-      # 刷新数据
-      inventory(dbGetQuery(con, "SELECT * FROM inventory"))
-      orders(dbGetQuery(con, "SELECT * FROM orders"))
+      # 更新数据并触发 UI 刷新
+      orders_refresh_trigger(!orders_refresh_trigger())
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
       # 结果展示
@@ -1306,7 +1314,7 @@ server <- function(input, output, session) {
     )
     
     # 更新订单表格
-    orders(dbGetQuery(con, "SELECT * FROM orders"))
+    orders_refresh_trigger(!orders_refresh_trigger())
     
     # reset_order_form(session, image_sold)
   })
@@ -1382,7 +1390,7 @@ server <- function(input, output, session) {
     ", params = list(new_notes, order_id))
       
       # 重新加载最新的 orders 数据
-      orders(dbGetQuery(con, "SELECT * FROM orders"))
+      orders_refresh_trigger(!orders_refresh_trigger())
       
       # 通知用户操作成功
       showNotification(sprintf("订单 #%s 已更新为备货状态！", order_id), type = "message")
@@ -1465,7 +1473,7 @@ server <- function(input, output, session) {
           item <- associated_items[i, ]
           
           # 逆向调整库存
-          adjust_inventory(
+          adjust_inventory_quantity(
             con = con,
             sku = item$SKU,
             adjustment = 1  # 增加库存数量
@@ -1499,10 +1507,9 @@ server <- function(input, output, session) {
       }
       showNotification(message, type = "message")
       
-      # 刷新数据
-      inventory(dbGetQuery(con, "SELECT * FROM inventory"))
+      # 更新数据并触发 UI 刷新
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-      orders(dbGetQuery(con, "SELECT * FROM orders"))
+      orders_refresh_trigger(!orders_refresh_trigger())
       
       # 重置输入
       reset_order_form(session, image_sold)
@@ -1548,46 +1555,34 @@ server <- function(input, output, session) {
     
     tryCatch({
       # 获取选中物品的 UniqueID 和 SKU
-      selected_items <- unique_items_data()[selected_rows, ]
+      selected_items <- filtered_unique_items_data_manage()[selected_rows, ]
       
       dbBegin(con) # 开启事务
       
       for (i in seq_len(nrow(selected_items))) {
         # 删除 unique_items 中对应的记录
         dbExecute(con, "
-      DELETE FROM unique_items
-      WHERE UniqueID = ?", params = list(selected_items$UniqueID[i]))
+          DELETE FROM unique_items
+          WHERE UniqueID = ?", params = list(selected_items$UniqueID[i]))
         
         # 重新计算平均 ProductCost 和 ShippingCost
         sku <- selected_items$SKU[i]
         
         remaining_items <- dbGetQuery(con, "
-      SELECT AVG(ProductCost) AS AvgProductCost, 
-             AVG(DomesticShippingCost) AS AvgShippingCost,
-             COUNT(*) AS RemainingCount
-      FROM unique_items
-      WHERE SKU = ?", params = list(sku))
+                            SELECT COUNT(*) AS RemainingCount
+                            FROM unique_items
+                            WHERE SKU = ?", params = list(sku))
         
         if (remaining_items$RemainingCount[1] > 0) {
-          # 更新 inventory 表的平均单价和库存数量
-          dbExecute(con, "
-        UPDATE inventory
-        SET Quantity = ?, 
-            ProductCost = ?, 
-            ShippingCost = ?
-        WHERE SKU = ?", 
-                    params = list(
-                      remaining_items$RemainingCount[1],
-                      remaining_items$AvgProductCost[1],
-                      remaining_items$AvgShippingCost[1],
-                      sku
-                    ))
+          # 库存减一
+          adjust_inventory_quantity(con, sku, adjustment = -1)
         } else {
           # 如果没有剩余记录，删除 inventory 表中的该 SKU
           dbExecute(con, "
-        DELETE FROM inventory
-        WHERE SKU = ?", params = list(sku))
+            DELETE FROM inventory
+            WHERE SKU = ?", params = list(sku))
         }
+        inventory_refresh_trigger(!inventory_refresh_trigger())
       }
       
       dbCommit(con) # 提交事务
@@ -1595,8 +1590,7 @@ server <- function(input, output, session) {
       # 通知用户成功删除
       showNotification("物品删除成功！", type = "message")
       
-      # 更新 inventory, unique_items 数据并触发 UI 刷新
-      inventory(dbGetQuery(con, "SELECT * FROM inventory"))
+      # 更新数据并触发 UI 刷新
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
     }, error = function(e) {
@@ -1607,6 +1601,7 @@ server <- function(input, output, session) {
     # 关闭确认框
     removeModal()
   })
+  
   
   # 采购商品图片处理模块
   image_manage <- imageModuleServer("image_manage")
@@ -1657,8 +1652,7 @@ server <- function(input, output, session) {
                     WHERE SKU = ?",
                   params = list(updated_image_path, selected_sku))
         
-        # 更新 inventory, unique_items数据并触发 UI 刷新
-        inventory(dbGetQuery(con, "SELECT * FROM inventory"))
+        # 更新数据并触发 UI 刷新
         unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
         
         # 显示成功通知
@@ -2030,7 +2024,7 @@ server <- function(input, output, session) {
     
     shinyjs::disable("link_tracking_btn")  # 禁用按钮
     
-    # 刷新表格数据
+    # 更新数据并触发 UI 刷新
     unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
     
     # 关闭确认对话框
@@ -2146,8 +2140,9 @@ server <- function(input, output, session) {
       
       dbCommit(con)
       
-      # 刷新表格数据
+      # 更新数据并触发 UI 刷新
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
+      
       showNotification("运单号已成功挂靠，平摊运费已更新！", type = "message")
     }, error = function(e) {
       # 回滚事务并通知用户
@@ -2179,10 +2174,10 @@ server <- function(input, output, session) {
         )
       })
       
-      # 刷新数据
+      # 更新数据并触发 UI 刷新
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-      showNotification("运单号已成功删除！", type = "message")
       
+      showNotification("运单号已成功删除！", type = "message")
     }, error = function(e) {
       showNotification(paste("删除运单号失败：", e$message), type = "error")
     })
@@ -2994,8 +2989,7 @@ server <- function(input, output, session) {
         )
       })
       
-      # 刷新数据
-      inventory(dbGetQuery(con, "SELECT * FROM inventory"))
+      # 更新数据并触发 UI 刷新
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
     }, error = function(e) {
