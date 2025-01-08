@@ -857,6 +857,7 @@ server <- function(input, output, session) {
     }, error = function(e) {
       showNotification(paste("更新订单状态时发生错误：", e$message), type = "error")
     })
+    runjs("document.getElementById('shipping_bill_number').focus();")
   })
   
   observeEvent(input$clear_shipping_bill_btn, {
