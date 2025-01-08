@@ -399,7 +399,7 @@ server <- function(input, output, session) {
   ################################################################
   
   # 监听标签页切换事件
-  observeEvent(input$inventory_china, {
+  observeEvent(input$inventory_us, {
     if (input$inventory_us == "入库") {
       runjs("document.getElementById('inbound_sku').focus();")
     }
