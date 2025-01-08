@@ -889,10 +889,10 @@ server <- function(input, output, session) {
             easyClose = FALSE,
             div(
               style = "padding: 10px; font-size: 16px; color: #FF0000;",
-              paste0("订单 ", current_order_id(), " 涉及调货物品，请核对物品无误后手动发货。")
+              paste0("订单 ", current_order_id(), " 涉及调货物品，请核对物品备齐后手动发货。")
             ),
             footer = tagList(
-              modalButton("关闭", class = "btn-primary")
+              modalButton("关闭")
             )
           ))
         } else {
