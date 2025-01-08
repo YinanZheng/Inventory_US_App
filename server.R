@@ -1356,7 +1356,7 @@ server <- function(input, output, session) {
         if (order_status == "调货") {
           actionButton(
             inputId = "complete_transfer",
-            label = "已完成预定",
+            label = "已完成调货",
             class = "btn-success",
             style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
           )
