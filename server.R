@@ -335,7 +335,6 @@ server <- function(input, output, session) {
   unique_items_table_manage_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_manage",
                                                        column_mapping <- c(common_columns, list(
                                                          UsEntryTime = "入库日",
-                                                         UsSoldTime = "售出日",
                                                          UsShippingTime = "发货日",
                                                          OrderID = "订单号")
                                                        ), selection = "multiple", data = unique_items_data,
@@ -352,7 +351,6 @@ server <- function(input, output, session) {
   unique_items_table_logistics_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_logistics",
                                                           column_mapping = c(common_columns, list(
                                                             IntlShippingMethod = "国际运输",
-                                                            DomesticSoldTime = "售出日",
                                                             DomesticExitTime = "出库日",
                                                             IntlShippingCost = "平摊国际运费",
                                                             IntlTracking = "国际物流单号"
@@ -383,7 +381,6 @@ server <- function(input, output, session) {
   unique_items_table_download_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_download",
                                                          column_mapping <- c(common_columns, list(
                                                            UsEntryTime = "入库日",
-                                                           UsSoldTime = "售出日",
                                                            UsShippingTime = "发货日")
                                                          ), data = filtered_unique_items_data_download)
   
@@ -2980,10 +2977,8 @@ server <- function(input, output, session) {
   unique_items_table_admin_selected_row <- callModule(uniqueItemsTableServer, "admin_items_table", 
                                                       column_mapping = c(common_columns, list(
                                                         Defect = "瑕疵态",
-                                                        PurchaseTime = "采购日",
-                                                        DomesticEntryTime = "入库日",
-                                                        DomesticExitTime = "出库日",
-                                                        DomesticSoldTime = "出售日",
+                                                        UsEntryTime = "入库日",
+                                                        UsShippingTime = "出库日",
                                                         IntlShippingMethod = "国际运输",
                                                         OrderID = "订单号"
                                                       )), 
