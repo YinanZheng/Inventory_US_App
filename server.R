@@ -820,14 +820,14 @@ server <- function(input, output, session) {
           paste0("当前订单状态为 '", current_order$OrderStatus[1], "' ，操作可能受限！请核对后继续。"),
           type = "warning"
         )
+      } else {
+        # 提示扫描SKU条码
+        runjs("document.getElementById('sku_input').focus();")
+        showNotification(
+          paste0("请为订单 ", current_order_id(), " 扫描或输入SKU条码！"),
+          type = "message"
+        )
       }
-      
-      # 提示扫描SKU条码
-      runjs("document.getElementById('sku_input').focus();")
-      showNotification(
-        paste0("请为订单 ", current_order_id(), " 扫描或输入SKU条码！"),
-        type = "message"
-      )
     }
   })
   
