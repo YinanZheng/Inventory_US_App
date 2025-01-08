@@ -260,6 +260,22 @@ server <- function(input, output, session) {
     data
   })
   
+  # 物品管理页过滤
+  filtered_unique_items_data_manage <- reactive({
+    req(unique_items_data())
+    data <- unique_items_data()
+    
+    data <- filter_unique_items_data_by_inputs(
+      data = data,
+      input = input,
+      maker_input_id = "manage_filter-maker",
+      item_name_input_id = "manage_filter-name",
+      purchase_date_range_id = "manage_filter-purchase_date_range"
+    )
+    
+    data
+  })
+  
   # 瑕疵品管理页过滤
   filtered_unique_items_data_defect <- reactive({
     req(unique_items_data())
@@ -341,14 +357,18 @@ server <- function(input, output, session) {
   })
   
   
+  
+  ####################################################################################################################################
+  
+  
+  
   # 渲染物品追踪数据表
   unique_items_table_inbound_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_inbound",
                                                         column_mapping <- c(common_columns, list(
                                                           ItemCount = "数量")
                                                         ), selection = "multiple", data = filtered_unique_items_data_inbound)
   
-  ####################################################################################################################################
-  
+
   # 订单管理分页订单表
   selected_order_row <- callModule(orderTableServer, "orders_table_module",
                                    column_mapping = list(
@@ -1785,7 +1805,6 @@ server <- function(input, output, session) {
           DELETE FROM unique_items
           WHERE UniqueID = ?", params = list(selected_items$UniqueID[i]))
         
-        # 重新计算平均 ProductCost 和 ShippingCost
         sku <- selected_items$SKU[i]
         
         remaining_items <- dbGetQuery(con, "
