@@ -892,7 +892,7 @@ server <- function(input, output, session) {
               paste0("订单 ", current_order_id(), " 涉及调货物品，请核对物品无误后手动发货。")
             ),
             footer = tagList(
-              modalButton("关闭", class = "btn-secondary")
+              modalButton("关闭", class = "btn-primary")
             )
           ))
         } else {
@@ -965,12 +965,17 @@ server <- function(input, output, session) {
     # 检查订单备注是否包含“调货”
     has_transfer_note <- grepl("调货", order_notes, fixed = TRUE)
     
-    # 判断按钮显示条件：订单内无物品 或 备注中含“调货”
-    if (nrow(order_items()) > 0 && !has_transfer_note) {
-      return(NULL)  # 如果条件不满足，隐藏按钮
+    # 获取当前订单内的物品
+    items <- order_items()
+    
+    # 判断按钮显示条件
+    if (nrow(items) == 0 || (all(items$Status == "美国发货") && has_transfer_note)) {
+      # 如果订单内没有物品，或者订单内物品状态全为“美国发货”且备注包含“调货”
+      return(actionButton("ship_order_btn", "手动发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;", width = "100%"))
     }
     
-    actionButton("ship_order_btn", "手动发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;", width = "100%")
+    # 如果条件不满足，隐藏按钮
+    return(NULL)
   })
   
   # 手动发货按钮功能
