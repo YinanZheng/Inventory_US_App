@@ -901,8 +901,12 @@ server <- function(input, output, session) {
   
   # 动态显示“发货”按钮
   output$dynamic_ship_button <- renderUI({
-    if (is.null(current_order_id()) || nrow(order_items()) > 0) {
-      return(NULL)  # 如果订单内有物品或没有订单，隐藏按钮
+    # 检查订单备注是否包含“调货”
+    has_transfer_note <- !is.null(current_order_id()) && grepl("调货", order_info()$OrderNotes, fixed = TRUE)
+    
+    # 判断按钮显示条件：订单内无物品 或 备注中含“调货”
+    if (is.null(current_order_id()) || nrow(order_items()) > 0 || !has_transfer_note) {
+      return(NULL)  # 如果条件不满足，隐藏按钮
     }
     actionButton("ship_order_btn", "手动发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;", width = "100%")
   })
