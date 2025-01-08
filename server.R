@@ -815,8 +815,19 @@ server <- function(input, output, session) {
     
     # 检查订单状态
     if (current_order$OrderStatus[1] != "装箱") {
+      if (current_order$OrderStatus[1] != "备货") {
+        showNotification(
+          paste0("当前订单状态为 '", current_order$OrderStatus[1], "' ，操作可能受限！请核对后继续。"),
+          type = "warning"
+        )
+      }
+      
+      # 提示扫描SKU条码
       runjs("document.getElementById('sku_input').focus();")
-      showNotification(paste0("请为订单 ", current_order_id(), " 扫描或输入SKU条码！"), type = "message")
+      showNotification(
+        paste0("请为订单 ", current_order_id(), " 扫描或输入SKU条码！"),
+        type = "message"
+      )
     }
   })
   
@@ -825,6 +836,17 @@ server <- function(input, output, session) {
     req(input$shipping_bill_number, input$sku_input)
     
     sku <- trimws(input$sku_input)
+    
+    # 获取当前订单
+    current_order <- matching_orders() %>% filter(OrderID == current_order_id())
+    
+    # 检查订单状态是否为“备货”
+    if (nrow(current_order) == 0 || current_order$OrderStatus != "备货") {
+      showNotification("当前订单状态不是“备货”，不可发货！", type = "error")
+      # 清空输入框
+      updateTextInput(session, "sku_input", value = "")
+      return()
+    }
     
     # 查找SKU对应的物品
     matching_item <- order_items() %>% filter(SKU == sku, Status != "美国发货")
@@ -892,10 +914,9 @@ server <- function(input, output, session) {
     runjs("document.getElementById('shipping_bill_number').focus();")
   })
   
+  # 清空运单号和 SKU 输入框
   observeEvent(input$clear_shipping_bill_btn, {
-    # 清空运单号和 SKU 输入框
     updateTextInput(session, "shipping_bill_number", value = "")
-    # 提示用户操作完成
     showNotification("运单号和 SKU 输入框已清空！", type = "message")
   })
   
