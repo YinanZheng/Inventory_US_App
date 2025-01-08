@@ -471,14 +471,29 @@ ui <- navbarPage(
           
           # 按钮区
           div(
-            style = "margin-top: 10px; display: flex; justify-content: space-between;",
-            uiOutput("register_order_button_ui"),
-            actionButton(
-              "clear_order_btn",
-              "清空订单",
-              icon = icon("eraser"),
-              class = "btn-warning",
-              style = "font-size: 16px; width: 48%; height: 42px;"
+            style = "margin-top: 10px; display: flex; flex-direction: column; gap: 5px;",  # 增加垂直间距
+            
+            div(
+              style = "display: flex; justify-content: space-between;",
+              uiOutput("register_order_button_ui"),
+              actionButton(
+                "clear_order_btn",
+                "清空订单",
+                icon = icon("eraser"),
+                class = "btn-warning",
+                style = "font-size: 16px; width: 48%; height: 42px;"
+              )
+            ),
+            
+            div(
+              style = "margin-top: 5px; display: flex; justify-content: center;",  # 设置行间距
+              actionButton(
+                "merge_order_btn",
+                "合并订单",
+                icon = icon("object-group"),
+                class = "btn-primary",
+                style = "font-size: 16px; width: 100%; height: 42px;"
+              )
             )
           )
         )
