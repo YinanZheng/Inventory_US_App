@@ -90,6 +90,12 @@ server <- function(input, output, session) {
     })
   })
   
+  # 商品名自动联想
+  item_names <- reactive({
+    req(inventory())
+    unique(inventory()$ItemName)  # 提取唯一的商品名
+  })
+  
   # 物品追踪表
   unique_items_data <- reactive({
     # 当 refresh_trigger 改变时触发更新
