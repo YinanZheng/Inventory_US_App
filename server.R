@@ -922,13 +922,14 @@ server <- function(input, output, session) {
   
   # 动态显示“发货”按钮
   output$dynamic_ship_button <- renderUI({
+    # 确保匹配订单和当前订单 ID 存在
+    req(matching_orders(), current_order_id())
+    
     # 从 matching_orders() 获取当前订单信息
     order <- matching_orders() %>% filter(OrderID == current_order_id())
     
-    # 检查是否找到该订单
-    if (nrow(order) == 0) {
-      return(NULL)  # 如果未找到当前订单，隐藏按钮
-    }
+    # 确保找到当前订单
+    req(nrow(order) > 0)
     
     # 提取备注字段
     order_notes <- order$OrderNotes
