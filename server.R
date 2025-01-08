@@ -1353,9 +1353,9 @@ server <- function(input, output, session) {
         ),
         
         # 右侧按钮（仅在订单状态为“预定”时显示）
-        if (order_status == "预定") {
+        if (order_status == "调货") {
           actionButton(
-            inputId = "complete_preorder",
+            inputId = "complete_transfer",
             label = "已完成预定",
             class = "btn-success",
             style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
