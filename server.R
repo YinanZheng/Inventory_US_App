@@ -713,13 +713,11 @@ server <- function(input, output, session) {
     req(order_items(), matching_orders())
     
     if (nrow(order_items()) == 0) {
-      renderOrderItems(output, "order_items_cards", data.frame())  # 清空物品卡片
+      renderOrderItems(output, "shipping_order_items_cardss", data.frame())  # 清空物品卡片
       return()
     }
     
-    showNotification(paste0(order_items()$SKU, collapse  = ", "))
-    
-    renderOrderItems(output, "order_items_cards", order_items())
+    renderOrderItems(output, "shipping_order_items_cardss", order_items())
     runjs("document.getElementById('sku_input').focus();")
   })
   
@@ -731,7 +729,7 @@ server <- function(input, output, session) {
     if (is.null(input$shipping_bill_number) || input$shipping_bill_number == "") {
       current_order_id(NULL)  # 清空当前订单 ID
       output$order_items_title <- renderUI({ NULL })  # 清空标题
-      renderOrderItems(output, "order_items_cards", data.frame())  # 清空物品卡片
+      renderOrderItems(output, "shipping_order_items_cardss", data.frame())  # 清空物品卡片
     }
   })
   
@@ -973,7 +971,7 @@ server <- function(input, output, session) {
   # 动态渲染订单物品卡片
   observe({
     req(new_order_items())
-    renderOrderItems(output, "order_items_cards", new_order_items(), deletable = TRUE)
+    renderOrderItems(output, "shipping_order_items_cardss", new_order_items(), deletable = TRUE)
   })
   
   observeEvent(input$us_shipping_sku_input, {
@@ -1027,7 +1025,7 @@ server <- function(input, output, session) {
     if (bill_number == "") {
       renderOrderInfo(output, "order_info_card", data.frame())  # 清空订单信息卡片
       output$order_items_title <- renderUI({ NULL })  # 清空标题
-      renderOrderItems(output, "order_items_cards", data.frame())  # 清空物品卡片
+      renderOrderItems(output, "shipping_order_items_cardss", data.frame())  # 清空物品卡片
     } else {
       # 延迟后执行的逻辑
       runjs("document.getElementById('us_shipping_sku_input').focus();")
@@ -1111,7 +1109,7 @@ server <- function(input, output, session) {
       })
       
       added_order_items <- unique_items_data() %>% filter(OrderID == order$OrderID)
-      renderOrderItems(output, "order_items_cards", added_order_items, deletable = FALSE)
+      renderOrderItems(output, "shipping_order_items_cardss", added_order_items, deletable = FALSE)
       
       showNotification(
         paste0("订单已成功发货！订单号：", order$OrderID, "，共发货 ", nrow(items), " 件。"),

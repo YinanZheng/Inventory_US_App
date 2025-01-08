@@ -511,7 +511,7 @@ ui <- navbarPage(
           class = "card",
           style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
           uiOutput("associated_items_title"),  # 动态标题
-          uiOutput("order_items_cards")  # 动态显示订单内物品卡片
+          uiOutput("shipping_order_items_cards")  # 动态显示订单内物品卡片
         )
       )
     )
