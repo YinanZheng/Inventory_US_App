@@ -415,6 +415,13 @@ ui <- navbarPage(
           
           fluidRow(
             column(6, 
+                   textInput("filter_sku", "SKU反查", placeholder = "输入SKU", width = "100%")),
+            column(6, 
+                   autocompleteInputUI("sold", label = "商品名反查", placeholder = "输入商品名"))
+          ),
+          
+          fluidRow(
+            column(6, 
                    actionButton("delete_order_btn", "删除订单", class = "btn-danger", style = "width: 100%;")),
             column(6, 
                    actionButton("reset_filter_btn", "清空筛选条件", class = "btn-secondary", style = "width: 100%;"))
