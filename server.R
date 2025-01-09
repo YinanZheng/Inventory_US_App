@@ -463,6 +463,8 @@ server <- function(input, output, session) {
   
   # 监听 SKU 输入
   observeEvent(input$inbound_sku, {
+    req(input$inbound_sku)
+    
     # 调用 handleSkuInput 并获取待入库数量
     pending_quantity <- handleSkuInput(
       sku_input = input$inbound_sku,
@@ -496,7 +498,6 @@ server <- function(input, output, session) {
         showNotification(paste0("SKU ", input$inbound_sku, " 的一个物品已自动入库！"), type = "message")
       } else {
         showNotification("自动入库失败，可能物品已全部入库或存在调货物品！", type = "error")
-        updateTextInput(session, "inbound_sku", value = "")
         return()
       }
       
