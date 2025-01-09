@@ -496,6 +496,7 @@ server <- function(input, output, session) {
         showNotification(paste0("SKU ", input$inbound_sku, " 的一个物品已自动入库！"), type = "message")
       } else {
         showNotification("自动入库失败，可能物品已全部入库或存在调货物品！", type = "error")
+        updateTextInput(session, "inbound_sku", value = "")
         return()
       }
       
