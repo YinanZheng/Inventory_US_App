@@ -495,7 +495,8 @@ server <- function(input, output, session) {
       if (!is.null(unique_ID) && unique_ID != "") {
         showNotification(paste0("SKU ", input$inbound_sku, " 的一个物品已自动入库！"), type = "message")
       } else {
-        showNotification("自动入库失败，可能物品已全部入库或数据异常！", type = "error")
+        showNotification("自动入库失败，可能物品已全部入库或存在调货物品！", type = "error")
+        return()
       }
       
       # 更新数据并触发 UI 刷新
