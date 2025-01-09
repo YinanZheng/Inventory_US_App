@@ -478,18 +478,17 @@ server <- function(input, output, session) {
     # 如果启用自动入库功能，直接执行入库逻辑
     if (input$auto_inbound && !is.null(pending_quantity) && pending_quantity > 0) {
       unique_ID <- handleOperation(
-        operation_name = "入库",
-        sku_input = input$inbound_sku,
+        unique_items_data(),
+        operation_name = "入库", 
+        sku_field = "inbound_sku",
         output_name = "inbound_item_info",
         query_status = "国内出库",
         update_status_value = "美国入库",
-        count_label = "待入库数",
-        count_field = "PendingQuantity",
-        con = con,
-        output = output,
-        refresh_trigger = NULL,
-        session = session,
-        input = input
+        count_label = "待入库数", 
+        count_field = "PendingQuantity", 
+        refresh_trigger = NULL, # 批量处理完了再触发刷新      
+        con,                  
+        input, output, session
       )
       
       # 检查是否成功处理
@@ -527,18 +526,17 @@ server <- function(input, output, session) {
     # 批量处理入库逻辑
     for (i in seq_len(inbound_quantity)) {
       unique_ID <- handleOperation(
-        operation_name = "入库",
-        sku_input = input$inbound_sku,
+        unique_items_data(),
+        operation_name = "入库", 
+        sku_field = "inbound_sku",
         output_name = "inbound_item_info",
         query_status = "国内出库",
         update_status_value = "美国入库",
-        count_label = "待入库数",
-        count_field = "PendingQuantity",
-        con = con,
-        output = output,
-        refresh_trigger = NULL,
-        session = session,
-        input = input
+        count_label = "待入库数", 
+        count_field = "PendingQuantity", 
+        refresh_trigger = NULL, # 批量处理完了再触发刷新      
+        con,                  
+        input, output, session
       )
       
       # 如果未找到对应的 UniqueID，停止后续操作

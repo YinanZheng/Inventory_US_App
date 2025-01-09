@@ -703,22 +703,21 @@ handleSkuInput <- function(
 }
 
 handleOperation <- function(
-    operation_name,       # 操作名称（入库、出库、售出）
-    sku_input,            # SKU 输入字段
-    output_name,          # 输出的 UI 名称
-    query_status,         # 查询的初始状态
-    update_status_value,  # 更新后的状态
-    count_label,          # 显示的计数标签
-    count_field,          # 计数字段名称
-    con,                  # 数据库连接
-    output,               # 输出对象
-    refresh_trigger,      # 数据刷新触发器
-    session,              # 当前会话对象
-    input = NULL,          # 显式传递的 input 对象
-    clear_field = NULL,    # 需要清空的字段
+    unique_items_data,       # 数据集
+    operation_name,          # 操作名称（如 "入库", "出库"）
+    sku_field,               # SKU 字段的 input 名称
+    output_name,             # 输出的 UI 名称
+    query_status,            # 查询的初始状态
+    update_status_value,     # 更新后的状态
+    count_label,             # 计数标签
+    count_field,             # 计数字段名称
+    refresh_trigger,         # 数据刷新触发器
+    con,                     # 数据库连接
+    input, output, session,  # Shiny 的输入、输出和会话对象
+    clear_field = NULL,      # 需要清空的字段
     clear_shipping_method = FALSE
 ) {
-  sku <- trimws(sku_input) # 清理空格
+  sku <- trimws(input[[sku_field]])
   
   if (is.null(sku) || sku == "") {
     showNotification("请先扫描 SKU！", type = "error")
@@ -728,59 +727,102 @@ handleOperation <- function(
     return()
   }
   
-  tryCatch({
-    # 查询符合条件的物品
-    query <- paste0("
-      SELECT UniqueID 
-      FROM unique_items 
-      WHERE SKU = ? AND Status = '", query_status, "' AND Defect != '瑕疵'
-      ORDER BY ProductCost ASC
-      LIMIT 1")
-    sku_items <- dbGetQuery(con, query, params = list(sku))
+  # 查询符合条件的物品
+  sku_items <- unique_items_data %>%
+    filter(SKU == sku, Status == query_status, Defect != "瑕疵") %>%
+    arrange(ProductCost) %>%
+    slice_head(n = 1)
+  
+  # 特殊情况：仅当操作为“入库”且状态为“国内出库”时检查
+  if (operation_name == "入库" && query_status == "国内出库" && nrow(sku_items) == 0) {
+    # 查询是否存在调货状态的物品
+    transfer_items <- unique_items_data %>%
+      filter(SKU == sku, Status == "美国调货", Defect != "瑕疵")
     
-    if (nrow(sku_items) == 0) {
-      showNotification(paste0("无可", operation_name, "的物品，所有该商品已完成 ", operation_name, "！"), type = "message")
+    if (nrow(transfer_items) > 0) {
+      # 提取物品名称、订单号、运单号和图片路径
+      item_name <- transfer_items$ItemName[1] %||% "未知商品"
+      order_ids <- transfer_items$OrderID %>% unique()
+      intl_tracking <- transfer_items$IntlTracking %>% unique()
+      img_path <- transfer_items$ItemImagePath[1] %||% placeholder_300px_path
+      
+      # 弹窗提示用户
+      showModal(modalDialog(
+        title = paste0("调货提示 - SKU: ", sku, " - ", item_name),
+        div(
+          style = "display: flex; align-items: center; padding: 10px;",
+          div(
+            style = "flex: 1; text-align: center; margin-right: 20px;",
+            tags$img(
+              src = ifelse(is.na(img_path), placeholder_300px_path, paste0(host_url, "/images/", basename(img_path))),
+              alt = "物品图片",
+              style = "max-width: 150px; max-height: 150px; border: 1px solid #ddd; border-radius: 8px;"
+            )
+          ),
+          div(
+            style = "flex: 2;",
+            tags$p("当前物品在入库前已被调货。请优先处理以下信息："),
+            tags$b("物品名称："), item_name, tags$br(),
+            tags$b("关联订单号："),
+            lapply(order_ids, function(order_id) {
+              div(
+                style = "display: flex; align-items: center; margin-bottom: 5px;",
+                tags$span(order_id, style = "flex: 1;"),
+                actionButton(
+                  inputId = paste0("copy_order_", order_id),
+                  label = "复制订单号",
+                  icon = icon("copy"),
+                  class = "btn-sm btn-secondary",
+                  style = "margin-left: 10px;",
+                  onclick = paste0("navigator.clipboard.writeText('", order_id, "')")
+                )
+              )
+            })
+          )
+        ),
+        easyClose = TRUE,
+        footer = modalButton("关闭")
+      ))
       return()
     }
+  }
+  
+  # 如果仍无符合条件的物品
+  if (nrow(sku_items) == 0) {
+    showNotification(paste0("无可", operation_name, "的物品，所有该商品已完成 ", operation_name, "！"), type = "message")
+    return()
+  }
     
+  tryCatch({
+    unique_id <- sku_items$UniqueID[1]
+      
     # 动态设置瑕疵状态
-    defect_status <- if (operation_name == "入库" && !is.null(input)) {
+    defect_status <- if (operation_name == "入库" && !is.null(input$defective_item)) {
       ifelse(isTRUE(input$defective_item), "瑕疵", "无瑕")
     } else NULL
     
     # 动态设置运输方式
-    shipping_method <- if (!is.null(input)) {
-      if (operation_name == "撤回") {
-        NULL  # 清空运输方式
-      } else if (operation_name == "出库") {
-        input$outbound_shipping_method  # 出库时的运输方式
-      } else if (operation_name == "售出") {
-        input$sold_shipping_method  # 售出时的运输方式
-      } else {
-        NULL  # 默认情况
-      }
-    } else {
+    shipping_method <- switch(
+      operation_name,
+      "撤回" = NULL,
+      "出库" = input$outbound_shipping_method,
+      "售出" = input$sold_shipping_method,
       NULL
-    }
+    )
     
-    # 动态清空字段逻辑
+    # 动态清空字段
     if (!is.null(clear_field)) {
-      dbExecute(con, paste0("
-        UPDATE unique_items
-        SET ", clear_field, " = NULL
-        WHERE UniqueID = ?"),
-                params = list(sku_items$UniqueID[1])
-      )
+      dbExecute(con, paste0("UPDATE unique_items SET ", clear_field, " = NULL WHERE UniqueID = ?"), params = list(unique_id))
     }
     
     # 调用更新状态函数
     update_status(
       con = con,
-      unique_id = sku_items$UniqueID[1],
+      unique_id = unique_id,
       new_status = update_status_value,
       defect_status = defect_status,
-      shipping_method = shipping_method,    # 设置运输方式
-      clear_shipping_method = clear_shipping_method, # 是否清空运输方式
+      shipping_method = shipping_method,
+      clear_shipping_method = clear_shipping_method,
       refresh_trigger = refresh_trigger
     )
     
@@ -793,11 +835,7 @@ handleOperation <- function(
       output = output,
       output_name = output_name,
       item_info = item_info,
-      img_path = ifelse(
-        is.na(item_info$ItemImagePath[1]),
-        placeholder_300px_path,
-        paste0(host_url, "/images/", basename(item_info$ItemImagePath[1]))
-      ),
+      img_path = ifelse(is.na(item_info$ItemImagePath[1]), placeholder_300px_path, paste0(host_url, "/images/", basename(item_info$ItemImagePath[1]))),
       count_label = count_label,
       count_field = count_field
     )
@@ -808,20 +846,16 @@ handleOperation <- function(
         title = paste0(operation_name, "完成"),
         paste0("此 SKU 的商品已全部完成 ", operation_name, "！"),
         easyClose = TRUE,
-        footer = NULL  # 不需要关闭按钮
+        footer = NULL
       ))
-      
-      # 延迟 2 秒后自动关闭弹窗
       shinyjs::delay(2000, removeModal())
     }
     
-    # 重置输入框和其他控件
+    # 重置输入框和控件
     updateTextInput(session, paste0(operation_name, "_sku"), value = "")
-    if (operation_name == "入库") {
-      updateCheckboxInput(session, "defective_item", value = FALSE)
-    }
+    if (operation_name == "入库") updateCheckboxInput(session, "defective_item", value = FALSE)
     
-    return(as.character(sku_items$UniqueID[1]))
+    return(unique_id)
     
   }, error = function(e) {
     # 错误处理
