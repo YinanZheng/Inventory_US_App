@@ -768,24 +768,14 @@ handleOperation <- function(
               div(
                 style = "display: flex; align-items: center; margin-bottom: 5px;",
                 tags$span(order_id, style = "flex: 1;"),
-                actionButton(
-                  inputId = paste0("copy_order_", order_id),
-                  label = "复制订单号",
-                  icon = icon("copy"),
-                  class = "btn-sm btn-secondary",
-                  style = "margin-left: 10px;"
-                ),
-                tags$script(HTML(paste0("
-                  $('#", paste0("copy_order_", order_id), "').on('click', function() {
-                    navigator.clipboard.writeText('", order_id, "')
-                      .then(function() {
-                        Shiny.setInputValue('copy_success', '", order_id, "', {priority: 'event'});
-                      })
-                      .catch(function(err) {
-                        console.error('复制失败:', err);
-                      });
-                  });
-                ")))
+                tags$button(
+                  id = paste0("copy_order_", order_id),  # 动态生成按钮 ID
+                  type = "button",
+                  class = "btn btn-sm btn-secondary copy-btn",  # 统一 class
+                  `data-clipboard-text` = order_id,  # 设置要复制的文本
+                  tags$i(class = "fa fa-copy"),  # 添加复制图标
+                  " 复制订单号"
+                )
               )
             })
           )

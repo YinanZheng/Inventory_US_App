@@ -143,6 +143,28 @@ ui <- navbarPage(
       } 
     ")),
       
+      tags$script(src = "https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.10/clipboard.min.js"),
+      
+      tags$script(HTML("
+        Shiny.addCustomMessageHandler('activateClipboard', function(message) {
+          var clipboard = new ClipboardJS('.copy-btn');
+          
+          clipboard.on('success', function(e) {
+            // 更改按钮文字为 '已复制'
+            var button = e.trigger;
+            button.textContent = '已复制';
+            button.disabled = true;  // 禁用按钮防止重复点击
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-success');
+            e.clearSelection();
+          });
+    
+          clipboard.on('error', function(e) {
+            console.error('复制失败:', e.action);
+          });
+        });
+      ")),
+      
       tags$script(HTML("
         $(document).on('paste', '[id$=\"paste_area\"]', function(event) {
           const items = (event.originalEvent.clipboardData || event.clipboardData).items;
@@ -161,14 +183,8 @@ ui <- navbarPage(
               break;
             }
           }
-        });")),
-      
-      tags$script('
-        Shiny.addCustomMessageHandler("navigate", function(url) {
-          window.location.href = url;
         });
-      ')
-      
+      "))
     )
   ),
   
