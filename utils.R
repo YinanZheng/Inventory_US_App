@@ -773,9 +773,19 @@ handleOperation <- function(
                   label = "复制订单号",
                   icon = icon("copy"),
                   class = "btn-sm btn-secondary",
-                  style = "margin-left: 10px;",
-                  onclick = paste0("navigator.clipboard.writeText('", order_id, "')")
-                )
+                  style = "margin-left: 10px;"
+                ),
+                tags$script(HTML(paste0("
+                  $('#", paste0("copy_order_", order_id), "').on('click', function() {
+                    navigator.clipboard.writeText('", order_id, "')
+                      .then(function() {
+                        Shiny.setInputValue('copy_success', '", order_id, "', {priority: 'event'});
+                      })
+                      .catch(function(err) {
+                        console.error('复制失败:', err);
+                      });
+                  });
+                ")))
               )
             })
           )
