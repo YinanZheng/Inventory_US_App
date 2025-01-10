@@ -290,7 +290,7 @@ server <- function(input, output, session) {
       data = data,
       input = input,
       maker_input_id = "defect_filter-maker",
-      item_name_input_id = "defect_filter-name",
+      item_name_input_id = "defect_filter-name"
     )
     
     # 默认过滤条件：状态为“美国入库”且 Defect 不为“未知”
