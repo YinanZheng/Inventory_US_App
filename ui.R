@@ -314,7 +314,8 @@ ui <- navbarPage(
             textInput("shipping_bill_number", "运单号:", placeholder = "请扫描运单号", width = "100%"),
             textInput("sku_input", "SKU:", placeholder = "请扫描SKU条形码", width = "100%"),
             uiOutput("dynamic_ship_button"),  # 动态按钮位置
-            actionButton("clear_shipping_bill_btn", "清空", icon = icon("trash-alt"), class = "btn-danger", style = "margin-top: 10px;")
+            actionButton("clear_shipping_bill_btn", "清空", icon = icon("trash-alt"), class = "btn-danger", style = "margin-top: 10px;"),
+            downloadButton("download_pdf", "")
         ),
         
         # 美国售出订单发货

@@ -24,8 +24,11 @@ server <- function(input, output, session) {
   # 触发order刷新
   orders_refresh_trigger <- reactiveVal(FALSE)
   
-  # 用于存储 PDF 文件路径
+  # 用于存储条形码 PDF 文件路径
   barcode_pdf_file_path <- reactiveVal(NULL)
+  
+  # 用于存储运单 PDF 文件路径
+  label_pdf_file_path <- reactiveVal(NULL)
   
   # 初始化货架和箱子内物品（售出分页）
   shelf_items <- reactiveVal(create_empty_shelf_box())
@@ -813,6 +816,14 @@ server <- function(input, output, session) {
     
     # 确保选中订单存在
     req(nrow(current_order) > 0)
+ 
+    updateActionButton(session, "download_pdf", label = switch(current_order$LabelStatus,
+                                                              "无" = "无运单文件",
+                                                              "上传" = "下载运单文件",
+                                                              "下载" = "已打印运单",
+                                                              "无运单文件"))
+  
+    label_pdf_file_path(file.path("/var/uploads/shiplabels", paste0(current_order()$UsTrackingNumber, ".pdf")))
     
     # 获取当前订单内的物品
     current_items <- order_items()
@@ -852,6 +863,20 @@ server <- function(input, output, session) {
       }
     }
   })
+  
+  # 定义下载处理器
+  output$download_pdf <- downloadHandler(
+    filename = function() {
+      label_pdf_file_path()
+    },
+    content = function(file) {
+      if (file.exists(label_pdf_file_path())) {
+        file.copy(label_pdf_file_path(), file)
+      } else {
+        showNotification("未找到对应的运单文件！", type = "error")
+      }
+    }
+  )
   
   # SKU 输入逻辑
   observeEvent(input$sku_input, {
@@ -970,7 +995,7 @@ server <- function(input, output, session) {
     showNotification("运单号和 SKU 输入框已清空！", type = "message")
   })
   
-  # 动态显示“发货”按钮
+  # 动态显示“手动发货”按钮
   output$dynamic_ship_button <- renderUI({
     # 确保匹配订单和当前订单 ID 存在
     req(matching_orders(), current_order_id())
@@ -1090,26 +1115,6 @@ server <- function(input, output, session) {
       )
     })
   })
-  
-  # 动态生成 downloadHandler
-  # observe({
-  #   lapply(matching_orders$UsTrackingNumber, function(tracking_number) {
-  #     output[[paste0("download_btn_", tracking_number)]] <- downloadHandler(
-  #       filename = function() {
-  #         paste0(tracking_number, ".pdf")
-  #       },
-  #       content = function(file) {
-  #         pdf_path <- file.path("/var/uploads/shiplabels", paste0(tracking_number, ".pdf"))
-  #         
-  #         if (file.exists(pdf_path)) {
-  #           file.copy(pdf_path, file)
-  #         } else {
-  #           showNotification(paste0("运单文件 ", tracking_number, ".pdf 未找到！"), type = "error")
-  #         }
-  #       }
-  #     )
-  #   })
-  # })
   
   # 动态渲染订单物品卡片
   observe({

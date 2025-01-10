@@ -1431,34 +1431,6 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
         NULL
       }
       
-      # 动态按钮逻辑
-      button_text <- switch(
-        order_info$LabelStatus,
-        "无" = "无运单PDF",
-        "上传" = "下载运单PDF",
-        "下载" = "已打印运单",
-        "无运单PDF" # 默认值
-      )
-      button_disabled <- order_info$LabelStatus == "无"
-      download_button_id <- paste0("download_btn_", order_info$UsTrackingNumber)
-      
-      # 动态显示按钮或类似按钮的文本
-      button_ui <- if (button_disabled) {
-        # 显示类似按钮的文本（不可点击）
-        div(
-          button_text,
-          class = "btn btn-secondary",
-          style = "background-color: grey; color: white; cursor: not-allowed; padding: 6px 12px; border-radius: 4px; display: inline-block; text-align: center;"
-        )
-      } else {
-        # 显示可点击的下载按钮
-        downloadButton(
-          outputId = download_button_id,
-          label = button_text,
-          class = "btn btn-primary"
-        )
-      }
-      
       # 渲染订单卡片
       div(
         id = paste0("order_card_", order_info$OrderID),  # 设置唯一 ID
@@ -1516,15 +1488,6 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
               tags$tr(
                 tags$td(tags$strong("状态:"), style = "padding: 5px; vertical-align: top;"),
                 tags$td(tags$span(order_info$OrderStatus, style = "color: #007BFF;"))
-              ),
-              
-              # 动态按钮或类似按钮的文本
-              tags$tr(
-                tags$td(
-                  button_ui,
-                  colspan = 2,
-                  style = "padding-top: 10px; text-align: center;"
-                )
               )
             )
           )
