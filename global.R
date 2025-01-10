@@ -18,6 +18,9 @@ library(plotly)
 library(openxlsx)
 library(lubridate)
 library(tidyr)
+library(tesseract)
+library(pdftools)
+library(later)
 
 # Source all modular functions
 source("./modules/typeModuleUI.R", local = TRUE)
@@ -64,7 +67,7 @@ common_columns <<- list(
   ProductCost = "单价",
   # DomesticShippingCost = "平摊运费",
   Status = "库存态"
-  # Defect = "物品状态"
+  # Defect = "瑕疵态"
 )
 
 # 定义需要记录时间的状态
@@ -76,7 +79,6 @@ status_columns <<- list(
   "美国入库" = "UsEntryTime",
   "美国售出" = "UsSoldTime",
   "美国调货" = "UsRelocationTime",
-  "美国发货" = "UsShippingTime",
   "退货" = "ReturnTime"
 )
 
@@ -99,4 +101,4 @@ defect_statuses <<- c("瑕疵", "修复", "无瑕")
 }
 
 # 定义管理员密码
-admin_password <- ""
+admin_password <<- "1029"
