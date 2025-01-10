@@ -864,19 +864,50 @@ server <- function(input, output, session) {
     }
   })
   
+  # 动态生成下载运单按钮
+  output$dynamic_download_button <- renderUI({
+    order <- selected_order()
+    if (is.null(order)) {
+      return(NULL)
+    }
+    
+    # 根据 LabelStatus 动态生成按钮或文本
+    label_text <- switch(
+      order$LabelStatus,
+      "无" = "无运单文件",
+      "上传" = "下载运单文件",
+      "下载" = "已打印运单",
+      "无运单文件" # 默认值
+    )
+    
+    if (order$LabelStatus == "无") {
+      div(
+        label_text,
+        class = "btn btn-secondary",
+        style = "background-color: grey; color: white; cursor: not-allowed; padding: 6px 12px; border-radius: 4px; display: inline-block; text-align: center;"
+      )
+    } else {
+      downloadButton("download_pdf", label = label_text, class = "btn btn-primary")
+    }
+  })
+  
   # 定义下载处理器
   output$download_pdf <- downloadHandler(
     filename = function() {
-      label_pdf_file_path()
+      basename(label_pdf_file_path())
     },
     content = function(file) {
-      if (file.exists(label_pdf_file_path())) {
-        file.copy(label_pdf_file_path(), file)
-      } else {
-        showNotification("未找到对应的运单文件！", type = "error")
-      }
+      file.copy(label_pdf_file_path(), file, overwrite = TRUE)
+      tracking_number <- tools::file_path_sans_ext(basename(label_pdf_file_path()))
+      # 更新数据库中的 LabelStatus 为 "打印"
+      dbExecute(
+        con,
+        "UPDATE orders SET LabelStatus = '打印' WHERE UsTrackingNumber = ?",
+        params = list(tracking_number)
+      )
     }
   )
+  
   
   # SKU 输入逻辑
   observeEvent(input$sku_input, {
