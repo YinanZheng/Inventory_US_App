@@ -768,14 +768,6 @@ handleOperation <- function(
               div(
                 style = "display: flex; align-items: center; margin-bottom: 5px;",
                 tags$span(order_id, style = "flex: 1;"),
-                tags$button(
-                  id = paste0("copy_order_", order_id),  # 动态生成按钮 ID
-                  type = "button",
-                  class = "btn btn-sm btn-secondary copy-btn",  # 统一 class
-                  `data-clipboard-text` = order_id,  # 设置要复制的文本
-                  tags$i(class = "fa fa-copy"),  # 添加复制图标
-                  " 复制订单号"
-                )
               )
             })
           )
