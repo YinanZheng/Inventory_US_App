@@ -1554,7 +1554,7 @@ server <- function(input, output, session) {
               style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
             )
           },
-          uiOutput("dynamic_action_buttons")
+          uiOutput("dynamic_download_button")
         )
       )
     })
