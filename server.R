@@ -866,21 +866,24 @@ server <- function(input, output, session) {
   
   # 动态生成下载运单按钮
   output$dynamic_download_button <- renderUI({
-    order <- selected_order()
-    if (is.null(order)) {
+    req(matching_orders(), current_order_id())
+    
+    current_order <- matching_orders() %>% filter(OrderID == current_order_id())
+    
+    if (is.null(current_order)) {
       return(NULL)
     }
     
     # 根据 LabelStatus 动态生成按钮或文本
     label_text <- switch(
-      order$LabelStatus,
+      current_order$LabelStatus,
       "无" = "无运单文件",
       "上传" = "下载运单文件",
       "下载" = "已打印运单",
       "无运单文件" # 默认值
     )
     
-    if (order$LabelStatus == "无") {
+    if (current_order$LabelStatus == "无") {
       div(
         label_text,
         class = "btn btn-secondary",
