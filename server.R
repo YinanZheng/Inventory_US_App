@@ -783,7 +783,7 @@ server <- function(input, output, session) {
     
     order_id <- trimws(input$order_id_input)
     
-    result <- orders %>%
+    result <- orders() %>%
       filter(OrderID == order_id) %>%
       select(UsTrackingNumber)
     
