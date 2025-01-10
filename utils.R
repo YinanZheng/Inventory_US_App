@@ -761,7 +761,7 @@ handleOperation <- function(
           ),
           div(
             style = "flex: 2;",
-            tags$p("当前物品在入库前已被调货。请优先处理以下信息："),
+            tags$p("当前物品在入库前已被调货，请优先处理以下订单："),
             tags$b("物品名称："), item_name, tags$br(),
             tags$b("关联订单号："),
             lapply(order_ids, function(order_id) {
@@ -1510,7 +1510,12 @@ renderOrderItems <- function(output, output_name, order_items, deletable = FALSE
           ),
           tags$tr(
             tags$td(tags$strong("状态:"), style = "padding: 0px;"),
-            tags$td(item$Status)
+            tags$td(
+              paste0(
+                item$Status,
+                " (", ifelse(is.na(item$IntlTracking) || item$IntlTracking == "", "未邮寄", "已邮寄"), ")"
+              )
+            )
           ),
           tags$tr(
             tags$td(tags$strong("瑕疵态:"), style = "padding: 0px;"),
