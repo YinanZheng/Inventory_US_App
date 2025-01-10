@@ -25,7 +25,7 @@ server <- function(input, output, session) {
   orders_refresh_trigger <- reactiveVal(FALSE)
   
   # 用于存储 PDF 文件路径
-  select_pdf_file_path <- reactiveVal(NULL)
+  barcode_pdf_file_path <- reactiveVal(NULL)
   
   # 初始化货架和箱子内物品（售出分页）
   shelf_items <- reactiveVal(create_empty_shelf_box())
@@ -52,6 +52,9 @@ server <- function(input, output, session) {
       showNotification("Initiation: Failed to load maker list data.", type = "error")
     })
   })
+  
+  # 更新orders表中已有运单pdf的情况
+  update_label_status_column(con)
   
   ####################################################################################################################################
   
@@ -375,7 +378,8 @@ server <- function(input, output, session) {
                                      CustomerName = "姓名",
                                      CustomerNetName = "网名",
                                      Platform = "平台",
-                                     UsTrackingNumber = "运单",
+                                     UsTrackingNumber = "运单号",
+                                     LabelStatus = "运单PDF",
                                      OrderStatus = "状态",
                                      OrderNotes = "备注"
                                    ),
@@ -637,7 +641,7 @@ server <- function(input, output, session) {
         page_height = page_height,
         unit = size_unit
       )
-      select_pdf_file_path(pdf_file)  # 保存生成的 PDF 路径
+      barcode_pdf_file_path(pdf_file)  # 保存生成的 PDF 路径
       
       showNotification("选中商品条形码已生成！", type = "message")
       shinyjs::enable("download_select_pdf")  # 启用下载按钮
@@ -650,12 +654,12 @@ server <- function(input, output, session) {
   # 下载选中商品条形码 PDF
   output$download_select_pdf <- downloadHandler(
     filename = function() {
-      basename(select_pdf_file_path())  # 生成文件名
+      basename(barcode_pdf_file_path())  # 生成文件名
     },
     content = function(file) {
-      file.copy(select_pdf_file_path(), file, overwrite = TRUE)
+      file.copy(barcode_pdf_file_path(), file, overwrite = TRUE)
       shinyjs::disable("download_select_pdf")  # 禁用下载按钮
-      select_pdf_file_path(NULL)  # 清空路径
+      barcode_pdf_file_path(NULL)  # 清空路径
     }
   )
 

@@ -943,6 +943,7 @@ apply_dynamic_styles <- function(table, column_names) {
   return(table)
 }
 
+# 订单注册与更新
 register_order <- function(order_id, customer_name, customer_netname, platform, order_notes, tracking_number, 
                            image_data, con, orders, box_items, unique_items_data, 
                            is_transfer_order = NULL, is_preorder = NULL, preorder_supplier = NULL) {
@@ -963,6 +964,31 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
       order_status <- "调货"
     } else if (is_preorder && !is_transfer_order) {
       order_status <- "预定"
+    }
+    
+    # 检查发货箱中的物品是否含有“美国入库”状态
+    if (nrow(box_items()) > 0) {
+      # 如果 box_items() 中包含 "国内出库" 或 "美国入库"，设置状态为 "调货"
+      if (any(box_items()$Status %in% c("国内出库", "美国入库"))) {
+        order_status <- "调货"
+      }
+    }
+    
+    # 确认运单 PDF 文件的状态
+    label_status <- if (!is.null(tracking_number)) {
+      if (file.exists(file.path("/var/uploads/shiplabels", paste0(tracking_number, ".pdf")))) {
+        "上传"
+      } else {
+        "无"
+      }
+    } else {
+      "无"
+    }
+    
+    # 如果状态为 "调货" 且 LabelStatus 为 "无"，显示错误通知
+    if (order_status == "调货" && label_status == "无") {
+      showNotification("调货订单必须上传运单 PDF！", type = "error")
+      return(FALSE)
     }
     
     # 如果为预订单，生成或更新供应商备注
@@ -1053,7 +1079,8 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
             CustomerName = COALESCE(?, CustomerName),
             CustomerNetName = COALESCE(?, CustomerNetName),
             Platform = COALESCE(?, Platform),
-            OrderStatus = ?
+            OrderStatus = ?,
+            LabelStatus = ?
         WHERE OrderID = ?",
                 params = list(
                   order_image_path,
@@ -1063,14 +1090,15 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
                   customer_netname,
                   platform,
                   order_status,
+                  label_status,
                   order_id
                 )
       )
       showNotification("订单信息已更新！", type = "message")
     } else {
       dbExecute(con, "
-        INSERT INTO orders (OrderID, UsTrackingNumber, OrderNotes, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderStatus)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        INSERT INTO orders (OrderID, UsTrackingNumber, OrderNotes, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderStatus, LabelStatus)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 params = list(
                   order_id,
                   tracking_number,
@@ -1079,7 +1107,8 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
                   customer_netname,
                   platform,
                   order_image_path,
-                  order_status
+                  order_status,
+                  label_status
                 )
       )
       showNotification("订单已成功登记！", type = "message")
@@ -1088,6 +1117,46 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
   }, error = function(e) {
     showNotification(paste("登记订单时发生错误：", e$message), type = "error")
     return(FALSE)
+  })
+}
+
+# 更新运单PDF状态列
+update_label_status_column <- function(con, pdf_directory = "/var/uploads/shiplabels") {
+  # 列出所有 PDF 文件
+  existing_files <- list.files(pdf_directory, full.names = FALSE)
+  existing_tracking_numbers <- gsub("\\.pdf$", "", existing_files)  # 提取运单号
+  
+  tryCatch({
+    # 动态生成 CASE 语句
+    case_statements <- paste0(
+      "CASE
+        WHEN UsTrackingNumber IS NULL OR UsTrackingNumber = '' THEN '无'
+        WHEN UsTrackingNumber IS NOT NULL AND UsTrackingNumber IN (",
+      if (length(existing_tracking_numbers) > 0) {
+        paste(sprintf("'%s'", existing_tracking_numbers), collapse = ",")
+      } else {
+        "''"
+      },
+      ") THEN
+          CASE
+            WHEN LabelStatus = '下载' THEN '上传'
+            ELSE '上传'
+          END
+        ELSE '无'
+      END"
+    )
+    
+    # 构建 SQL 更新语句
+    update_query <- paste0(
+      "UPDATE orders
+       SET LabelStatus = ", case_statements
+    )
+    
+    # 执行 SQL 更新
+    dbExecute(con, update_query)
+    message("LabelStatus 列已更新成功。")
+  }, error = function(e) {
+    stop(paste("更新 LabelStatus 列时发生错误：", e$message))
   })
 }
 

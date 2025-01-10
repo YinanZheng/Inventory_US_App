@@ -1,6 +1,7 @@
 orderTableServer <- function(input, output, session, column_mapping, selection = "single", data, 
                              options = modifyList(table_default_options, list(scrollY = "360px"))) {
   output$order_table <- renderDT({
+    
     # 初始化渲染表
     datatable_and_names <- render_table_with_images(
       data = data(),                 # 使用传递的 reactive 数据源
@@ -13,6 +14,22 @@ orderTableServer <- function(input, output, session, column_mapping, selection =
     # 获取数据列名
     column_names <- datatable_and_names$column_names
     table <- datatable_and_names$datatable
+    
+    # 运单状态字段高亮
+    if ("运单PDF" %in% column_names) {
+      table <- table %>%
+        formatStyle(
+          "运单PDF",
+          backgroundColor = styleEqual(
+            c("无", "上传", "打印"),
+            c("#f6f2ff", "#95b3fc", "#b89afc")
+          ),
+          color = styleEqual(
+            c("无", "上传", "打印"),
+            c("black", "black", "black")
+          )
+        )
+    }
     
     # 平台字段高亮
     if ("平台" %in% column_names) {
