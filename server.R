@@ -935,8 +935,11 @@ server <- function(input, output, session) {
       return()
     }
     
-    # 检查是否状态已为“美国发货”
-    if (all(matching_item$Status == "美国发货")) {
+    # 查找第一个状态不为“美国发货”的物品
+    next_item <- matching_item %>% filter(Status != "美国发货") %>% slice(1)
+    
+    # 如果所有物品状态均为“美国发货”
+    if (nrow(next_item) == 0) {
       showNotification("该商品已完成操作（状态为 '美国发货'）！", type = "message")
       updateTextInput(session, "sku_input", value = "")
       return()
@@ -946,7 +949,7 @@ server <- function(input, output, session) {
     tryCatch({
       update_status(
         con = con,
-        unique_id = matching_item$UniqueID[1],
+        unique_id = next_item$UniqueID,
         new_status = "美国发货",
         refresh_trigger = unique_items_data_refresh_trigger
       )
