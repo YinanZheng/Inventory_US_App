@@ -1545,8 +1545,9 @@ server <- function(input, output, session) {
         ),
         
         # 右侧按钮（仅在订单状态为“预定”时显示）
-        tagList(
-          if (order_status == "调货") {
+        if (order_status == "调货") 
+        {
+          tagList(
             actionButton(
               inputId = "complete_transfer",
               label = "已完成调货",
@@ -1554,8 +1555,8 @@ server <- function(input, output, session) {
               style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
             ),
             uiOutput("dynamic_download_button_manage")
-          }
-        )
+          )
+        }
       )
     })
     
