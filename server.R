@@ -823,7 +823,7 @@ server <- function(input, output, session) {
                                                               "下载" = "已打印运单",
                                                               "无运单文件"))
   
-    label_pdf_file_path(file.path("/var/uploads/shiplabels", paste0(current_order()$UsTrackingNumber, ".pdf")))
+    label_pdf_file_path(file.path("/var/uploads/shiplabels", paste0(current_order$UsTrackingNumber, ".pdf")))
     
     # 获取当前订单内的物品
     current_items <- order_items()
