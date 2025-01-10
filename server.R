@@ -364,7 +364,7 @@ server <- function(input, output, session) {
   unique_items_table_inbound_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_inbound",
                                                         column_mapping <- c(common_columns, list(
                                                           ItemCount = "数量")
-                                                        ), selection = "single", data = filtered_unique_items_data_inbound)
+                                                        ), selection = "multiple", data = filtered_unique_items_data_inbound)
   
 
   # 订单管理分页订单表
@@ -1281,24 +1281,22 @@ server <- function(input, output, session) {
   
   matching_customer <- reactive({
     req(input$customer_name)  # 确保用户输入了顾客姓名
-    
-    # 安全查询数据库，模糊匹配顾客姓名
-    query <- "SELECT CustomerName, CustomerNetName 
-            FROM orders 
-            WHERE CustomerName LIKE ?
-            LIMIT 1"
-    
-    # 捕获错误，防止崩溃
     tryCatch({
-      result <- dbGetQuery(con, query, params = list(paste0("%", input$customer_name, "%")))
+      result <- orders() %>%
+        filter(grepl(input$customer_name, CustomerName, ignore.case = TRUE))  # 模糊匹配顾客姓名
       
-      if (nrow(result) > 0) {
-        return(result$CustomerNetName[1])  # 返回第一个匹配的网名
+      valid_result <- result %>%
+        filter(!is.na(CustomerNetName) & CustomerNetName != "") %>%  # 过滤有效的网名
+        slice_head(n = 1)  # 仅返回第一条有网名的记录
+      
+      # 返回第一个有效的网名或 NULL
+      if (nrow(valid_result) > 0) {
+        return(valid_result$CustomerNetName[1])
       } else {
-        return(NULL)  # 如果没有匹配结果，返回 NULL
+        return(NULL)  # 没有匹配的网名
       }
     }, error = function(e) {
-      showNotification("查询数据库时出错，请检查连接或输入值", type = "error")
+      showNotification("网名查找出错！", type = "error")
       return(NULL)
     })
   })
@@ -1366,7 +1364,7 @@ server <- function(input, output, session) {
         updateSelectInput(session, "platform", selected = existing_order$Platform[1])
         
         updateTextInput(session, "customer_name", value = existing_order$CustomerName[1])
-        updateTextInput(session, "customer_netname", value = existing_order$CustomerNetName[1])
+        # updateTextInput(session, "customer_netname", value = existing_order$CustomerNetName[1]) # 交给网名自动填写功能
         
         updateTextInput(session, "tracking_number", value = existing_order$UsTrackingNumber[1])
         updateTextAreaInput(session, "order_notes", value = existing_order$OrderNotes[1])
