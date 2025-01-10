@@ -1549,7 +1549,8 @@ server <- function(input, output, session) {
               class = "btn-success",
               style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
             ),
-            downloadButton("download_pdf_manage", label = "下载运单", class = "btn btn-primary", style = "height: 34px; margin-left: 10px; font-size: 14px;")
+            downloadButton("download_pdf_manage", label = "下载运单", class = "btn btn-primary", 
+                           style = "height: 34px; margin-left: 10px; font-size: 14px; padding: 5px 10px;")
           )
         } else {
           NULL
