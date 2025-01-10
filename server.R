@@ -1092,24 +1092,24 @@ server <- function(input, output, session) {
   })
   
   # 动态生成 downloadHandler
-  observe({
-    lapply(matching_orders$UsTrackingNumber, function(tracking_number) {
-      output[[paste0("download_btn_", tracking_number)]] <- downloadHandler(
-        filename = function() {
-          paste0(tracking_number, ".pdf")
-        },
-        content = function(file) {
-          pdf_path <- file.path("/var/uploads/shiplabels", paste0(tracking_number, ".pdf"))
-          
-          if (file.exists(pdf_path)) {
-            file.copy(pdf_path, file)
-          } else {
-            showNotification(paste0("运单文件 ", tracking_number, ".pdf 未找到！"), type = "error")
-          }
-        }
-      )
-    })
-  })
+  # observe({
+  #   lapply(matching_orders$UsTrackingNumber, function(tracking_number) {
+  #     output[[paste0("download_btn_", tracking_number)]] <- downloadHandler(
+  #       filename = function() {
+  #         paste0(tracking_number, ".pdf")
+  #       },
+  #       content = function(file) {
+  #         pdf_path <- file.path("/var/uploads/shiplabels", paste0(tracking_number, ".pdf"))
+  #         
+  #         if (file.exists(pdf_path)) {
+  #           file.copy(pdf_path, file)
+  #         } else {
+  #           showNotification(paste0("运单文件 ", tracking_number, ".pdf 未找到！"), type = "error")
+  #         }
+  #       }
+  #     )
+  #   })
+  # })
   
   # 动态渲染订单物品卡片
   observe({
