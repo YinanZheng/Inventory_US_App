@@ -517,6 +517,11 @@ server <- function(input, output, session) {
     }
   })
   
+  observe({
+    # 动态生成按钮后，通知前端激活 clipboard.js
+    session$sendCustomMessage(type = 'activateClipboard', message = NULL)
+  })
+  
   # 确认入库逻辑
   observeEvent(input$confirm_inbound_btn, {
     # 从输入中获取入库数量，确保为正整数
