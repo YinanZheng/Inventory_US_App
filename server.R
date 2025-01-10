@@ -794,6 +794,7 @@ server <- function(input, output, session) {
     } else {
       showNotification("未找到相关订单，请检查输入！", type = "error")
     }
+    updateTextInput(session, "order_id_input", value = "")
   })
   
 
