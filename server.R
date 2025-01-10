@@ -392,15 +392,20 @@ server <- function(input, output, session) {
   
   unique_items_table_manage_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_manage",
                                                        column_mapping <- c(common_columns, list(
-                                                         UsEntryTime = "入库日",
-                                                         UsShippingTime = "发货日",
+                                                         PurchaseTime = "采购日",
+                                                         DomesticEntryTime = "入库日",
+                                                         DomesticExitTime = "出库日",
+                                                         DomesticSoldTime = "售出日",
+                                                         UsEntryTime = "美入库日",
+                                                         UsRelocationTime = "美调货日",
+                                                         UsShippingTime = "美发货日",
                                                          OrderID = "订单号")
-                                                       ), selection = "multiple", data = unique_items_data,
+                                                       ), selection = "multiple", data = filtered_unique_items_data_manage,
                                                        option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
   
   unique_items_table_defect_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_defect",
                                                        column_mapping <- c(common_columns, list(
-                                                         UsEntryTime = "入库日",
+                                                         UsEntryTime = "美入库日",
                                                          Defect = "瑕疵态",
                                                          DefectNotes = "瑕疵品备注")
                                                        ), selection = "multiple", data = filtered_unique_items_data_defect,
@@ -409,9 +414,10 @@ server <- function(input, output, session) {
   unique_items_table_logistics_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_logistics",
                                                           column_mapping = c(common_columns, list(
                                                             IntlShippingMethod = "国际运输",
+                                                            DomesticSoldTime = "售出日",
                                                             DomesticExitTime = "出库日",
-                                                            IntlShippingCost = "平摊国际运费",
-                                                            IntlTracking = "国际物流单号"
+                                                            IntlShippingCost = "国际运费",
+                                                            IntlTracking = "国际运单"
                                                           )), selection = "multiple",
                                                           data = filtered_unique_items_data_logistics,
                                                           option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
@@ -1690,34 +1696,39 @@ server <- function(input, output, session) {
     
     tryCatch({
       # 获取与订单关联的物品
-      associated_items <- dbGetQuery(con, "SELECT * FROM unique_items WHERE OrderID = ?", params = list(order_id))
+      associated_items <- unique_items_data() %>% filter(OrderID == order_id)
       
       if (nrow(associated_items) > 0) {
         # 遍历关联物品进行逆向操作
         lapply(1:nrow(associated_items), function(i) {
           item <- associated_items[i, ]
           
-          # 逆向调整库存
-          adjust_inventory_quantity(
-            con = con,
-            sku = item$SKU,
-            adjustment = 1  # 增加库存数量
-          )
+          # 查询物品的原始状态
+          original_state <- dbGetQuery(con, paste0(
+            "SELECT * FROM item_status_history WHERE UniqueID = '", item$UniqueID, "' ORDER BY change_time DESC LIMIT 1"
+          ))
           
-          # 恢复物品状态到“美国入库”
-          update_status(
-            con = con,
-            unique_id = item$UniqueID,
-            new_status = "美国入库",
-            clear_status_timestamp = "美国售出" # 同时清空美国售出的时间戳
-          )
-          
-          # 清空物品的 OrderID
-          update_order_id(
-            con = con,
-            unique_id = item$UniqueID,
-            order_id = NULL  # 清空订单号
-          )
+          if (nrow(original_state) > 0) {
+            # 恢复库存数量
+            adjust_inventory_quantity(con, item$SKU, adjustment = 1)  # 增加库存数量
+            
+            # 恢复物品状态
+            update_status(
+              con = con,
+              unique_id = item$UniqueID,
+              new_status = original_state$previous_status,
+              clear_status_timestamp = item$Status
+            )
+            
+            # 清空物品的 OrderID
+            update_order_id(
+              con = con,
+              unique_id = item$UniqueID,
+              order_id = NULL  # 清空订单号
+            )
+          } else {
+            showNotification(paste0("物品 ", item$UniqueID, " 无状态历史记录，无法恢复。"), type = "error")
+          }
         })
       }
       
