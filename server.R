@@ -873,8 +873,8 @@ server <- function(input, output, session) {
     label_text <- switch(
       current_order$LabelStatus,
       "无" = "无运单文件",
-      "上传" = "下载运单文件",
-      "打印" = "已打印运单",
+      "已传" = "下载运单文件",
+      "印出" = "运单已打印",
       "无运单文件" # 默认值
     )
     
@@ -897,10 +897,10 @@ server <- function(input, output, session) {
     content = function(file) {
       file.copy(label_pdf_file_path(), file, overwrite = TRUE)
       tracking_number <- tools::file_path_sans_ext(basename(label_pdf_file_path()))
-      # 更新数据库中的 LabelStatus 为 "打印"
+      # 更新数据库中的 LabelStatus 为 "印出"
       dbExecute(
         con,
-        "UPDATE orders SET LabelStatus = '打印' WHERE UsTrackingNumber = ?",
+        "UPDATE orders SET LabelStatus = '印出' WHERE UsTrackingNumber = ?",
         params = list(tracking_number)
       )
       orders_refresh_trigger(!orders_refresh_trigger())
