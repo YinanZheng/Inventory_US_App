@@ -1193,7 +1193,7 @@ filter_unique_items_data_by_inputs <- function(
     data, 
     input, 
     maker_input_id, 
-    status_input_id,
+    status_input_id = NULL,
     item_name_input_id, 
     purchase_date_range_id = NULL, 
     sold_date_range_id = NULL,
