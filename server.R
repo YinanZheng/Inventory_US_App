@@ -364,7 +364,7 @@ server <- function(input, output, session) {
   unique_items_table_inbound_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_inbound",
                                                         column_mapping <- c(common_columns, list(
                                                           ItemCount = "数量")
-                                                        ), selection = "multiple", data = filtered_unique_items_data_inbound)
+                                                        ), selection = "single", data = filtered_unique_items_data_inbound)
   
 
   # 订单管理分页订单表
