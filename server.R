@@ -470,8 +470,6 @@ server <- function(input, output, session) {
   
   # 监听 SKU 输入
   observeEvent(input$inbound_sku, {
-    req(input$inbound_sku)
-    
     # 调用 handleSkuInput 并获取待入库数量
     pending_quantity <- handleSkuInput(
       sku_input = input$inbound_sku,
