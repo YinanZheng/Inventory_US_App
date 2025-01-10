@@ -1911,12 +1911,18 @@ server <- function(input, output, session) {
       dbBegin(con) # 开启事务
       
       for (i in seq_len(nrow(selected_items))) {
+        unique_id <- selected_items$UniqueID[i]
+        sku <- selected_items$SKU[i]
+        
         # 删除 unique_items 中对应的记录
         dbExecute(con, "
           DELETE FROM unique_items
           WHERE UniqueID = ?", params = list(selected_items$UniqueID[i]))
         
-        sku <- selected_items$SKU[i]
+        # 删除 item_status_history 中对应的历史状态记录
+        dbExecute(con, "
+          DELETE FROM item_status_history
+          WHERE UniqueID = ?", params = list(unique_id))
         
         remaining_items <- dbGetQuery(con, "
                             SELECT COUNT(*) AS RemainingCount
@@ -1938,7 +1944,7 @@ server <- function(input, output, session) {
       dbCommit(con) # 提交事务
       
       # 通知用户成功删除
-      showNotification("物品删除成功！", type = "message")
+      showNotification("物品及其历史状态记录删除成功！", type = "message")
       
       # 更新数据并触发 UI 刷新
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
@@ -1951,7 +1957,6 @@ server <- function(input, output, session) {
     # 关闭确认框
     removeModal()
   })
-  
   
   # 采购商品图片处理模块
   image_manage <- imageModuleServer("image_manage")
