@@ -1139,8 +1139,8 @@ update_label_status_column <- function(con, pdf_directory = "/var/uploads/shipla
       },
       ") THEN
           CASE
-            WHEN LabelStatus = '下载' THEN '上传'
-            ELSE '上传'
+            WHEN LabelStatus = '印出' THEN '已传'
+            ELSE '已传'
           END
         ELSE '无'
       END"
