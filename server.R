@@ -816,13 +816,8 @@ server <- function(input, output, session) {
     
     # 确保选中订单存在
     req(nrow(current_order) > 0)
- 
-    updateActionButton(session, "download_pdf", label = switch(current_order$LabelStatus,
-                                                              "无" = "无运单文件",
-                                                              "上传" = "下载运单文件",
-                                                              "下载" = "已打印运单",
-                                                              "无运单文件"))
   
+    # 存储运单文件路径
     label_pdf_file_path(file.path("/var/uploads/shiplabels", paste0(current_order$UsTrackingNumber, ".pdf")))
     
     # 获取当前订单内的物品
@@ -879,7 +874,7 @@ server <- function(input, output, session) {
       current_order$LabelStatus,
       "无" = "无运单文件",
       "上传" = "下载运单文件",
-      "下载" = "已打印运单",
+      "打印" = "已打印运单",
       "无运单文件" # 默认值
     )
     
@@ -908,6 +903,7 @@ server <- function(input, output, session) {
         "UPDATE orders SET LabelStatus = '打印' WHERE UsTrackingNumber = ?",
         params = list(tracking_number)
       )
+      orders_refresh_trigger(!orders_refresh_trigger())
     }
   )
   
