@@ -1436,7 +1436,7 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
         id = paste0("order_card_", order_info$OrderID),  # 设置唯一 ID
         class = "order-card",
         style = paste0(
-          "position: relative; display: inline-block; width: 500px; height: 310px; ",
+          "position: relative; display: inline-block; width: 550px; height: 310px; ",
           "background-color: #ffffff; border: 1px solid #ddd; border-radius: 8px; ",
           "box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); margin-right: 15px; ",
           ifelse(clickable, "cursor: pointer;", "cursor: default;")  # 动态设置鼠标样式
