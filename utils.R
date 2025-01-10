@@ -1440,13 +1440,22 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
         "无运单PDF" # 默认值
       )
       button_disabled <- order_info$LabelStatus == "无"
-      button_id <- paste0("download_pdf_btn_", order_info$UsTrackingNumber)
-      button_onclick <- if (button_disabled) {
-        NULL
+      download_button_id <- paste0("download_btn_", order_info$UsTrackingNumber)
+      
+      # 动态显示按钮或类似按钮的文本
+      button_ui <- if (button_disabled) {
+        # 显示类似按钮的文本（不可点击）
+        div(
+          button_text,
+          class = "btn btn-secondary",
+          style = "background-color: grey; color: white; cursor: not-allowed; padding: 6px 12px; border-radius: 4px; display: inline-block; text-align: center;"
+        )
       } else {
-        sprintf(
-          "Shiny.setInputValue('download_pdf_order', '%s', {priority: 'event'})",
-          order_info$UsTrackingNumber
+        # 显示可点击的下载按钮
+        downloadButton(
+          outputId = download_button_id,
+          label = button_text,
+          class = "btn btn-primary"
         )
       }
       
@@ -1509,17 +1518,10 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
                 tags$td(tags$span(order_info$OrderStatus, style = "color: #007BFF;"))
               ),
               
-              # 动态按钮部分
+              # 动态按钮或类似按钮的文本
               tags$tr(
                 tags$td(
-                  actionButton(
-                    button_id,
-                    label = button_text,
-                    class = "btn btn-primary",
-                    style = if (button_disabled) "background-color: grey; color: white; cursor: not-allowed;" else "",
-                    onclick = button_onclick,
-                    disabled = button_disabled
-                  ),
+                  button_ui,
                   colspan = 2,
                   style = "padding-top: 10px; text-align: center;"
                 )
