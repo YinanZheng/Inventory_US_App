@@ -415,9 +415,10 @@ server <- function(input, output, session) {
   
   unique_items_table_defect_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_defect",
                                                        column_mapping <- c(common_columns, list(
-                                                         UsEntryTime = "美入库日",
+                                                         PurchaseTime = "采购日",
+                                                         DomesticEntryTime = "入库日",
                                                          Defect = "瑕疵态",
-                                                         DefectNotes = "瑕疵品备注")
+                                                         DefectNotes = "瑕疵备注")
                                                        ), selection = "multiple", data = filtered_unique_items_data_defect,
                                                        option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
   
@@ -1375,177 +1376,6 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  ##### 网名自动填写
-  
-  matching_customer <- reactive({
-    req(input$customer_name)  # 确保用户输入了顾客姓名
-    tryCatch({
-      result <- orders() %>%
-        filter(grepl(input$customer_name, CustomerName, ignore.case = TRUE))  # 模糊匹配顾客姓名
-      
-      valid_result <- result %>%
-        filter(!is.na(CustomerNetName) & CustomerNetName != "") %>%  # 过滤有效的网名
-        slice_head(n = 1)  # 仅返回第一条有网名的记录
-      
-      # 返回第一个有效的网名或 NULL
-      if (nrow(valid_result) > 0) {
-        return(valid_result$CustomerNetName[1])
-      } else {
-        return(NULL)  # 没有匹配的网名
-      }
-    }, error = function(e) {
-      showNotification("网名查找出错！", type = "error")
-      return(NULL)
-    })
-  })
-  
-  # 缓存最近查询过的顾客姓名与网名
-  cache <- reactiveVal(list())
-  
-  # 使用 debounce 避免频繁触发查询
-  customer_name_delayed <- debounce(reactive(input$customer_name), 300)
-  
-  # 网名自动填写
-  observeEvent(customer_name_delayed(), {
-    # 如果用户清空了 customer_name，则清空 customer_netname
-    if (customer_name_delayed() == "") {
-      updateTextInput(session, "customer_netname", value = "")
-      return()
-    }
-    
-    req(customer_name_delayed())  # 确保用户输入不为空
-    
-    cache_data <- cache()
-    
-    # 检查缓存是否已有数据
-    if (customer_name_delayed() %in% names(cache_data)) {
-      netname <- cache_data[[customer_name_delayed()]]
-    } else {
-      # 查询数据库
-      netname <- matching_customer()
-      
-      # 如果有结果，更新缓存
-      if (!is.null(netname)) {
-        cache_data[[customer_name_delayed()]] <- netname
-        cache(cache_data)  # 更新缓存
-      }
-    }
-    
-    # 更新网名输入框
-    updateTextInput(session, "customer_netname", value = netname %||% "")
-  })
-  
-  ######
-  
-  # 出售订单图片处理模块
-  image_sold <- imageModuleServer("image_sold")
-  
-  # 在输入订单号时检查订单信息并填充
-  observeEvent(input$order_id, {
-    # 检查订单号是否为空
-    req(input$order_id)  # 如果订单号为空，停止执行
-    
-    tryCatch({
-      # 去除空格和#号
-      sanitized_order_id <- gsub("#", "", trimws(input$order_id))
-      
-      # 查询订单信息，包含新增字段
-      existing_order <- orders() %>% filter(OrderID == sanitized_order_id)
-      
-      # 如果订单存在，填充对应字段
-      if (nrow(existing_order) > 0) {
-        # 填充各字段信息
-        updateSelectInput(session, "platform", selected = existing_order$Platform[1])
-        
-        updateTextInput(session, "customer_name", value = existing_order$CustomerName[1])
-        # updateTextInput(session, "customer_netname", value = existing_order$CustomerNetName[1]) # 交给网名自动填写功能
-        
-        updateTextInput(session, "tracking_number", value = existing_order$UsTrackingNumber[1])
-        updateTextAreaInput(session, "order_notes", value = existing_order$OrderNotes[1])
-        
-        # 动态更新按钮为“更新订单”
-        output$register_order_button_ui <- renderUI({
-          actionButton(
-            "register_order_btn",
-            "更新订单",
-            icon = icon("edit"),
-            class = "btn-success",
-            style = "font-size: 16px; min-width: 130px; height: 42px;"
-          )
-        })
-        
-        showNotification("已找到订单信息！字段已自动填充", type = "message")
-      } else {
-        # 如果订单记录不存在，清空出order ID以外所有相关字段
-        showNotification("未找到对应订单记录，可登记新订单", type = "warning")
-        
-        # 重置所有输入框
-        updateSelectInput(session, "platform", selected = "")
-        updateTextInput(session, "customer_name", value = "")
-        updateTextInput(session, "customer_netname", value = "")
-        updateTextInput(session, "tracking_number", value = "")
-        image_sold$reset()
-        updateTextAreaInput(session, "order_notes", value = "")
-        
-        # 动态更新按钮为“登记订单”
-        output$register_order_button_ui <- renderUI({
-          actionButton(
-            "register_order_btn",
-            "登记订单",
-            icon = icon("plus"),
-            class = "btn-primary",
-            style = "font-size: 16px; min-width: 130px; height: 42px;"
-          )
-        })
-      }
-    }, error = function(e) {
-      # 捕获错误并通知用户
-      showNotification(paste("检查订单时发生错误：", e$message), type = "error")
-    })
-  })
-  
-  # 登记订单逻辑
-  observeEvent(input$register_order_btn, {
-    if (is.null(input$order_id) || input$order_id == "") {
-      showNotification("订单号不能为空！", type = "error")
-      return()
-    }
-    
-    if (is.null(input$platform) || input$platform == "") {
-      showNotification("电商平台不能为空，请选择一个平台！", type = "error")
-      return()
-    }
-    
-    # 去除空格和#号
-    sanitized_order_id <- gsub("#", "", trimws(input$order_id))
-    
-    # 调用封装函数登记订单
-    register_order(
-      order_id = sanitized_order_id,
-      customer_name = input$customer_name,
-      customer_netname = input$customer_netname,
-      platform = input$platform,
-      order_notes = input$order_notes,
-      tracking_number = input$tracking_number,
-      image_data = image_sold,
-      con = con,
-      orders = orders,
-      box_items = box_items,
-      unique_items_data = unique_items_data
-    )
-    
-    # 更新订单表格
-    orders_refresh_trigger(!orders_refresh_trigger())
-    
-    # reset_order_form(session, image_sold)
-  })
-  
-  # 清空订单信息按钮
-  observeEvent(input$clear_order_btn, {
-    reset_order_form(session, image_sold)
-    showNotification("已清空所有输入！", type = "message")
-  })
-  
   # 订单关联物品容器
   associated_items <- reactiveVal()
   
@@ -1600,46 +1430,6 @@ server <- function(input, output, session) {
     associated_items <- associated_items(unique_items_data() %>% filter(OrderID == order_id))
   })
   
-  observeEvent(input$complete_transfer, {
-    # 检查是否选择了订单行
-    if (is.null(selected_order_row())) {
-      # 提示用户未选择订单
-      showNotification("请先点选订单行再执行调货操作！", type = "warning")
-      return()
-    }
-    
-    req(selected_order_row())
-    
-    # 获取选中订单
-    selected_row <- selected_order_row()
-    selected_order <- filtered_orders()[selected_row, ]
-    order_id <- selected_order$OrderID
-    existing_notes <- selected_order$OrderNotes %||% ""  # 若为空，则默认空字符串
-    
-    # 在 R 中拼接备注内容
-    new_notes <- paste(existing_notes, sprintf("【调货完成 %s】", format(Sys.Date(), "%Y-%m-%d")))
-    
-    tryCatch({
-      # 使用拼接后的备注信息进行 SQL 更新
-      dbExecute(con, "
-      UPDATE orders
-      SET OrderStatus = '备货',
-          OrderNotes = ?
-      WHERE OrderID = ?
-    ", params = list(new_notes, order_id))
-      
-      # 重新加载最新的 orders 数据
-      orders_refresh_trigger(!orders_refresh_trigger())
-      
-      # 通知用户操作成功
-      showNotification(sprintf("订单 #%s 已更新为备货状态！", order_id), type = "message")
-      
-    }, error = function(e) {
-      # 捕获错误并通知用户
-      showNotification(sprintf("更新订单状态时发生错误：%s", e$message), type = "error")
-    })
-  })
-
   # 渲染物品信息卡片  
   observe({
     req(associated_items())
