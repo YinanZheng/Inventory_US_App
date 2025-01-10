@@ -871,7 +871,7 @@ server <- function(input, output, session) {
     label_text <- switch(
       current_order$LabelStatus,
       "无" = "无运单文件",
-      "已传" = "下载运单文件",
+      "已传" = "下载运单",
       "印出" = "运单已打印",
       "无运单文件" # 默认值
     )
@@ -1549,7 +1549,7 @@ server <- function(input, output, session) {
               class = "btn-success",
               style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
             ),
-            downloadButton("download_pdf_manage", label = "下载运单文件", class = "btn btn-primary")
+            downloadButton("download_pdf_manage", label = "下载运单", class = "btn btn-primary", style = "margin-left: 10px; font-size: 14px;")
           )
         } else {
           NULL
