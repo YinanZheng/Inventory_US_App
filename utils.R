@@ -1440,13 +1440,13 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
         "无运单PDF" # 默认值
       )
       button_disabled <- order_info$LabelStatus == "无"
-      button_id <- paste0("download_pdf_btn_", order_info$OrderID)
+      button_id <- paste0("download_pdf_btn_", order_info$UsTrackingNumber)
       button_onclick <- if (button_disabled) {
         NULL
       } else {
         sprintf(
           "Shiny.setInputValue('download_pdf_order', '%s', {priority: 'event'})",
-          order_info$OrderID
+          order_info$UsTrackingNumber
         )
       }
       
