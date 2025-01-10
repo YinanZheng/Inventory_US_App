@@ -2042,6 +2042,12 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # 物品表过滤模块
+  itemFilterServer(
+    id = "defect_filter",
+    makers_items_map = makers_items_map
+  )
+  
   # 处理登记为瑕疵品
   observeEvent(input$register_defective, {
     selected_rows <- unique_items_table_defect_selected_row()  # 获取选中行索引
