@@ -1469,6 +1469,10 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
                 tags$td(tags$span(order_info$OrderID, style = "color: #007BFF; font-weight: bold;"))
               ),
               tags$tr(
+                tags$td(tags$strong("运单号:"), style = "padding: 5px; vertical-align: top;"),
+                tags$td(tags$span(order_info$UsTrackingNumber, style = "color: #007BFF; font-weight: bold;"))
+              ),
+              tags$tr(
                 tags$td(tags$strong("顾客姓名:"), style = "padding: 5px; vertical-align: top;"),
                 tags$td(tags$span(order_info$CustomerName, style = "color: #007BFF;"))
               ),
