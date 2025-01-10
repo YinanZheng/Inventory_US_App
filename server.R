@@ -1541,8 +1541,7 @@ server <- function(input, output, session) {
         ),
         
         # 右侧按钮（仅在订单状态为“预定”时显示）
-        if (order_status == "调货") 
-        {
+        if (order_status == "调货") {
           tagList(
             actionButton(
               inputId = "complete_transfer",
@@ -1550,8 +1549,10 @@ server <- function(input, output, session) {
               class = "btn-success",
               style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
             ),
-            uiOutput("dynamic_download_button_manage")
+            downloadButton("download_pdf_manage", label = "下载运单文件", class = "btn btn-primary")
           )
+        } else {
+          NULL
         }
       )
     })
@@ -1817,35 +1818,6 @@ server <- function(input, output, session) {
     }, error = function(e) {
       showNotification(paste("合并订单时发生错误：", e$message), type = "error")
     })
-  })
-  
-  # 动态生成下载运单按钮
-  output$dynamic_download_button_manage <- renderUI({
-    req(matching_orders(), current_order_id())
-    
-    current_order <- matching_orders() %>% filter(OrderID == current_order_id())
-    
-    if (is.null(current_order)) {
-      return(NULL)
-    }
-    
-    # 根据 LabelStatus 动态生成按钮或文本
-    label_text <- switch(
-      current_order$LabelStatus,
-      "已传" = "下载运单文件",
-      "印出" = "运单已打印",
-      "下载运单文件" # 默认值
-    )
-    
-    if (current_order$LabelStatus == "无") {
-      div(
-        label_text,
-        class = "btn btn-secondary",
-        style = "background-color: grey; color: white; cursor: not-allowed; padding: 6px 12px; border-radius: 4px; display: inline-block; text-align: center;"
-      )
-    } else {
-      downloadButton("download_pdf_manage", label = label_text, class = "btn btn-primary")
-    }
   })
   
   # 定义下载处理器
