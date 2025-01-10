@@ -178,6 +178,7 @@ server <- function(input, output, session) {
       data = data,
       input = input,
       maker_input_id = "inbound_filter-maker",
+      status_input_id = "inbound_filter-status",
       item_name_input_id = "inbound_filter-name"    
       )
     
@@ -273,8 +274,8 @@ server <- function(input, output, session) {
       data = data,
       input = input,
       maker_input_id = "manage_filter-maker",
+      status_input_id = "manage_filter-status",
       item_name_input_id = "manage_filter-name",
-      purchase_date_range_id = "manage_filter-purchase_date_range"
     )
     
     data
@@ -284,6 +285,13 @@ server <- function(input, output, session) {
   filtered_unique_items_data_defect <- reactive({
     req(unique_items_data())
     data <- unique_items_data()
+    
+    data <- filter_unique_items_data_by_inputs(
+      data = data,
+      input = input,
+      maker_input_id = "defect_filter-maker",
+      item_name_input_id = "defect_filter-name",
+    )
     
     # 默认过滤条件：状态为“美国入库”且 Defect 不为“未知”
     data <- data[!is.na(data$Defect) & data$Defect != "未知" & data$Status == "美国入库", ]
@@ -309,6 +317,7 @@ server <- function(input, output, session) {
       data = data,
       input = input,
       maker_input_id = "logistic_filter-maker",
+      status_input_id = "logistic_filter-status",
       item_name_input_id = "logistic_filter-name",
       sold_date_range_id = "logistic_filter-sold_date_range",
       exit_date_range_id = "logistic_filter-exit_date_range"

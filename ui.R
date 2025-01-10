@@ -173,7 +173,7 @@ ui <- navbarPage(
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
 
-        itemFilterUI(id = "inbound_filter", border_color = "#28A745", text_color = "#28A745", use_purchase_date = FALSE),
+        itemFilterUI(id = "inbound_filter", border_color = "#28A745", text_color = "#28A745", status_choices = c("所有状态" = "", "国内出库", "美国入库"), use_purchase_date = FALSE),
         
         tags$hr(style = "margin: 5px 0; border: none;"),
         
@@ -426,78 +426,15 @@ ui <- navbarPage(
         
         tags$hr(style = "margin: 5px 0; border: none;"),
         
-        # 订单登记区（共用）
+        
         div(
-          class = "card",
-          style = "margin-bottom: 5px; padding: 15px; border: 1px solid #007BFF; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
-          
-          tags$h4("订单登记与更新", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
-          
-          fluidRow(
-            column(
-              7,
-              textInput("order_id", "订单号", placeholder = "请输入订单号", width = "100%")
-            ),
-            column(
-              5,
-              selectInput(
-                inputId = "platform",
-                label = "电商平台",
-                choices = c(
-                  "请选择" = "",
-                  "Etsy" = "Etsy",
-                  "Shopify" = "Shopify",
-                  "TikTok" = "TikTok",
-                  "其他" = "其他"
-                ),
-                selected = "",
-                width = "100%"
-              )
-            )
-          ),
-          
-          fluidRow(
-            column(6, textInput("customer_name", "顾客姓名", placeholder = "请输入", width = "100%")),
-            column(6, textInput("customer_netname", "顾客网名", placeholder = "请输入", width = "100%"))
-          ),
-          
-          # 运单号
-          textInput("tracking_number", "运单号", placeholder = "请输入运单号", width = "100%"),
-          
-          tags$div(style = "margin-top: 20px;"),  # 增加20px垂直间距
-          
-          # 订单图片上传
-          imageModuleUI("image_sold", label = "订单图片上传", label_color = "#007BFF"),
-          
-          # 订单备注
-          textAreaInput("order_notes", "订单备注", placeholder = "请输入备注内容", width = "100%"),
-          
-          # 按钮区
-          div(
-            style = "margin-top: 10px; display: flex; flex-direction: column; gap: 5px;",  # 增加垂直间距
-            
-            div(
-              style = "display: flex; justify-content: space-between;",
-              uiOutput("register_order_button_ui"),
-              actionButton(
-                "clear_order_btn",
-                "清空订单",
-                icon = icon("eraser"),
-                class = "btn-warning",
-                style = "font-size: 16px; width: 48%; height: 42px;"
-              )
-            ),
-            
-            div(
-              style = "margin-top: 5px; display: flex; justify-content: center;",  # 设置行间距
-              actionButton(
-                "merge_order_btn",
-                "合并订单",
-                icon = icon("object-group"),
-                class = "btn-primary",
-                style = "font-size: 16px; width: 100%; height: 42px;"
-              )
-            )
+          style = "margin-top: 5px; display: flex; justify-content: center;",  # 设置行间距
+          actionButton(
+            "merge_order_btn",
+            "合并订单",
+            icon = icon("object-group"),
+            class = "btn-primary",
+            style = "font-size: 16px; width: 100%; height: 42px;"
           )
         )
       ),
@@ -527,6 +464,27 @@ ui <- navbarPage(
       class = "layout-container",  # Flexbox 容器
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
+        
+        itemFilterUI(id = "manage_filter", border_color = "#28A745", text_color = "#28A745", use_purchase_date = FALSE),
+        
+        tags$hr(style = "margin: 5px 0; border: none;"),
+        
+        div(
+          class = "card shadow-sm", # 添加卡片样式
+          style = "border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; background-color: #f9f9f9;",
+          # 卡片标题
+          div(
+            style = "margin-bottom: 10px; padding-bottom: 8px;",
+            tags$h4("更新商品图片", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
+            
+            imageModuleUI("image_manage", label = ""),
+            
+            actionButton("update_image_btn", "更新商品图片", icon = icon("pen"), style = "background-color: #006400; color: white;")
+          ),
+        ),
+        
+        tags$hr(style = "margin: 5px 0; border: none;"),
+        
         fluidRow(
           column(
             12,
@@ -550,22 +508,6 @@ ui <- navbarPage(
               )
             )
           )
-        ),
-        
-        tags$hr(), # 分隔线
-        
-        div(
-          class = "card shadow-sm", # 添加卡片样式
-          style = "border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; background-color: #f9f9f9;",
-          # 卡片标题
-          div(
-            style = "margin-bottom: 10px; padding-bottom: 8px;",
-            tags$h4("更新商品图片", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
-            
-            imageModuleUI("image_manage", label = ""),
-            
-            actionButton("update_image_btn", "更新商品图片", icon = icon("pen"), style = "background-color: #006400; color: white;")
-          ),
         )
       ),
       
@@ -591,7 +533,11 @@ ui <- navbarPage(
       class = "layout-container",  # Flexbox 容器
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
-
+        
+        itemFilterUI(id = "defect_filter", border_color = "#28A745", text_color = "#28A745", use_status = FALSE, use_purchase_date = FALSE),
+        
+        tags$hr(), # 分隔线
+        
         # 登记瑕疵品部分
         div(
           style = "margin-bottom: 20px;",

@@ -95,6 +95,9 @@ itemFilterServer <- function(id, makers_items_map) {
           server = TRUE
         )
         
+        # 重置库存状态
+        updateSelectInput(session, "status", selected = "")
+        
         # 重置日期选择器
         updateDateRangeInput(session, "purchase_date_range", start = Sys.Date() - 365, end = Sys.Date())
         updateDateRangeInput(session, "sold_date_range", start = Sys.Date() - 365, end = Sys.Date())
