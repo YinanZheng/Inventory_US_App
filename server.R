@@ -1414,11 +1414,7 @@ server <- function(input, output, session) {
       sanitized_order_id <- gsub("#", "", trimws(input$order_id))
       
       # 查询订单信息，包含新增字段
-      existing_order <- dbGetQuery(con, "
-      SELECT CustomerName, CustomerNetName, Platform, UsTrackingNumber, OrderStatus, OrderNotes 
-      FROM orders 
-      WHERE OrderID = ?", params = list(sanitized_order_id)
-      )
+      existing_order <- orders() %>% filter(OrderID == sanitized_order_id)
       
       # 如果订单存在，填充对应字段
       if (nrow(existing_order) > 0) {
@@ -1529,6 +1525,8 @@ server <- function(input, output, session) {
     order_id <- selected_order$OrderID
     customer_name <- selected_order$CustomerName
     order_status <- selected_order$OrderStatus
+    
+    label_pdf_file_path(file.path("/var/uploads/shiplabels", paste0(selected_order$UsTrackingNumber, ".pdf")))
     
     # 填充左侧订单信息栏
     updateTextInput(session, "order_id", value = order_id)
