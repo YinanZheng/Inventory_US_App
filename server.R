@@ -1091,6 +1091,25 @@ server <- function(input, output, session) {
     })
   })
   
+  # 运单号下载
+  observeEvent(input$download_pdf_order, {
+    order_id <- input$download_pdf_order
+    pdf_path <- file.path("/var/uploads/shiplabels", paste0(order_id, ".pdf"))
+    
+    if (file.exists(pdf_path)) {
+      shiny::downloadHandler(
+        filename = function() {
+          paste0(order_id, ".pdf")
+        },
+        content = function(file) {
+          file.copy(pdf_path, file)
+        }
+      )()
+    } else {
+      showNotification("未找到对应的运单文件！", type = "error")
+    }
+  })
+  
   # 动态渲染订单物品卡片
   observe({
     req(new_order_items())

@@ -1431,6 +1431,25 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
         NULL
       }
       
+      # 动态按钮逻辑
+      button_text <- switch(
+        order_info$LabelStatus,
+        "无" = "无运单PDF",
+        "上传" = "下载运单PDF",
+        "下载" = "已打印运单",
+        "无运单PDF" # 默认值
+      )
+      button_disabled <- order_info$LabelStatus == "无"
+      button_id <- paste0("download_pdf_btn_", order_info$OrderID)
+      button_onclick <- if (button_disabled) {
+        NULL
+      } else {
+        sprintf(
+          "Shiny.setInputValue('download_pdf_order', '%s', {priority: 'event'})",
+          order_info$OrderID
+        )
+      }
+      
       # 渲染订单卡片
       div(
         id = paste0("order_card_", order_info$OrderID),  # 设置唯一 ID
@@ -1488,6 +1507,22 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
               tags$tr(
                 tags$td(tags$strong("状态:"), style = "padding: 5px; vertical-align: top;"),
                 tags$td(tags$span(order_info$OrderStatus, style = "color: #007BFF;"))
+              ),
+              
+              # 动态按钮部分
+              tags$tr(
+                tags$td(
+                  actionButton(
+                    button_id,
+                    label = button_text,
+                    class = "btn btn-primary",
+                    style = if (button_disabled) "background-color: grey; color: white; cursor: not-allowed;" else "",
+                    onclick = button_onclick,
+                    disabled = button_disabled
+                  ),
+                  colspan = 2,
+                  style = "padding-top: 10px; text-align: center;"
+                )
               )
             )
           )
