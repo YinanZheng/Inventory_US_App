@@ -777,6 +777,26 @@ server <- function(input, output, session) {
   
   ### 逻辑
   
+  # 输入订单号填写运单号
+  observe({
+    req(input$order_id_input) # 确保输入框非空
+    
+    order_id <- trimws(input$order_id_input)
+    
+    result <- orders %>%
+      filter(OrderID == order_id) %>%
+      select(UsTrackingNumber)
+    
+    # 更新运单号
+    if (!is.null(result) && nrow(result) > 0) {
+      updateTextInput(session, "shipping_bill_number", value = result$UsTrackingNumber[1])
+      showNotification("运单号更新成功！", type = "message")
+    } else {
+      showNotification("未找到相关订单，请检查输入！", type = "error")
+    }
+  })
+  
+
   # 清空运单号逻辑
   observeEvent(input$shipping_bill_number, {
     if (is.null(input$shipping_bill_number) || input$shipping_bill_number == "") {

@@ -312,7 +312,7 @@ ui <- navbarPage(
         div(class = "card", style = "padding: 20px; border: 1px solid #007BFF; border-radius: 8px; margin-bottom: 20px;",
             tags$h4("国内售出订单发货", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
             textInput("shipping_bill_number", "运单号:", placeholder = "请扫描运单号", width = "100%"),
-            textInput("order_id_input", "订单号:", placeholder = "请输入订单号：", width = "100%"),
+            textInput("order_id_input", "订单号:", placeholder = "请输入订单号", width = "100%"),
             textInput("sku_input", "SKU:", placeholder = "请扫描SKU条形码", width = "100%"),
             uiOutput("dynamic_ship_button"),  # 动态按钮位置
             actionButton("clear_shipping_bill_btn", "清空", icon = icon("trash-alt"), class = "btn-danger", style = "margin-top: 10px;"),
