@@ -415,7 +415,6 @@ server <- function(input, output, session) {
   
   unique_items_table_defect_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_defect",
                                                        column_mapping = c(common_columns, list(
-                                                         PurchaseTime = "采购日",
                                                          DomesticEntryTime = "入库日",
                                                          Defect = "瑕疵态",
                                                          DefectNotes = "瑕疵备注")
