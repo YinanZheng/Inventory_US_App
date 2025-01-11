@@ -259,8 +259,8 @@ server <- function(input, output, session) {
       data <- data %>% filter(OrderID %in% item_orders)
     }
     
-    # 按更新时间倒序排列
-    data <- data %>% arrange(desc(updated_at))
+    # 按录入时间倒序排列
+    data <- data %>% arrange(desc(created_at))
     
     data
   })
@@ -394,7 +394,8 @@ server <- function(input, output, session) {
                                      UsTrackingNumber = "运单号",
                                      LabelStatus = "运单PDF",
                                      OrderStatus = "状态",
-                                     OrderNotes = "备注"
+                                     OrderNotes = "备注",
+                                     created_at = "创建时间"
                                    ),
                                    data = filtered_orders,  # 数据源
                                    selection = "single" # 单选模式
