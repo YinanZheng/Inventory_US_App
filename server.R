@@ -295,7 +295,7 @@ server <- function(input, output, session) {
     )
     
     # 默认过滤条件：状态为“国内入库”且 Defect 不为“未知”
-    data <- data[!is.na(data$Defect) & data$Defect != "未知" & data$Status == "国内入库", ]
+    data <- data[!is.na(data$Defect) & data$Defect != "未知" & data$Status == "美国入库", ]
     
     # 处理开关互斥逻辑
     if (isTRUE(input$show_defects_only)) {
@@ -416,7 +416,6 @@ server <- function(input, output, session) {
   unique_items_table_defect_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_defect",
                                                        column_mapping = c(common_columns, list(
                                                          UsEntryTime = "美入库日",
-                                                         UsRelocationTime = "美调货日",
                                                          Defect = "瑕疵态",
                                                          DefectNotes = "瑕疵备注")
                                                        ), selection = "multiple", data = filtered_unique_items_data_defect,
