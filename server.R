@@ -415,7 +415,8 @@ server <- function(input, output, session) {
   
   unique_items_table_defect_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_defect",
                                                        column_mapping = c(common_columns, list(
-                                                         DomesticEntryTime = "入库日",
+                                                         UsEntryTime = "美入库日",
+                                                         UsRelocationTime = "美调货日",
                                                          Defect = "瑕疵态",
                                                          DefectNotes = "瑕疵备注")
                                                        ), selection = "multiple", data = filtered_unique_items_data_defect,
@@ -454,8 +455,9 @@ server <- function(input, output, session) {
   
   unique_items_table_download_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_download",
                                                          column_mapping <- c(common_columns, list(
-                                                           UsEntryTime = "入库日",
-                                                           UsShippingTime = "发货日")
+                                                           UsEntryTime = "美入库日",                                                           UsEntryTime = "美入库日",
+                                                           UsRelocationTime = "美调货日",
+                                                           UsShippingTime = "美发货日")
                                                          ), data = filtered_unique_items_data_download)
   
 
