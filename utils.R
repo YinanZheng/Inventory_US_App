@@ -483,47 +483,6 @@ deleteConfirmationModal <- function(item_count) {
   )
 }
 
-fetchSkuData <- function(sku, con) {
-  query <- "
-    SELECT 
-      ItemName,
-      Maker,
-      MajorType,
-      MinorType,
-      Quantity AS TotalQuantity,
-      ProductCost AS AverageCost,
-      ShippingCost AS AverageShippingCost,
-      ItemImagePath
-    FROM inventory
-    WHERE SKU = ?"
-  dbGetQuery(con, query, params = list(sku))
-}
-
-
-fetchInventoryStatusData <- function(sku, con) {
-  query <- "
-    SELECT 
-      Status, 
-      COUNT(*) AS Count
-    FROM unique_items
-    WHERE SKU = ?
-    GROUP BY Status"
-  dbGetQuery(con, query, params = list(sku))
-}
-
-
-fetchDefectStatusData <- function(sku, con) {
-  query <- "
-    SELECT 
-      Defect, 
-      COUNT(*) AS Count
-    FROM unique_items
-    WHERE SKU = ?
-    GROUP BY Defect"
-  dbGetQuery(con, query, params = list(sku))
-}
-
-
 fetchSkuOperationData <- function(sku, con) {
   # 查询 SKU 的基本信息和相关状态数据
   query <- "
@@ -1177,16 +1136,6 @@ update_label_status_column <- function(con, pdf_directory = "/var/uploads/shipla
     stop(paste("更新 LabelStatus 列时发生错误：", e$message))
   })
 }
-
-
-# 动态生成 input 命名空间
-get_input_id <- function(base_id, suffix) {
-  # 提取 "XXX" 的前缀部分
-  prefix <- strsplit(base_id, "-")[[1]][1]
-  # 拼接完整 ID
-  paste0(prefix, "-", suffix)
-}
-
 
 # 从输入数据中筛选数据
 filter_unique_items_data_by_inputs <- function(
