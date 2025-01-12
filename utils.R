@@ -505,54 +505,6 @@ fetchSkuOperationData <- function(sku, con) {
   dbGetQuery(con, query, params = list(sku))
 }
 
-
-plotBarChart <- function(data, x, y, x_label, y_label, colors) {
-  # 检查数据是否为空
-  if (nrow(data) == 0 || is.null(data[[y]]) || length(data[[y]]) == 0) {
-    return(plotly::plot_ly(type = "scatter", mode = "text") %>%
-             plotly::add_text(x = 0.5, y = 0.5, text = "无库存状态数据", textfont = list(size = 20, color = "red")))
-  }
-  
-  # 使用 plotly 绘制柱状图
-  plotly::plot_ly(
-    data = data,
-    x = ~get(x),
-    y = ~get(y),
-    type = "bar",
-    marker = list(color = colors[seq_along(data[[y]])]) # 设置颜色
-  ) %>%
-    plotly::layout(
-      xaxis = list(title = x_label),
-      yaxis = list(title = y_label),
-      title = "状态分布",
-      showlegend = FALSE
-    )
-}
-
-
-plotPieChart <- function(data, labels, values, colors) {
-  # 检查数据是否为空
-  if (nrow(data) == 0 || is.null(data[[values]]) || length(data[[values]]) == 0) {
-    return(plotly::plot_ly(type = "scatter", mode = "text") %>%
-             plotly::add_text(x = 0.5, y = 0.5, text = "无瑕疵情况数据", textfont = list(size = 20, color = "red")))
-  }
-  
-  # 使用 plotly 绘制饼图
-  plotly::plot_ly(
-    data = data,
-    labels = ~get(labels),
-    values = ~get(values),
-    type = "pie",
-    textinfo = "label+percent",
-    marker = list(colors = colors[seq_along(data[[values]])]) # 设置颜色
-  ) %>%
-    plotly::layout(
-      title = "瑕疵情况分布",
-      showlegend = TRUE
-    )
-}
-
-
 renderItemInfo <- function(output, output_name, item_info, img_path, count_label = "待入库数", count_field = "PendingQuantity") {
   # 如果 item_info 为空或没有数据，构造一个默认空数据框
   if (is.null(item_info) || nrow(item_info) == 0) {
