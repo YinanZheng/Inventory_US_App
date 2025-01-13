@@ -1115,7 +1115,10 @@ server <- function(input, output, session) {
     })
   })
   
-  ##############################################################################################
+  
+  #####################
+  ### 美国发货部分  ###
+  #####################
   
   # 创建新加订单物品容器
   new_order_items <- reactiveVal()
@@ -1236,7 +1239,6 @@ server <- function(input, output, session) {
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
   
-  
   observe({
     # 获取延迟后的输入值
     bill_number <- debounced_us_shipping_bill_number()
@@ -1337,6 +1339,13 @@ server <- function(input, output, session) {
     }, error = function(e) {
       dbRollback(con)
       showNotification(paste("发货失败：", e$message), type = "error")
+    })
+    
+    # 延迟 3 秒清空输入框
+    shinyjs::delay(3000, {
+      updateTextInput(session, "us_shipping_bill_number", value = "")
+      updateTextInput(session, "us_shipping_sku_input", value = "")
+      updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
     })
   })
   
