@@ -3,7 +3,7 @@ itemFilterUI <- function(
     border_color = "#007BFF", 
     text_color = "#007BFF", 
     use_status = TRUE,
-    status_choices = c("所有状态" = "", "采购", "国内入库", "国内出库", "国内售出", "美国入库", "美国售出", "美国调货", "退货"), 
+    status_choices = c("所有状态" = "", "采购", "国内入库", "国内出库", "国内售出", "美国入库", "美国发货", "美国调货", "退货"), 
     use_purchase_date = TRUE, 
     use_sold_date = FALSE, 
     use_exit_date = FALSE
