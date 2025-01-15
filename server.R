@@ -273,7 +273,7 @@ server <- function(input, output, session) {
     
   })
   
-  orders_table_domestic_sold_pending <- reactive({
+  filtered_orders_domestic_sold <- reactive({
     req(orders())  # 确保订单数据存在
     
     data <- orders()  # 获取所有订单数据
