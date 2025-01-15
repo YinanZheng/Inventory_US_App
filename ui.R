@@ -407,7 +407,23 @@ ui <- navbarPage(
         tabsetPanel(
           id = "order_management_tabs",
           tabPanel(
-            "订单管理",
+            "已经到齐",
+            div(
+              class = "card",
+              style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
+              orderTableUI("orders_table_domestic_sold_pending")
+            )
+          ),
+          tabPanel(
+            "没有到齐",
+            div(
+              class = "card",
+              style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
+              orderTableUI("orders_table_transfer_pending")
+            )
+          ),
+          tabPanel(
+            "订单查询",
             div(
               class = "card",
               style = "height: 460px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
@@ -418,22 +434,6 @@ ui <- navbarPage(
               style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
               uiOutput("associated_items_title"),
               uiOutput("order_items_cards")
-            )
-          ),
-          tabPanel(
-            "调货完未到齐",
-            div(
-              class = "card",
-              style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
-              orderTableUI("orders_table_transfer_pending")
-            )
-          ),
-          tabPanel(
-            "美国已到齐未发货",
-            div(
-              class = "card",
-              style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
-              orderTableUI("orders_table_domestic_sold_pending")
             )
           )
         )
