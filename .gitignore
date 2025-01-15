@@ -7,3 +7,4 @@ tests/test-app/server.R
 tests/test-app/ui.R
 deploy on ubuntu.txt
 .DS_Store
+/maintainance
