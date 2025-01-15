@@ -1742,7 +1742,7 @@ server <- function(input, output, session) {
     req(tracking_number)  # 确保运单号存在
     
     # 跳转到“发货”页面
-    updateTabsetPanel(session, "inventory_china", selected = "发货")
+    updateTabsetPanel(session, "inventory_us", selected = "发货")
     
     # 自动填写运单号
     updateTextInput(session, "shipping_bill_number", value = tracking_number)
