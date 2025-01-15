@@ -3227,7 +3227,7 @@ server <- function(input, output, session) {
                                                         OrderID = "订单号"
                                                       )), 
                                                       selection = "multiple",
-                                                      option = modifyList(table_decault_options, list(searching = TRUE)),
+                                                      option = modifyList(table_default_options, list(searching = TRUE)),
                                                       data = unique_items_data)
   
   # 更新库存状态按钮
