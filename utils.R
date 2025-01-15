@@ -1222,19 +1222,6 @@ generate_montage <- function(image_paths, output_path, geometry = "+5+5") {
   return(output_path)
 }
 
-reset_order_form <- function(session, image_module) {
-  updateTextInput(session, "order_id", value = "")
-  updateSelectInput(session, "platform", selected = "")
-  updateTextInput(session, "customer_name", value = "")
-  updateTextInput(session, "customer_netname", value = "")
-  updateCheckboxInput(session, "is_preorder", value = FALSE)
-  updateCheckboxInput(session, "is_transfer_order", value = FALSE)
-  updateTextInput(session, "tracking_number", value = "")
-  image_module$reset()
-  updateTextAreaInput(session, "order_notes", value = "")
-}
-
-
 # 数据下载分页的高级下拉菜单
 createSearchableDropdown <- function(input_id, label, data, placeholder = "搜索...") {
   # 将数据转换为 Dropdown 所需格式

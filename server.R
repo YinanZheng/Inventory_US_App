@@ -1559,9 +1559,6 @@ server <- function(input, output, session) {
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       orders_refresh_trigger(!orders_refresh_trigger())
       
-      # 重置输入
-      reset_order_form(session, image_sold)
-      
       # 清空关联物品表
       output$associated_items_table <- renderDT({ NULL })
     }, error = function(e) {
