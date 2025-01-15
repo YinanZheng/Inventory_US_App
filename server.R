@@ -1897,9 +1897,8 @@ server <- function(input, output, session) {
   # 采购商品图片处理模块
   image_manage <- imageModuleServer("image_manage")
   
-  # Handle image update button click
+  # 处理更新图片
   observeEvent(input$update_image_btn, {
-    # 1. 确保用户选中了单行
     selected_rows <- unique_items_table_manage_selected_row()
     if (length(selected_rows) != 1) {
       showNotification("请确保只选中一行！", type = "error")

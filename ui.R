@@ -463,8 +463,8 @@ ui <- navbarPage(
             
             imageModuleUI("image_manage", label = ""),
             
-            actionButton("update_image_btn", "更新商品图片", icon = icon("pen"), style = "background-color: #006400; color: white;")
-          ),
+            actionButton("update_image_btn", "更新商品图片", icon = icon("pen"), style = "background-color: #006400; color: white; width: 100%;")
+          )
         ),
         
         tags$hr(style = "margin: 5px 0; border: none;"),
