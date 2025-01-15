@@ -1083,7 +1083,6 @@ update_label_status_column <- function(con, pdf_directory = "/var/uploads/shipla
     
     # 执行 SQL 更新
     dbExecute(con, update_query)
-    message("LabelStatus 列已更新成功。")
   }, error = function(e) {
     stop(paste("更新 LabelStatus 列时发生错误：", e$message))
   })
