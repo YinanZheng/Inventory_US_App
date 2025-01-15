@@ -1732,22 +1732,41 @@ server <- function(input, output, session) {
     }
   )
   
-  # 监听表格行的点击事件
+  # 监听 "调货完成未发货" 表格行的点击事件
   observeEvent(selected_order_transfer_pending_row(), {
-    selected_row <- selected_order_transfer_pending_row()  # 获取点击的行索引
-    req(selected_row)  # 确保索引存在
+    selected_row <- selected_order_transfer_pending_row() 
+    req(selected_row) 
     
-    # 获取选中行的运单号
     tracking_number <- filtered_orders_transfer_pending()[selected_row, "UsTrackingNumber"]
-    req(tracking_number)  # 确保运单号存在
     
-    # 跳转到“发货”页面
-    updateTabsetPanel(session, "inventory_us", selected = "发货")
+    # 如果运单号为空或缺失，显示提示信息
+    if (is.null(tracking_number) || tracking_number == "") {
+      showNotification("未找到运单号，请检查", type = "error")
+      return()  # 终止后续操作
+    }
     
-    # 自动填写运单号
+    updateTabsetPanel(session, "inventory_us", selected = "发货") # 跳转到“发货”页面
+    
     updateTextInput(session, "shipping_bill_number", value = tracking_number)
   })
   
+  # 监听 "国内售出未发货" 表格行的点击事件
+  observeEvent(selected_order_domestic_sold_pending_row(), {
+    selected_row <- selected_order_domestic_sold_pending_row() 
+    req(selected_row)
+    
+    tracking_number <- filtered_orders_domestic_sold()[selected_row, "UsTrackingNumber"]
+    
+    # 如果运单号为空或缺失，显示提示信息
+    if (is.null(tracking_number) || tracking_number == "") {
+      showNotification("未找到运单号，请检查", type = "error")
+      return()  # 终止后续操作
+    }
+    
+    updateTabsetPanel(session, "inventory_us", selected = "发货") # 跳转到“发货”页面
+    
+    updateTextInput(session, "shipping_bill_number", value = tracking_number)
+  })
   
   ################################################################
   ##                                                            ##
