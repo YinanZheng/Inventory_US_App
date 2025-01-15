@@ -271,14 +271,41 @@ server <- function(input, output, session) {
     
     data <- orders()  # 获取所有订单数据
     
+    # 筛选符合条件的订单
+    filtered_data <- data %>%
+      filter(
+        grepl("【调货完成 [0-9]{4}-[0-9]{2}-[0-9]{2}】", OrderNotes),  # 备注包含指定格式
+        OrderStatus == "备货"  # 状态是“备货”
+      )
+    
+    return(filtered_data)
   })
   
   filtered_orders_domestic_sold <- reactive({
-    req(orders())  # 确保订单数据存在
+    req(orders(), unique_items_data())  # 确保订单和物品数据存在
     
-    data <- orders()  # 获取所有订单数据
+    # 获取订单和物品数据
+    data_orders <- orders()
+    data_items <- unique_items_data()
     
+    # 筛选符合条件的物品
+    filtered_items <- data_items %>%
+      filter(
+        Status == "国内售出",           # 物品状态为“国内售出”
+        !is.na(IntlTracking),          # 有国际运单号
+        IntlTracking != ""             # 运单号不为空
+      )
+    
+    # 筛选符合条件的订单
+    filtered_orders <- data_orders %>%
+      filter(
+        OrderID %in% filtered_items$OrderID,  # 订单包含符合条件的物品
+        OrderStatus == "备货"                 # 订单状态为“备货”
+      )
+    
+    return(filtered_orders)
   })
+  
   
   # 物品管理页过滤
   filtered_unique_items_data_manage <- reactive({
