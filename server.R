@@ -782,11 +782,11 @@ server <- function(input, output, session) {
   ################################################################
   
   # 页面切换时的聚焦
-  observeEvent(input$shipping_tabs, {
-    if (input$shipping_tabs == "国内售出发货") {
+  observeEvent(input$inventory_us, input$shipping_tabs, {
+    if (input$inventory_us == "发货" && input$shipping_tabs == "国内售出发货") {
       runjs("document.getElementById('shipping_bill_number').focus();")
     }
-    if (input$shipping_tabs == "美国售出发货") {
+    if (input$inventory_us == "发货" && input$shipping_tabs == "美国售出发货") {
       runjs("document.getElementById('us_shipping_bill_number').focus();")
     }
   })
