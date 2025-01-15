@@ -3049,6 +3049,7 @@ server <- function(input, output, session) {
                                                         IntlShippingMethod = "国际运输",
                                                         OrderID = "订单号"
                                                       )), 
+                                                      options = modifyList(table_default_options, list(searching = TRUE)),
                                                       selection = "multiple", 
                                                       data = unique_items_data)
   
