@@ -1053,25 +1053,25 @@ register_order <- function(order_id, customer_name, customer_netname, platform, 
 update_label_status_column <- function(con, pdf_directory = "/var/uploads/shiplabels") {
   # 列出所有 PDF 文件
   existing_files <- list.files(pdf_directory, full.names = FALSE)
-  existing_tracking_numbers <- gsub("\\.pdf$", "", existing_files)  # 提取运单号
+  existing_tracking_numbers <- gsub("\\.pdf$", "", existing_files)  # 提取运单号（去掉 .pdf 后缀）
   
   tryCatch({
     # 动态生成 CASE 语句
     case_statements <- paste0(
       "CASE
-        WHEN UsTrackingNumber IS NULL OR UsTrackingNumber = '' THEN '无'
-        WHEN UsTrackingNumber IS NOT NULL AND UsTrackingNumber IN (",
+        WHEN UsTrackingNumber IS NULL OR UsTrackingNumber = '' THEN '无'  -- 如果运单号为空或 NULL，更新为 '无'
+        WHEN UsTrackingNumber IN (", 
       if (length(existing_tracking_numbers) > 0) {
         paste(sprintf("'%s'", existing_tracking_numbers), collapse = ",")
       } else {
-        "''"
-      },
+        "''"  # 如果没有 PDF 文件，提供一个空的占位符
+      }, 
       ") THEN
           CASE
-            WHEN LabelStatus = '印出' THEN '已传'
-            ELSE '已传'
+            WHEN LabelStatus = '印出' THEN '印出'  -- 如果状态是 '印出'，保持不变
+            ELSE '已传'                          -- 否则更新为 '已传'
           END
-        ELSE '无'
+        ELSE '无'  -- 如果运单号存在但没有对应的 PDF 文件，更新为 '无'
       END"
     )
     
@@ -1088,6 +1088,7 @@ update_label_status_column <- function(con, pdf_directory = "/var/uploads/shipla
     stop(paste("更新 LabelStatus 列时发生错误：", e$message))
   })
 }
+
 
 # 从输入数据中筛选数据
 filter_unique_items_data_by_inputs <- function(
