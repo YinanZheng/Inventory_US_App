@@ -266,45 +266,90 @@ server <- function(input, output, session) {
     data
   })
   
-  filtered_orders_transfer_pending <- reactive({
-    req(orders())  # 确保订单数据存在
-    
-    data <- orders()  # 获取所有订单数据
-    
-    # 筛选符合条件的订单
-    filtered_data <- data %>%
-      filter(
-        grepl("【调货完成 [0-9]{4}-[0-9]{2}-[0-9]{2}】", OrderNotes),  # 备注包含指定格式
-        OrderStatus == "备货"  # 状态是“备货”
-      )
-    
-    return(filtered_data)
-  })
-  
-  filtered_orders_domestic_sold <- reactive({
+  filtered_orders_arrived <- reactive({
     req(orders(), unique_items_data())  # 确保订单和物品数据存在
     
     # 获取订单和物品数据
     data_orders <- orders()
     data_items <- unique_items_data()
     
-    # 筛选符合条件的物品
-    filtered_items <- data_items %>%
-      filter(
-        Status == "国内售出",           # 物品状态为“国内售出”
-        !is.na(IntlTracking),          # 有国际运单号
-        IntlTracking != ""             # 运单号不为空
-      )
+    # 筛选订单状态为“备货”的订单
+    data_orders <- data_orders %>%
+      filter(OrderStatus == "备货")
     
-    # 筛选符合条件的订单
-    filtered_orders <- data_orders %>%
+    # 条件 1：订单内所有物品都有国际运单号
+    all_with_tracking_orders <- data_items %>%
+      group_by(OrderID) %>%
+      summarise(
+        all_with_tracking = all(!is.na(IntlTracking) & IntlTracking != "")  # 所有物品都有运单号
+      ) %>%
+      filter(all_with_tracking) %>%  # 筛选符合条件的订单
+      pull(OrderID)
+    
+    # 条件 2：订单内没有任何物品，备注有调货完成记录
+    no_items_with_transfer_note_orders <- data_orders %>%
       filter(
-        OrderID %in% filtered_items$OrderID,  # 订单包含符合条件的物品
-        OrderStatus == "备货"                 # 订单状态为“备货”
-      )
+        !(OrderID %in% data_items$OrderID) &  # 订单内没有任何物品
+          grepl("【调货完成 \\d{4}-\\d{2}-\\d{2}】", OrderNotes)  # 备注包含调货完成记录
+      ) %>%
+      pull(OrderID)
+    
+    # 合并两种符合条件的订单
+    valid_order_ids <- union(all_with_tracking_orders, no_items_with_transfer_note_orders)
+    
+    # 返回筛选后的订单
+    filtered_orders <- data_orders %>%
+      filter(OrderID %in% valid_order_ids)
     
     return(filtered_orders)
   })
+  
+  
+  filtered_orders_waiting <- reactive({
+    req(orders(), unique_items_data())  # 确保订单和物品数据存在
+    
+    # 获取订单和物品数据
+    data_orders <- orders()
+    data_items <- unique_items_data()
+    
+    # 筛选订单状态为“备货”的订单
+    data_orders <- data_orders %>%
+      filter(OrderStatus == "备货")
+    
+    # 条件 1：部分物品有国际运单号，部分没有的订单
+    partial_tracking_orders <- data_items %>%
+      group_by(OrderID) %>%
+      summarise(
+        has_tracking = any(!is.na(IntlTracking) & IntlTracking != ""),  # 至少一个物品有运单号
+        no_tracking = any(is.na(IntlTracking) | IntlTracking == "")    # 至少一个物品没有运单号
+      ) %>%
+      filter(has_tracking & no_tracking) %>%  # 同时满足上述两种情况
+      pull(OrderID)  # 提取符合条件的 OrderID
+    
+    # 条件 2：所有物品都没有国际运单号，但备注中有调货操作记录的订单
+    no_tracking_with_transfer_note_orders <- data_items %>%
+      group_by(OrderID) %>%
+      summarise(
+        all_no_tracking = all(is.na(IntlTracking) | IntlTracking == "")  # 所有物品都没有运单号
+      ) %>%
+      filter(all_no_tracking) %>%
+      pull(OrderID) %>%
+      intersect(  # 交集筛选，订单备注包含指定格式的调货记录
+        data_orders %>%
+          filter(grepl("【调货完成 \\d{4}-\\d{2}-\\d{2}】", OrderNotes)) %>%  # 正则匹配
+          pull(OrderID)
+      )
+    
+    # 合并两种符合条件的订单
+    valid_order_ids <- union(partial_tracking_orders, no_tracking_with_transfer_note_orders)
+    
+    # 返回筛选后的订单
+    filtered_orders <- data_orders %>%
+      filter(OrderID %in% valid_order_ids)
+    
+    return(filtered_orders)
+  })
+  
   
   
   # 物品管理页过滤
@@ -432,20 +477,19 @@ server <- function(input, output, session) {
                                    selection = "single" # 单选模式
   )
   
-  selected_order_transfer_pending_row <- callModule(orderTableServer, "orders_table_transfer_pending",
-                                                    column_mapping = orders_table_columns,
-                                                    options = modifyList(table_default_options, list(scrollY = "650px", searching = TRUE)),
-                                                    data = filtered_orders_transfer_pending,  # 数据源
-                                                    selection = "single" # 单选模式
+  selected_orders_table_arrived_row <- callModule(orderTableServer, "orders_table_arrived",
+                                                  column_mapping = orders_table_columns,
+                                                  options = modifyList(table_default_options, list(scrollY = "650px", searching = TRUE)),
+                                                  data = filtered_orders_arrived,  # 数据源
+                                                  selection = "single" # 单选模式
   )
   
-  selected_order_domestic_sold_pending_row <- callModule(orderTableServer, "orders_table_domestic_sold_pending",
-                                                         column_mapping = orders_table_columns,
-                                                         options = modifyList(table_default_options, list(scrollY = "650px", searching = TRUE)),
-                                                         data = filtered_orders_domestic_sold,  # 数据源
-                                                         selection = "single" # 单选模式
+  selected_orders_table_waiting_row <- callModule(orderTableServer, "orders_table_waiting",
+                                                  column_mapping = orders_table_columns,
+                                                  options = modifyList(table_default_options, list(scrollY = "650px", searching = TRUE)),
+                                                  data = filtered_orders_waiting,  # 数据源
+                                                  selection = "single" # 单选模式
   )
-  
   
   
   # 物品管理分页物品表
@@ -1731,12 +1775,12 @@ server <- function(input, output, session) {
     }
   )
   
-  # 监听 "调货完成未发货" 表格行的点击事件
-  observeEvent(selected_order_transfer_pending_row(), {
-    selected_row <- selected_order_transfer_pending_row() 
+  # 监听 "已经到到齐" 表格行的点击事件
+  observeEvent(selected_orders_table_arrived_row(), {
+    selected_row <- selected_orders_table_arrived_row() 
     req(selected_row) 
     
-    tracking_number <- filtered_orders_transfer_pending()[selected_row, "UsTrackingNumber"]
+    tracking_number <- filtered_orders_arrived()[selected_row, "UsTrackingNumber"]
     
     # 如果运单号为空或缺失，显示提示信息
     if (is.null(tracking_number) || tracking_number == "") {
@@ -1749,12 +1793,12 @@ server <- function(input, output, session) {
     updateTextInput(session, "shipping_bill_number", value = tracking_number)
   })
   
-  # 监听 "国内售出未发货" 表格行的点击事件
-  observeEvent(selected_order_domestic_sold_pending_row(), {
-    selected_row <- selected_order_domestic_sold_pending_row() 
+  # 监听 "没有到齐" 表格行的点击事件
+  observeEvent(selected_orders_table_waiting_row(), {
+    selected_row <- selected_orders_table_waiting_row() 
     req(selected_row)
     
-    tracking_number <- filtered_orders_domestic_sold()[selected_row, "UsTrackingNumber"]
+    tracking_number <- filtered_orders_waiting()[selected_row, "UsTrackingNumber"]
     
     # 如果运单号为空或缺失，显示提示信息
     if (is.null(tracking_number) || tracking_number == "") {

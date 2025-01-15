@@ -411,7 +411,7 @@ ui <- navbarPage(
             div(
               class = "card",
               style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
-              orderTableUI("orders_table_domestic_sold_pending")
+              orderTableUI("orders_table_arrived")
             )
           ),
           tabPanel(
@@ -419,7 +419,7 @@ ui <- navbarPage(
             div(
               class = "card",
               style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
-              orderTableUI("orders_table_transfer_pending")
+              orderTableUI("orders_table_waiting")
             )
           ),
           tabPanel(
