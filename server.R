@@ -408,14 +408,14 @@ server <- function(input, output, session) {
   
   selected_order_transfer_pending_row <- callModule(orderTableServer, "orders_table_transfer_pending",
                                                     column_mapping = orders_table_columns,
-                                                    options = modifyList(table_default_options, list(scrollY = "700px", searching = TRUE)),
+                                                    options = modifyList(table_default_options, list(scrollY = "650px", searching = TRUE)),
                                                     data = filtered_orders_transfer_pending,  # 数据源
                                                     selection = "single" # 单选模式
   )
   
   selected_order_domestic_sold_pending_row <- callModule(orderTableServer, "orders_table_domestic_sold_pending",
                                                          column_mapping = orders_table_columns,
-                                                         options = modifyList(table_default_options, list(scrollY = "700px", searching = TRUE)),
+                                                         options = modifyList(table_default_options, list(scrollY = "650px", searching = TRUE)),
                                                          data = filtered_orders_domestic_sold,  # 数据源
                                                          selection = "single" # 单选模式
   )
