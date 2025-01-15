@@ -327,7 +327,7 @@ ui <- navbarPage(
           ),
           
           tabPanel(
-            "美国售出发货", icon = tags$img(src = paste0(host_url, "icons/icons8-us-48.png"), height = '20px', style = 'margin-right: 5px;'),
+            "美国售出发货", icon = tags$img(src = paste0(host_url, "icons/icons8-usa-48.png"), height = '20px', style = 'margin-right: 5px;'),
             div(
               class = "card",
               style = "padding: 20px; border: 1px solid #28A745; border-radius: 8px; margin-bottom: 20px;",
