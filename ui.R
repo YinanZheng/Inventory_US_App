@@ -312,7 +312,7 @@ ui <- navbarPage(
           id = "shipping_tabs",
           
           tabPanel(
-            "国内售出发货", icon = tags$img(src = '/var/www/icons/icons8-china-48.png', height = '20px', style = 'margin-right: 5px;'),
+            "国内售出发货", icon = tags$img(src = paste0(host_url, "/icons/icons8-china-48.png"), height = '20px', style = 'margin-right: 5px;'),
             div(
               class = "card",
               style = "padding: 20px; border: 1px solid #007BFF; border-radius: 8px; margin-bottom: 20px;",
