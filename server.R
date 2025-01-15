@@ -1816,6 +1816,11 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  itemFilterServer(
+    id = "manage_filter",
+    makers_items_map = makers_items_map
+  )
+  
   # 监听删除按钮点击事件，弹出确认框
   observeEvent(input$confirm_delete_btn, {
     selected_rows <- unique_items_table_manage_selected_row()
