@@ -1733,12 +1733,12 @@ server <- function(input, output, session) {
   )
   
   # 监听表格行的点击事件
-  observeEvent(input$selected_order_transfer_pending_row, {
-    selected_row <- input$selected_order_transfer_pending_row  # 获取点击的行索引
+  observeEvent(selected_order_transfer_pending_row(), {
+    selected_row <- selected_order_transfer_pending_row()  # 获取点击的行索引
     req(selected_row)  # 确保索引存在
     
     # 获取选中行的运单号
-    tracking_number <- orders()[selected_row, "UsTrackingNumber"]
+    tracking_number <- filtered_orders_transfer_pending()[selected_row, "UsTrackingNumber"]
     req(tracking_number)  # 确保运单号存在
     
     # 跳转到“发货”页面
