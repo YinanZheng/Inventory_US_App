@@ -890,7 +890,7 @@ server <- function(input, output, session) {
   
   ### 逻辑
   
-  debounced_order_id <- debounce(reactive(input$order_id_input), millis = 500)  # 延迟 500 毫秒
+  debounced_order_id <- debounce(reactive(input$order_id_input), millis = 1000)  # 延迟 1000 毫秒
   
   # 输入订单号填写运单号
   observe({
