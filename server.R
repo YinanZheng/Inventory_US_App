@@ -986,7 +986,7 @@ server <- function(input, output, session) {
     
     # 更新状态为“美国发货”
     tryCatch({
-      showNotification(paste("new_status:", new_status, "| status_columns keys:", paste(names(status_columns), collapse = ", ")), type = "default")
+      showNotification(paste("status_columns keys:", paste(names(status_columns), collapse = ", ")), type = "default")
       
       update_status(
         con = con,
