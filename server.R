@@ -1535,6 +1535,39 @@ server <- function(input, output, session) {
     associated_items <- associated_items(unique_items_data() %>% filter(OrderID == order_id))
   })
   
+  observeEvent(input$complete_transfer, {
+    req(selected_order_row())
+    
+    # 获取选中订单
+    selected_row <- selected_order_row()
+    selected_order <- filtered_orders()[selected_row, ]
+    order_id <- selected_order$OrderID
+    existing_notes <- selected_order$OrderNotes %||% ""  # 若为空，则默认空字符串
+
+    # 在 R 中拼接备注内容
+    new_notes <- paste(existing_notes, sprintf("【调货完成 %s】", format(Sys.Date(), "%Y-%m-%d")))
+    
+    tryCatch({
+      # 使用拼接后的备注信息进行 SQL 更新
+      dbExecute(con, "
+      UPDATE orders
+      SET OrderStatus = '备货',
+          OrderNotes = ?
+      WHERE OrderID = ?
+    ", params = list(new_notes, order_id))
+      
+      # 重新加载最新的 orders 数据
+      orders_refresh_trigger(!orders_refresh_trigger())
+      
+      # 通知用户操作成功
+      showNotification(sprintf("订单 #%s 已更新为备货状态！", order_id), type = "message")
+      
+    }, error = function(e) {
+      # 捕获错误并通知用户
+      showNotification(sprintf("更新订单状态时发生错误：%s", e$message), type = "error")
+    })
+  })
+  
   # 渲染物品信息卡片  
   observe({
     req(associated_items())
