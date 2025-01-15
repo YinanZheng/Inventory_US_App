@@ -421,7 +421,7 @@ ui <- navbarPage(
             )
           ),
           tabPanel(
-            "调货完成未发货",
+            "调货完未到齐",
             div(
               class = "card",
               style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
@@ -429,7 +429,7 @@ ui <- navbarPage(
             )
           ),
           tabPanel(
-            "国内售出未发货",
+            "美国已到齐未发货",
             div(
               class = "card",
               style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
