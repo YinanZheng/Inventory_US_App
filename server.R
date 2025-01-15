@@ -428,7 +428,6 @@ server <- function(input, output, session) {
   # 订单管理分页订单表
   selected_order_row <- callModule(orderTableServer, "orders_table_module",
                                    column_mapping = orders_table_columns,
-                                   options = modifyList(table_default_options, list(scrollY = "330px", searching = TRUE)),
                                    data = filtered_orders,  # 数据源
                                    selection = "single" # 单选模式
   )
