@@ -890,11 +890,13 @@ server <- function(input, output, session) {
   
   ### 逻辑
   
+  debounced_order_id <- debounce(reactive(input$order_id_input), millis = 500)  # 延迟 500 毫秒
+  
   # 输入订单号填写运单号
   observe({
-    req(input$order_id_input) # 确保输入框非空
+    req(debounced_order_id())  # 确保输入框非空
     
-    order_id <- trimws(input$order_id_input)
+    order_id <- trimws(debounced_order_id())
     
     result <- orders() %>%
       filter(OrderID == order_id) %>%
