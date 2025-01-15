@@ -1578,12 +1578,14 @@ clean_untracked_images <- function() {
     # 1. 获取数据库中记录的图片路径（包括 inventory 和 orders 表）
     inventory_query <- "SELECT ItemImagePath FROM inventory WHERE ItemImagePath IS NOT NULL"
     orders_query <- "SELECT OrderImagePath FROM orders WHERE OrderImagePath IS NOT NULL"
+    transactions_query <- "SELECT TransactionImagePath FROM transactions WHERE TransactionImagePath IS NOT NULL"
     
     inventory_paths <- normalizePath(dbGetQuery(con, inventory_query)$ItemImagePath, mustWork = FALSE)
     orders_paths <- normalizePath(dbGetQuery(con, orders_query)$OrderImagePath, mustWork = FALSE)
+    transactions_paths <- normalizePath(dbGetQuery(con, transactions_query)$TransactionImagePath, mustWork = FALSE)
     
     # 合并所有记录路径
-    recorded_paths <- unique(c(inventory_paths, orders_paths))
+    recorded_paths <- unique(c(inventory_paths, orders_paths, transactions_paths))
     
     # 2. 列出目录中所有图片文件，并规范化路径
     all_files <- normalizePath(list.files("/var/www/images/", full.names = TRUE), mustWork = FALSE)
