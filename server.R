@@ -3217,13 +3217,17 @@ server <- function(input, output, session) {
   unique_items_table_admin_selected_row <- callModule(uniqueItemsTableServer, "admin_items_table", 
                                                       column_mapping = c(common_columns, list(
                                                         Defect = "瑕疵态",
-                                                        UsEntryTime = "入库日",
-                                                        UsShippingTime = "出库日",
-                                                        IntlShippingMethod = "国际运输",
+                                                        urchaseTime = "采购日",
+                                                        DomesticEntryTime = "入库日",
+                                                        DomesticExitTime = "出库日",
+                                                        DomesticSoldTime = "售出日",
+                                                        UsEntryTime = "美入库日",
+                                                        UsRelocationTime = "美调货日",
+                                                        UsShippingTime = "美发货日",
                                                         OrderID = "订单号"
                                                       )), 
-                                                      options = modifyList(table_default_options, list(scrollY = "700px", searching = TRUE)),
-                                                      selection = "multiple", 
+                                                      selection = "multiple",
+                                                      option = modifyList(table_decault_options, list(searching = TRUE)),
                                                       data = unique_items_data)
   
   # 更新库存状态按钮
