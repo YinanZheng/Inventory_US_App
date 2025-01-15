@@ -30,11 +30,11 @@ orderTableServer <- function(input, output, session, column_mapping, selection =
         formatStyle(
           "运单PDF",
           backgroundColor = styleEqual(
-            c("无", "已传", "印出"),
+            c("无", "已上传", "已打印"),
             c("#f6f2ff", "#95b3fc", "#b89afc")
           ),
           color = styleEqual(
-            c("无", "已传", "印出"),
+            c("无", "已上传", "已打印"),
             c("black", "black", "black")
           )
         )
