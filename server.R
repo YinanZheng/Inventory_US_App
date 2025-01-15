@@ -397,7 +397,7 @@ server <- function(input, output, session) {
                                      OrderNotes = "备注",
                                      created_at = "创建时间"
                                    ),
-                                   options = modifyList(table_default_options, list(searching = TRUE)),
+                                   options = modifyList(table_default_options, list(scrollY = "360px", searching = TRUE)),
                                    data = filtered_orders,  # 数据源
                                    selection = "single" # 单选模式
   )
