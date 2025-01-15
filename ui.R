@@ -35,6 +35,7 @@ ui <- navbarPage(
     
       /* 禁止导航栏高度扩展 */
       .navbar {
+        background-color: #4b0363 !important; /* 设置背景颜色 */
         white-space: nowrap !important; /* 确保所有子元素在单行内 */
       }
       
