@@ -421,7 +421,7 @@ ui <- navbarPage(
             column(6, 
                    actionButton("delete_order_btn", "删除订单", class = "btn-danger", style = "width: 100%;")),
             column(6, 
-                   actionButton("reset_filter_btn", "清空筛选条件", class = "btn-secondary", style = "width: 100%;"))
+                   actionButton("reset_filter_btn", "清空筛选条件", class = "btn-info", style = "width: 100%;"))
           )
         ),
         
