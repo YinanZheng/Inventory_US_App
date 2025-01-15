@@ -90,10 +90,16 @@ orderTableServer <- function(input, output, session, column_mapping, selection =
         # 弹出窗口显示大图
         showModal(modalDialog(
           title = "订单图片预览",
-          img(src = img_host_path, height = "700px", style = "display: block; margin: 0 auto;"),
+          tags$div(
+            style = "overflow: auto; max-height: 700px; text-align: center;",
+            tags$img(
+              src = img_host_path,
+              style = "max-width: 100%; height: auto; display: inline-block;"
+            )
+          ),
           size = "l",
           easyClose = TRUE,
-          footer = modalButton("关闭")
+          footer = NULL
         ))
       }
     }
