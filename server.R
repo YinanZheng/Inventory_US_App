@@ -266,6 +266,20 @@ server <- function(input, output, session) {
     data
   })
   
+  filtered_orders_transfer_pending <- reactive({
+    req(orders())  # 确保订单数据存在
+    
+    data <- orders()  # 获取所有订单数据
+    
+  })
+  
+  orders_table_domestic_sold_pending <- reactive({
+    req(orders())  # 确保订单数据存在
+    
+    data <- orders()  # 获取所有订单数据
+    
+  })
+  
   # 物品管理页过滤
   filtered_unique_items_data_manage <- reactive({
     req(unique_items_data())
@@ -386,23 +400,29 @@ server <- function(input, output, session) {
 
   # 订单管理分页订单表
   selected_order_row <- callModule(orderTableServer, "orders_table_module",
-                                   column_mapping = list(
-                                     OrderID = "订单号",
-                                     OrderImagePath = "订单图",
-                                     CustomerName = "姓名",
-                                     CustomerNetName = "网名",
-                                     Platform = "平台",
-                                     UsTrackingNumber = "运单号",
-                                     LabelStatus = "运单PDF",
-                                     OrderStatus = "状态",
-                                     OrderNotes = "备注",
-                                     created_at = "创建时间"
-                                   ),
+                                   column_mapping = orders_table_columns,
                                    options = modifyList(table_default_options, list(scrollY = "330px", searching = TRUE)),
                                    data = filtered_orders,  # 数据源
                                    selection = "single" # 单选模式
   )
   
+  selected_order_transfer_pending_row <- callModule(orderTableServer, "orders_table_transfer_pending",
+                                                    column_mapping = orders_table_columns,
+                                                    options = modifyList(table_default_options, list(scrollY = "700px", searching = TRUE)),
+                                                    data = filtered_orders_transfer_pending,  # 数据源
+                                                    selection = "single" # 单选模式
+  )
+  
+  selected_order_domestic_sold_pending_row <- callModule(orderTableServer, "orders_table_domestic_sold_pending",
+                                                         column_mapping = orders_table_columns,
+                                                         options = modifyList(table_default_options, list(scrollY = "700px", searching = TRUE)),
+                                                         data = filtered_orders_domestic_sold,  # 数据源
+                                                         selection = "single" # 单选模式
+  )
+  
+  
+  
+  # 物品管理分页物品表
   unique_items_table_manage_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_manage",
                                                        column_mapping <- c(common_columns, list(
                                                          PurchaseTime = "采购日",
@@ -416,6 +436,7 @@ server <- function(input, output, session) {
                                                        ), selection = "multiple", data = filtered_unique_items_data_manage,
                                                        option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
   
+  # 瑕疵品管理分页物品表
   unique_items_table_defect_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_defect",
                                                        column_mapping = c(common_columns, list(
                                                          UsEntryTime = "美入库日",
@@ -424,6 +445,7 @@ server <- function(input, output, session) {
                                                        ), selection = "multiple", data = filtered_unique_items_data_defect,
                                                        option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
   
+  # 国际物流管理分页物品表
   unique_items_table_logistics_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_logistics",
                                                           column_mapping = c(common_columns, list(
                                                             IntlShippingMethod = "国际运输",
@@ -435,6 +457,7 @@ server <- function(input, output, session) {
                                                           data = filtered_unique_items_data_logistics,
                                                           option = modifyList(table_default_options, list(scrollY = "730px", searching = TRUE)))
   
+  # 查询分页库存表
   output$filtered_inventory_table_query <- renderDT({  # input$filtered_inventory_table_query_rows_selected
     column_mapping <- list(
       SKU = "条形码",
@@ -455,6 +478,7 @@ server <- function(input, output, session) {
     )$datatable
   })
   
+  # 下载分页物品表
   unique_items_table_download_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_download",
                                                          column_mapping <- c(common_columns, list(
                                                            UsEntryTime = "美入库日",                                                           UsEntryTime = "美入库日",
