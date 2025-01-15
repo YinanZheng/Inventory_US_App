@@ -606,7 +606,7 @@ server <- function(input, output, session) {
         update_status_value = "美国入库",
         count_label = "待入库数", 
         count_field = "PendingQuantity", 
-        refresh_trigger = NULL, # 批量处理完了再触发刷新      
+        refresh_trigger = unique_items_data_refresh_trigger,      
         con,                  
         input, output, session
       )
@@ -618,9 +618,6 @@ server <- function(input, output, session) {
         showNotification("自动入库失败，可能物品已全部入库或存在调货物品！", type = "error")
         return()
       }
-      
-      # 更新数据并触发 UI 刷新
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
       # 清空 SKU 输入框
       updateTextInput(session, "inbound_sku", value = "")
@@ -660,7 +657,7 @@ server <- function(input, output, session) {
         update_status_value = "美国入库",
         count_label = "待入库数", 
         count_field = "PendingQuantity", 
-        refresh_trigger = NULL, # 批量处理完了再触发刷新      
+        refresh_trigger = unique_items_data_refresh_trigger,      
         con,                  
         input, output, session
       )
@@ -692,8 +689,7 @@ server <- function(input, output, session) {
         showNotification("无瑕疵品备注！", type = "warning")
       }
     }
-    
-    # 更新数据并触发 UI 刷新
+
     unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
     
     # 重置输入
