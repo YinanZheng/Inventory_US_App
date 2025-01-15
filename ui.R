@@ -370,89 +370,72 @@ ui <- navbarPage(
     "订单管理", icon = icon("clipboard-list"),
     div(
       class = "layout-container",
-      
-      # 左侧：动态变化的筛选区和订单登记
       div(
         class = "sticky-sidebar",
-        style = "width: 400px;",  # 使用内联样式覆盖宽度
-        
+        style = "width: 400px;", 
         div(
           class = "card",
           style = "margin-bottom: 5px; padding: 15px; border: 1px solid #28A745; border-radius: 8px;",
           tags$h4("订单筛选", style = "color: #28A745; font-weight: bold;"),
-          
           textInput("filter_order_id", "订单号", placeholder = "输入订单号", width = "100%"),
           textInput("filter_tracking_id", "运单号", placeholder = "输入运单号", width = "100%"),
-          
           fluidRow(
-            column(6, 
-                   textInput("filter_customer_name", "顾客姓名", placeholder = "输入顾客姓名", width = "100%")),
-            column(6, 
-                   textInput("filter_customer_netname", "顾客网名", placeholder = "输入顾客网名", width = "100%"))
+            column(6, textInput("filter_customer_name", "顾客姓名", placeholder = "输入顾客姓名", width = "100%")),
+            column(6, textInput("filter_customer_netname", "顾客网名", placeholder = "输入顾客网名", width = "100%"))
           ),
-          
           fluidRow(
-            column(6, 
-                   selectInput(
-                     inputId = "filter_platform",
-                     label = "电商平台",
-                     choices = c("所有平台" = "", "Etsy", "Shopify", "TikTok", "其他"),
-                     selected = "",
-                     width = "100%"
-                   )),
-            column(6, 
-                   selectInput(
-                     inputId = "filter_order_status",
-                     label = "订单状态",
-                     choices = c("所有状态" = "", "备货", "预定", "调货", "装箱", "发出", "在途", "送达"),
-                     selected = "",
-                     width = "100%"
-                   ))
+            column(6, selectInput("filter_platform", "电商平台", c("所有平台" = "", "Etsy", "Shopify", "TikTok", "其他"), selected = "", width = "100%")),
+            column(6, selectInput("filter_order_status", "订单状态", c("所有状态" = "", "备货", "预定", "调货", "装箱", "发出", "在途", "送达"), selected = "", width = "100%"))
           ),
-          
           fluidRow(
-            column(6, 
-                   textInput("filter_sku", "SKU反查", placeholder = "输入SKU", width = "100%")),
-            column(6, 
-                   autocompleteInputUI("sold", label = "商品名反查", placeholder = "输入商品名"))
+            column(6, textInput("filter_sku", "SKU反查", placeholder = "输入SKU", width = "100%")),
+            column(6, autocompleteInputUI("sold", label = "商品名反查", placeholder = "输入商品名"))
           ),
-          
           fluidRow(
-            column(6, 
-                   actionButton("delete_order_btn", "删除订单", class = "btn-danger", style = "width: 100%;")),
-            column(6, 
-                   actionButton("reset_filter_btn", "清空筛选条件", class = "btn-info", style = "width: 100%;"))
+            column(6, actionButton("delete_order_btn", "删除订单", class = "btn-danger", style = "width: 100%;")),
+            column(6, actionButton("reset_filter_btn", "清空筛选条件", class = "btn-info", style = "width: 100%;"))
           )
         ),
-        
         tags$hr(style = "margin: 5px 0; border: none;"),
-        
-        
         div(
-          style = "margin-top: 5px; display: flex; justify-content: center;",  # 设置行间距
-          actionButton(
-            "merge_order_btn",
-            "合并订单",
-            icon = icon("object-group"),
-            class = "btn-primary",
-            style = "font-size: 16px; width: 100%; height: 42px;"
-          )
+          style = "margin-top: 5px; display: flex; justify-content: center;", 
+          actionButton("merge_order_btn", "合并订单", icon = icon("object-group"), class = "btn-primary", style = "font-size: 16px; width: 100%; height: 42px;")
         )
       ),
-      
-      # 主面板：订单管理
       div(
         class = "main-panel",
-        div(
-          class = "card",
-          style = "height: 460px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
-          orderTableUI("orders_table_module")
-        ),
-        div(
-          class = "card",
-          style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;", # 自动调整高度
-          uiOutput("associated_items_title"),  # 动态标题
-          uiOutput("order_items_cards")  # 动态显示订单内物品卡片
+        tabsetPanel(
+          id = "order_management_tabs",
+          tabPanel(
+            "订单管理",
+            div(
+              class = "card",
+              style = "height: 460px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
+              orderTableUI("orders_table_module")
+            ),
+            div(
+              class = "card",
+              style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
+              uiOutput("associated_items_title"),
+              uiOutput("order_items_cards")
+            )
+          ),
+          tabPanel(
+            "调货完成未发货",
+            div(
+              class = "card",
+              style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
+              uniqueItemsTableUI("unique_items_transfer_pending")
+            )
+          ),
+          tabPanel(
+            "国内售出未发货",
+            div(
+              class = "card",
+              style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
+              uniqueItemsTableUI("unique_items_domestic_sold_pending")
+            )
+          )
         )
       )
     )
