@@ -1,7 +1,6 @@
 # Define server logic
 server <- function(input, output, session) {
   
-  source("utils.R", local = TRUE)
   source("global.R", local = TRUE)
   
   # Database
