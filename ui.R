@@ -18,6 +18,7 @@ ui <- navbarPage(
         overflow-x: auto !important;
         white-space: nowrap !important;
         max-width: 100% !important; /* 防止宽度限制 */
+        background-color: #4b0363 !important; /* 设置背景颜色为紫色 */
       }
       
       /* 导航栏滚动条样式 */
