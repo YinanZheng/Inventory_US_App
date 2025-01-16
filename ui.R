@@ -693,6 +693,182 @@ ui <- navbarPage(
     )
   ), # end of 国际物流管理 tab
 
+  tabPanel(
+    "账务管理", icon = icon("wallet"),
+    div(
+      class = "layout-container",
+      div(
+        class = "sticky-sidebar",
+        tabsetPanel(
+          id = "sidebar_tabs",  # 用于服务器监听当前选中的分页
+          type = "tabs",        # 使用标签式分页
+          selected = "账务登记", # 默认选中的分页
+          
+          # 账务登记分页
+          tabPanel(
+            title = "账务登记", icon = icon("file-invoice-dollar"),
+            tags$h4("账务登记", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
+            
+            # 单一金额输入框
+            numericInput("amount", "金额:", value = 0, min = 0, width = "100%"),
+            
+            # 互斥勾选框
+            radioButtons(
+              inputId = "transaction_type",
+              label = "交易类型:",
+              choices = c("转出" = "out", "转入" = "in"),
+              selected = NULL,
+              inline = TRUE
+            ),
+            
+            # 指定转款选择器
+            fluidRow(
+              column(5, dateInput("custom_date", "转款日期:", value = Sys.Date(), width = "100%")),
+              column(7, timeInput("custom_time", "转款时间:", value = format(Sys.time(), "%H:%M:%S"), width = "100%"))
+            ),
+            
+            # 订单图片上传
+            imageModuleUI("image_transactions", label = "转账证据上传", label_color = "#007BFF"),
+            
+            textAreaInput("remarks", "备注:", placeholder = "请输入备注内容", width = "100%"),
+            
+            # 提交按钮
+            actionButton("record_transaction", "登记", icon = icon("save"), 
+                         class = "btn-primary", style = "width: 100%; margin-bottom: 10px;"),
+            
+            # 删除和重置按钮同一行
+            fluidRow(
+              column(
+                width = 6,
+                actionButton("delete_transaction", "删除选中记录", icon = icon("trash"), 
+                             class = "btn-danger", style = "width: 100%;")
+              ),
+              column(
+                width = 6,
+                actionButton("reset_form", "重置", icon = icon("redo"), 
+                             class = "btn-info", style = "width: 100%;")
+              )
+            )
+          ),
+          
+          # 资金转移分页
+          tabPanel(
+            title = "资金转移", icon = icon("exchange-alt"),
+            tags$h4("资金转移", style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"),
+            
+            # 转移金额输入框
+            numericInput("transfer_amount", "转移金额:", value = 0, min = 0, width = "100%"),
+            
+            # 转出账户选择
+            selectInput(
+              inputId = "from_account",
+              label = "转出账户:",
+              choices = c("工资卡", "美元卡", "买货卡", "一般户卡"),
+              selected = "美元卡",
+              width = "100%"
+            ),
+            
+            # 转入账户选择
+            selectInput(
+              inputId = "to_account",
+              label = "转入账户:",
+              choices = c("工资卡", "美元卡", "买货卡", "一般户卡"),
+              selected = NULL,
+              width = "100%"
+            ),
+            
+            # 订单图片上传
+            imageModuleUI("image_transfer", label = "转账证据上传", label_color = "#007BFF"),
+            
+            # 备注输入框
+            textAreaInput("transfer_remarks", "备注:", placeholder = "请输入备注内容", width = "100%"),
+            
+            # 转移登记按钮
+            actionButton("record_transfer", "记录转移", icon = icon("exchange-alt"), 
+                         class = "btn-success", style = "width: 100%; margin-bottom: 10px;"),
+            
+            # 删除和重置按钮同一行
+            fluidRow(
+              column(
+                width = 6,
+                actionButton("delete_transfer", "删除选中记录", icon = icon("trash"), 
+                             class = "btn-danger", style = "width: 100%;")
+              ),
+              column(
+                width = 6,
+                actionButton("reset_form_transfer", "重置", icon = icon("redo"), 
+                             class = "btn-info", style = "width: 100%;")
+              )
+            )
+          )
+        )
+      ),
+      div(
+        class = "main-panel",
+        tabsetPanel(
+          id = "transaction_tabs",  # 绑定到 input$tabs
+          tabPanel("账户余额总览", 
+                   fluidRow(
+                     column(12, div(
+                       class = "card shadow-lg",
+                       style = "background: #1F1F1F; color: white; padding: 40px; text-align: center; border-radius: 16px; margin-bottom: 40px; border: 2px solid #FFC107;",
+                       tags$h4("总余额", style = "font-weight: bold; font-size: 30px; margin-bottom: 20px; letter-spacing: 1.5px;"),
+                       tags$h3(
+                         textOutput("total_balance"),
+                         style = "font-size: 40px; margin-top: 0; font-weight: bold; text-shadow: 2px 2px 4px rgba(255, 193, 7, 0.8); color: #FFC107;"
+                       )
+                     ))
+                   ),
+                   fluidRow(
+                     column(3, div(
+                       class = "card shadow-lg",
+                       style = "background: linear-gradient(135deg, #FFC107, #FF9800); color: white; padding: 20px; text-align: center; border-radius: 16px; position: relative; overflow: hidden;",
+                       tags$div(
+                         style = "position: absolute; top: -10px; left: -10px; opacity: 0.3;",
+                         tags$img(src = "https://dummyimage.com/100x100/fff/000.png&text=$", width = "60px", height = "60px")
+                       ),
+                       tags$h4("买货卡 (139)", style = "font-weight: bold; margin-bottom: 10px;"),
+                       tags$h3(textOutput("purchase_balance"), style = "font-size: 24px; margin-top: 0;")
+                     )),
+                     column(3, div(
+                       class = "card shadow-lg",
+                       style = "background: linear-gradient(135deg, #6C757D, #495057); color: white; padding: 20px; text-align: center; border-radius: 16px; position: relative; overflow: hidden;",
+                       tags$div(
+                         style = "position: absolute; top: -10px; left: -10px; opacity: 0.3;",
+                         tags$img(src = "https://dummyimage.com/100x100/fff/000.png&text=$", width = "60px", height = "60px")
+                       ),
+                       tags$h4("一般户卡 (541)", style = "font-weight: bold; margin-bottom: 10px;"),
+                       tags$h3(textOutput("general_balance"), style = "font-size: 24px; margin-top: 0;")
+                     )),
+                     column(3, div(
+                       class = "card shadow-lg",
+                       style = "background: linear-gradient(135deg, #007BFF, #0056b3); color: white; padding: 20px; text-align: center; border-radius: 16px; position: relative; overflow: hidden;",
+                       tags$div(
+                         style = "position: absolute; top: -10px; left: -10px; opacity: 0.3;",
+                         tags$img(src = "https://dummyimage.com/100x100/fff/000.png&text=$", width = "60px", height = "60px")
+                       ),
+                       tags$h4("工资卡 (567)", style = "font-weight: bold; margin-bottom: 10px;"),
+                       tags$h3(textOutput("salary_balance"), style = "font-size: 24px; margin-top: 0;")
+                     )),
+                     column(3, div(
+                       class = "card shadow-lg",
+                       style = "background: linear-gradient(135deg, #28A745, #1E7E34); color: white; padding: 20px; text-align: center; border-radius: 16px; position: relative; overflow: hidden;",
+                       tags$div(
+                         style = "position: absolute; top: -10px; left: -10px; opacity: 0.3;",
+                         tags$img(src = "https://dummyimage.com/100x100/fff/000.png&text=$", width = "60px", height = "60px")
+                       ),
+                       tags$h4("美元卡 (553)", style = "font-weight: bold; margin-bottom: 10px;"),
+                       tags$h3(textOutput("dollar_balance"), style = "font-size: 24px; margin-top: 0;")
+                     ))
+                   )),
+          tabPanel(title = "买货卡(139)", value = "买货卡", DTOutput("purchase_card_table")),
+          tabPanel(title = "一般户卡(541)", value = "一般户卡", DTOutput("general_card_table")),
+          tabPanel(title = "工资卡(567)", value = "工资卡", DTOutput("salary_card_table")),
+          tabPanel(title = "美元卡(553)", value = "美元卡", DTOutput("dollar_card_table"))
+        )
+      )
+    )
+  ), # End of 账务管理
   
   tabPanel(
     "查询", icon = icon("search"), 

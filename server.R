@@ -2261,7 +2261,30 @@ server <- function(input, output, session) {
         params = list(tracking_number, shipping_method, total_cost)
       )
       
-      showNotification("国际运单登记成功，信息已更新，可执行挂靠操作！", type = "message", duration = 5)
+      # 生成交易记录的备注
+      remarks <- paste("[国际运费登记]", "运单号:", tracking_number, "运输方式:", shipping_method)
+      
+      # 生成交易记录的 ID
+      transaction_id <- generate_transaction_id("一般户卡", total_cost, remarks, Sys.time())
+      
+      # 插入交易记录到“一般户卡”
+      dbExecute(
+        con,
+        "INSERT INTO transactions (TransactionID, AccountType, Amount, Remarks, TransactionTime) 
+       VALUES (?, ?, ?, ?, ?)",
+        params = list(
+          transaction_id,
+          "一般户卡", 
+          -total_cost,  # 转出金额为负值
+          remarks,
+          Sys.time()
+        )
+      )
+      
+      showNotification("国际运单登记成功，相关费用已记录到'一般户卡（541）'！", type = "message", duration = 5)
+      
+      # 重新计算所有balance记录
+      update_balance("一般户卡", con)
       
       shinyjs::enable("link_tracking_btn")  # 启用挂靠运单按钮
     }, error = function(e) {
@@ -2354,7 +2377,6 @@ server <- function(input, output, session) {
       total_value_sum <- summary_info$TotalValue[1] + summary_info$TotalDomesticShipping[1] + summary_info$TotalIntlShipping[1]
       
       # 格式化汇总信息
-      # 格式化汇总信息
       summary_text <- HTML(paste0(
         "<div style='font-family: Arial, sans-serif; line-height: 2;'>",  # 调整行间距
         "<table style='width: 100%; border-collapse: collapse;'>",
@@ -2410,9 +2432,9 @@ server <- function(input, output, session) {
     
     # 弹出确认对话框
     showModal(modalDialog(
-      title = HTML("<strong style='color: #C70039;'>确认删除运单</strong>"),
+      title = HTML("<strong style='color: #C70039;'>确认删除国际运单</strong>"),
       HTML(paste0(
-        "<p>您确定要删除运单号 <strong>", tracking_number, "</strong> 吗？此操作不可逆！</p>"
+        "<p>您确定要删除国际运单号 <strong>", tracking_number, "</strong> 吗？此操作不可逆！</p>"
       )),
       easyClose = FALSE,
       footer = tagList(
@@ -2499,7 +2521,7 @@ server <- function(input, output, session) {
       } else {
         # 如果有多个物流单号或为空，清空输入框并提示用户
         updateTextInput(session, "intl_tracking_number", value = "")
-        showNotification("选中行包含多个不同的物流单号或为空，请检查！", type = "warning")
+        showNotification("选中行包含多个不同的物流单号或为空！", type = "warning")
       }
     }, error = function(e) {
       showNotification(paste("操作失败：", e$message), type = "error")
@@ -2605,27 +2627,494 @@ server <- function(input, output, session) {
     }
     
     tryCatch({
+      # 获取选中行的物品数据
       selected_items <- filtered_unique_items_data_logistics()[selected_rows, ]
+      selected_tracking_numbers <- unique(na.omit(selected_items$IntlTracking))
       
-      # 解除运单号关联，清零运费数据
-      lapply(selected_items$UniqueID, function(unique_id) {
-        dbExecute(
-          con,
-          "UPDATE unique_items 
-         SET IntlTracking = NULL, IntlShippingCost = 0.00
-         WHERE UniqueID = ?",
-          params = list(unique_id)
-        )
-      })
+      # 批量解除挂靠并清零运费
+      dbExecute(
+        con,
+        "UPDATE unique_items 
+       SET IntlTracking = NULL, IntlShippingCost = 0.00 
+       WHERE UniqueID IN (?)",
+        params = list(selected_items$UniqueID)
+      )
       
-      # 更新数据并触发 UI 刷新
+      # 直接使用 SQL 语句重新计算平摊运费
+      dbExecute(
+        con,
+        "
+      UPDATE unique_items ui
+      JOIN (
+        SELECT IntlTracking, TotalCost / COUNT(*) AS PerItemCost
+        FROM unique_items
+        JOIN intl_shipments ON unique_items.IntlTracking = intl_shipments.TrackingNumber
+        WHERE IntlTracking IN (?)
+        GROUP BY IntlTracking
+      ) calc ON ui.IntlTracking = calc.IntlTracking
+      SET ui.IntlShippingCost = calc.PerItemCost",
+        params = list(selected_tracking_numbers)
+      )
+      
+      # 刷新数据触发 UI 更新
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
+      showNotification("运单号已成功解除挂靠，相关物品的平摊运费已重新计算！", type = "message")
       
-      showNotification("运单号已成功删除！", type = "message")
     }, error = function(e) {
-      showNotification(paste("删除运单号失败：", e$message), type = "error")
+      showNotification(paste("解除挂靠失败：", e$message), type = "error")
     })
   })
+  
+  
+  
+  ################################################################
+  ##                                                            ##
+  ## 账务管理分页                                               ##
+  ##                                                            ##
+  ################################################################
+  
+  is_update_mode <- reactiveVal(FALSE)  # 初始化为登记模式
+  selected_TransactionID  <- reactiveVal(NULL)  # 存储选中的记录 ID
+  selected_TransactionImagePath <- reactiveVal(NULL)  # 存储选中的记录图片路径
+  
+  # 初始化全局缓存，用于存储各账户的哈希值
+  transaction_table_hash <- reactiveValues(
+    salary = NULL,
+    dollar = NULL,
+    purchase = NULL,
+    general = NULL
+  )
+  
+  # 分页切换更新
+  observe({
+    if (input$transaction_tabs == "账户余额总览") {
+      updateAccountOverview()
+    }
+    
+    account_type <- switch(
+      input$transaction_tabs,
+      "工资卡" = "工资卡",
+      "美元卡" = "美元卡",
+      "买货卡" = "买货卡",
+      "一般户卡" = "一般户卡"
+    )
+    
+    if (!is.null(account_type)) {
+      refreshTransactionTable(account_type)  # 优化后的表格刷新
+      resetToCreateMode()
+      resetTransactionForm(session)
+      resetTransferForm(session)
+    }
+  })
+  
+  # 登记转账记录
+  observeEvent(input$record_transaction, {
+    req(!is.null(input$amount), input$amount > 0, !is.null(input$transaction_type))
+    
+    # 确定账户类型
+    account_type <- switch(
+      input$transaction_tabs,
+      "工资卡" = "工资卡",
+      "美元卡" = "美元卡",
+      "买货卡" = "买货卡",
+      "一般户卡" = "一般户卡",
+      NULL
+    )
+    
+    if (is.null(account_type)) {
+      showNotification("请选择有效的账户类型！", type = "error")
+      return()
+    }
+    
+    # 合并用户选择的日期和时间为完整时间戳
+    transaction_time <- format(as.POSIXct(input$custom_time, format = "%H:%M:%S"), "%H:%M:%S")
+    transaction_date <- paste(input$custom_date, transaction_time)
+    transaction_datetime <- as.POSIXct(transaction_date, format = "%Y-%m-%d %H:%M:%S")
+    
+    # 生成 12 位 TransactionID
+    transaction_id <- generate_transaction_id(account_type, input$amount, input$remarks, transaction_datetime)
+    
+    # 区分“登记”和“更新”模式
+    if (is_update_mode()) {
+      image_path <- process_image_upload(
+        sku = selected_TransactionID(),
+        file_data = image_transactions$uploaded_file(),
+        pasted_data = image_transactions$pasted_file(),
+        inventory_path = selected_TransactionImagePath(),
+      )
+      
+      if (is.null(image_path) || length(image_path) != 1) {
+        image_path <- ""  # 设置默认值
+      }
+      
+      tryCatch({
+        dbExecute(
+          con,
+          "UPDATE transactions 
+         SET Amount = ?, Remarks = ?, TransactionTime = ?, TransactionImagePath = ?
+         WHERE TransactionID = ?",
+          params = list(
+            ifelse(input$transaction_type == "in", input$amount, -input$amount),
+            input$remarks,
+            transaction_datetime,
+            image_path,
+            transaction_id
+          )
+        )
+        showNotification("记录更新成功！", type = "message")
+        
+        update_balance(account_type, con)
+        
+        resetToCreateMode() # 重置为“登记”模式
+        resetTransactionForm(session) # 重置输入框
+        
+        # 自动更新账户余额和表格
+        updateAccountOverview()
+        refreshTransactionTable(account_type)
+      }, error = function(e) {
+        showNotification(paste("更新失败：", e$message), type = "error")
+      })
+    } else {
+      # 登记逻辑
+      tryCatch({
+        # 插入交易记录
+        transaction_id <- generate_transaction_id(account_type, input$amount, input$remarks, transaction_datetime)
+        dbExecute(
+          con,
+          "INSERT INTO transactions (TransactionID, AccountType, Amount, Remarks, TransactionImagePath, TransactionTime) VALUES (?, ?, ?, ?, ?, ?)",
+          params = list(
+            transaction_id,
+            account_type,
+            ifelse(input$transaction_type == "in", input$amount, -input$amount),
+            input$remarks,
+            process_image_upload(
+              sku = transaction_id,
+              file_data = image_transactions$uploaded_file(),
+              pasted_data = image_transactions$pasted_file()
+            ),
+            transaction_datetime
+          )
+        )
+        showNotification("记录登记成功！", type = "message")
+        
+        # 检查是否为最新记录
+        latest_time <- dbGetQuery(
+          con,
+          "SELECT MAX(TransactionTime) AS LatestTime FROM transactions WHERE AccountType = ?",
+          params = list(account_type)
+        )$LatestTime[1]
+        
+        if (!is.null(latest_time) && transaction_datetime < as.POSIXct(latest_time)) {
+          # 如果插入记录不是最新的，则重新计算余额
+          update_balance(account_type, con)
+        }
+        
+        resetTransactionForm(session) # 重置输入框
+        
+        # 自动更新账户余额和表格
+        updateAccountOverview()
+        refreshTransactionTable(account_type)
+      }, error = function(e) {
+        showNotification(paste("登记失败：", e$message), type = "error")
+      })
+    }
+  })
+  
+  # 登记资金转账记录
+  observeEvent(input$record_transfer, {
+    req(!is.null(input$transfer_amount), input$transfer_amount > 0)
+    req(!is.null(input$from_account), !is.null(input$to_account))
+    
+    if (input$from_account == input$to_account) {
+      showNotification("转出账户和转入账户不能相同！", type = "error")
+      return()
+    }
+    
+    # 动态生成备注信息
+    transfer_remarks_from <- paste0("[转出至 ", input$to_account, "] ", input$transfer_remarks)
+    transfer_remarks_to <- paste0("[从 ", input$from_account, " 转入] ", input$transfer_remarks)
+    
+    # 处理图片上传
+    transfer_image_path <- process_image_upload(
+      sku = paste0(input$from_account, "_", input$to_account, "_", Sys.time()), # 用账户和时间生成唯一标识
+      file_data = image_transfer$uploaded_file(),
+      pasted_data = image_transfer$pasted_file()
+    )
+    
+    if (is.null(transfer_image_path) || transfer_image_path == "") {
+      transfer_image_path <- NULL  # 如果未上传图片，设置为 NULL
+    }
+    
+    tryCatch({
+      # 生成 TransactionID
+      transaction_id_from <- generate_transaction_id(
+        account_type = input$from_account,
+        amount = -input$transfer_amount,
+        remarks = transfer_remarks_from,
+        transaction_datetime = Sys.time()
+      )
+      
+      transaction_id_to <- generate_transaction_id(
+        account_type = input$to_account,
+        amount = input$transfer_amount,
+        remarks = transfer_remarks_to,
+        transaction_datetime = Sys.time()
+      )
+      
+      # 插入转出记录
+      dbExecute(
+        con,
+        "INSERT INTO transactions (TransactionID, AccountType, Amount, Remarks, TransactionImagePath, TransactionTime) 
+       VALUES (?, ?, ?, ?, ?, ?)",
+        params = list(transaction_id_from, input$from_account, -input$transfer_amount, transfer_remarks_from, transfer_image_path, Sys.time())
+      )
+      
+      # 插入转入记录
+      dbExecute(
+        con,
+        "INSERT INTO transactions (TransactionID, AccountType, Amount, Remarks, TransactionImagePath, TransactionTime) 
+       VALUES (?, ?, ?, ?, ?, ?)",
+        params = list(transaction_id_to, input$to_account, input$transfer_amount, transfer_remarks_to, transfer_image_path, Sys.time())
+      )
+      
+      showNotification("资金转移记录成功！", type = "message")
+      
+      # 自动更新账户余额
+      updateAccountOverview()
+      
+      # 自动刷新表格
+      refreshTransactionTable(input$from_account)
+      refreshTransactionTable(input$to_account)
+      
+      # 清空表单
+      resetTransferForm(session)
+      
+    }, error = function(e) {
+      showNotification(paste("资金转移失败：", e$message), type = "error")
+    })
+  })
+  
+  # 删除转账记录 (登记)
+  observeEvent(input$delete_transaction, {
+    current_tab <- input$transaction_tabs
+    
+    account_type <- getAccountType(input)
+    
+    if (is.null(account_type)) {
+      showNotification("请选择有效的账户类型！", type = "error")
+      return()
+    }
+    
+    # 获取选中的行
+    selected_rows <- switch(
+      current_tab,
+      "工资卡" = input$salary_card_table_rows_selected,
+      "美元卡" = input$dollar_card_table_rows_selected,
+      "买货卡" = input$purchase_card_table_rows_selected,
+      "一般户卡" = input$general_card_table_rows_selected
+    )
+    
+    if (length(selected_rows) > 0) {
+      # 手动构造 LIMIT 的参数
+      row_index <- selected_rows - 1
+      
+      # 查询选中记录的 TransactionID
+      query <- sprintf(
+        "SELECT TransactionID FROM transactions WHERE AccountType = '%s' ORDER BY TransactionTime DESC LIMIT %d, 1",
+        account_type, row_index
+      )
+      record_to_delete <- dbGetQuery(con, query)
+      
+      if (nrow(record_to_delete) > 0) {
+        tryCatch({
+          # 删除选中的记录
+          dbExecute(con, "DELETE FROM transactions WHERE TransactionID = ?", params = list(record_to_delete$TransactionID))
+          
+          # 重新计算所有balance记录
+          update_balance(account_type, con)
+          
+          # 自动刷新账户余额总览统计
+          updateAccountOverview()
+          
+          # 自动刷新表格
+          refreshTransactionTable(account_type)
+        }, error = function(e) {
+          showNotification(paste("删除失败：", e$message), type = "error")
+        })
+      } else {
+        showNotification("无法找到选中的记录！", type = "error")
+      }
+    } else {
+      showNotification("请选择要删除的记录", type = "error")
+    }
+    
+    resetToCreateMode() # 重置为“登记”模式
+    resetTransactionForm(session) # 重置输入框
+  })
+  
+  # 删除转账记录 (转移)
+  observeEvent(input$delete_transfer, {
+    current_tab <- input$transaction_tabs
+    
+    account_type <- getAccountType(input)
+    
+    if (is.null(account_type)) {
+      showNotification("请选择有效的账户类型！", type = "error")
+      return()
+    }
+    
+    # 获取选中的行
+    selected_rows <- switch(
+      current_tab,
+      "工资卡" = input$salary_card_table_rows_selected,
+      "美元卡" = input$dollar_card_table_rows_selected,
+      "买货卡" = input$purchase_card_table_rows_selected,
+      "一般户卡" = input$general_card_table_rows_selected
+    )
+    
+    if (length(selected_rows) > 0) {
+      # 手动构造 LIMIT 的参数
+      row_index <- selected_rows - 1
+      
+      # 查询选中记录的 TransactionID
+      query <- sprintf(
+        "SELECT TransactionID FROM transactions WHERE AccountType = '%s' ORDER BY TransactionTime DESC LIMIT %d, 1",
+        account_type, row_index
+      )
+      record_to_delete <- dbGetQuery(con, query)
+      
+      if (nrow(record_to_delete) > 0) {
+        tryCatch({
+          # 删除选中的记录
+          dbExecute(con, "DELETE FROM transactions WHERE TransactionID = ?", params = list(record_to_delete$TransactionID))
+          
+          # 重新计算所有balance记录
+          update_balance(account_type, con)
+          
+          # 自动刷新账户余额总览统计
+          updateAccountOverview()
+          
+          # 自动刷新表格
+          refreshTransactionTable(account_type)
+        }, error = function(e) {
+          showNotification(paste("删除失败：", e$message), type = "error")
+        })
+      } else {
+        showNotification("无法找到选中的记录！", type = "error")
+      }
+    } else {
+      showNotification("请选择要删除的记录", type = "error")
+    }
+    
+    resetTransferForm(session) # 重置输入框
+  })
+  
+  # 转账证据图片处理模块 (登记)
+  image_transactions <- imageModuleServer("image_transactions")
+  
+  # 转账证据图片处理模块 (转移)
+  image_transfer <- imageModuleServer("image_transfer")
+  
+  # 重置 (登记)
+  observeEvent(input$reset_form, {
+    resetToCreateMode() # 重置为“登记”模式
+    resetTransactionForm(session) # 重置输入框
+    showNotification("表单已重置！", type = "message")
+  })
+  
+  # 重置 (转移)
+  observeEvent(input$reset_form_transfer, {
+    resetTransferForm(session) # 重置输入框
+    showNotification("表单已重置！", type = "message")
+  })
+  
+  ####
+  
+  # 监听 工资卡 点选
+  observeEvent(input$salary_card_table_rows_selected, {
+    selected_row <- input$salary_card_table_rows_selected
+    
+    if (!is.null(selected_row)) {
+      # 获取选中行的数据
+      fetchData <- fetchInputFromTable("工资卡", selected_row)
+      selected_TransactionID(fetchData$TransactionID)
+      selected_TransactionImagePath(fetchData$TransactionImagePath)
+      
+      # 切换按钮为“更新”
+      is_update_mode(TRUE)
+      updateActionButton(session, "record_transaction", label = "更新", icon = icon("edit"))
+      
+      showNotification("信息已加载，准备更新记录", type = "message")
+    }
+  })
+  
+  # 监听 美元卡 点选
+  observeEvent(input$dollar_card_table_rows_selected, {
+    selected_row <- input$dollar_card_table_rows_selected
+    
+    if (!is.null(selected_row)) {
+      # 获取选中行的数据
+      fetchData <- fetchInputFromTable("美元卡", input$dollar_card_table_rows_selected)
+      selected_TransactionID(fetchData$TransactionID)
+      selected_TransactionImagePath(fetchData$TransactionImagePath)
+      
+      # 切换按钮为“更新”
+      is_update_mode(TRUE)
+      updateActionButton(session, "record_transaction", label = "更新", icon = icon("edit"))
+      
+      showNotification("信息已加载，准备更新记录", type = "message")
+    }
+  })
+  
+  # 监听 买货卡 点选
+  observeEvent(input$purchase_card_table_rows_selected, {
+    selected_row <- input$purchase_card_table_rows_selected
+    
+    if (!is.null(selected_row)) {
+      # 获取选中行的数据
+      fetchData <- fetchInputFromTable("买货卡", input$purchase_card_table_rows_selected)
+      selected_TransactionID(fetchData$TransactionID)
+      selected_TransactionImagePath(fetchData$TransactionImagePath)
+      
+      # 切换按钮为“更新”
+      is_update_mode(TRUE)
+      updateActionButton(session, "record_transaction", label = "更新", icon = icon("edit"))
+      
+      showNotification("信息已加载，准备更新记录", type = "message")
+    }
+  })
+  
+  # 监听 一般户卡 点选
+  observeEvent(input$general_card_table_rows_selected, {
+    selected_row <- input$general_card_table_rows_selected
+    
+    if (!is.null(selected_row)) {
+      # 获取选中行的数据
+      fetchData <- fetchInputFromTable("一般户卡", input$general_card_table_rows_selected)
+      selected_TransactionID(fetchData$TransactionID)
+      selected_TransactionImagePath(fetchData$TransactionImagePath)
+      
+      # 切换按钮为“更新”
+      is_update_mode(TRUE)
+      updateActionButton(session, "record_transaction", label = "更新", icon = icon("edit"))
+      
+      showNotification("信息已加载，准备更新记录", type = "message")
+    }
+  })
+  
+  ####
+  
+  # 处理工资卡表格的图片点击
+  handleTransactionImageClick("工资卡", "salary_card_table", 4)
+  
+  # 处理美元卡表格的图片点击
+  handleTransactionImageClick("美元卡", "dollar_card_table", 4)
+  
+  # 处理买货卡表格的图片点击
+  handleTransactionImageClick("买货卡", "purchase_card_table", 4)
+  
+  # 处理一般户卡表格的图片点击
+  handleTransactionImageClick("一般户卡", "general_card_table", 4)
   
   
   

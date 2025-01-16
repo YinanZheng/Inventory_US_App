@@ -109,10 +109,5 @@ table_default_options <<- list(
 # 定义瑕疵和修复的状态
 defect_statuses <<- c("瑕疵", "修复", "无瑕")
 
-# 自定义函数
-`%||%` <- function(a, b) {
-  if (!is.null(a)) a else b
-}
-
 # 定义管理员密码
 admin_password <<- "1029"

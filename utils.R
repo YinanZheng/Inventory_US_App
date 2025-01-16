@@ -1578,6 +1578,304 @@ match_tracking_number <- function(data, tracking_number_column, input_tracking_i
 }
 
 
+
+##### 账务管理相关function
+
+# 计算账户余额-账务管理用
+get_balance <- function(account_type) {
+  # 查询指定账户的最新余额（按时间排序）
+  query <- "
+    SELECT Balance
+    FROM transactions
+    WHERE AccountType = ?
+    ORDER BY TransactionTime DESC
+    LIMIT 1
+  "
+  result <- dbGetQuery(con, query, params = list(account_type))
+  
+  # 如果没有记录，则余额为 0
+  balance <- result$Balance[1] %||% 0  # 使用 %||% 防止 NULL
+  return(as.numeric(balance))  # 返回数值型余额
+}
+
+# 更新账户余额显示-账务管理用
+updateAccountOverview <- function() {
+  output$salary_balance <- renderText({
+    sprintf("¥%.2f", get_balance("工资卡"))
+  })
+  
+  output$dollar_balance <- renderText({
+    sprintf("¥%.2f", get_balance("美元卡"))
+  })
+  
+  output$purchase_balance <- renderText({
+    sprintf("¥%.2f", get_balance("买货卡"))
+  })
+  
+  output$general_balance <- renderText({
+    sprintf("¥%.2f", get_balance("一般户卡"))
+  })
+  
+  output$total_balance <- renderText({
+    total <- sum(
+      get_balance("工资卡"),
+      get_balance("美元卡"),
+      get_balance("买货卡"),
+      get_balance("一般户卡"),
+      na.rm = TRUE
+    )
+    sprintf("¥%.2f", total)
+  })
+}
+
+# 刷新账目记录-账务管理用
+refreshTransactionTable <- function(account_type) {
+  table_map <- list(
+    "工资卡" = "salary_card_table",
+    "美元卡" = "dollar_card_table",
+    "买货卡" = "purchase_card_table",
+    "一般户卡" = "general_card_table"
+  )
+  
+  # 检查账户类型是否有效
+  if (account_type %in% names(table_map)) {
+    # 获取数据
+    data <- fetchAndFormatTransactionData(account_type)
+    
+    # 计算数据的哈希值
+    current_hash <- digest::digest(data)
+    
+    # 确定哈希缓存键
+    hash_key <- switch(
+      account_type,
+      "工资卡" = "salary",
+      "美元卡" = "dollar",
+      "买货卡" = "purchase",
+      "一般户卡" = "general"
+    )
+    
+    # 如果哈希值未变化，则跳过刷新
+    if (!is.null(transaction_table_hash[[hash_key]]) && 
+        transaction_table_hash[[hash_key]] == current_hash) {
+      return()
+    }
+    
+    # 更新哈希缓存
+    transaction_table_hash[[hash_key]] <- current_hash
+    
+    # 渲染表格
+    table_result <- render_table_with_images(
+      data = data,
+      column_mapping = transaction_common_columns,
+      image_column = "TransactionImagePath",  # 图片列名
+      options = list(
+        scrollY = "600px",
+        scrollX = TRUE,
+        paging = TRUE,
+        pageLength = 30,
+        dom = 'frtip',
+        searching = TRUE
+      )
+    )
+    
+    # 更新输出
+    output[[table_map[[account_type]]]] <- renderDT({
+      table_result$datatable
+    })
+    message(paste(account_type, "数据已刷新。"))
+  } else {
+    showNotification("无效的账户类型！", type = "error")
+  }
+}
+
+# 获取格式化好的账目记录表
+fetchAndFormatTransactionData <- function(account_type) {
+  # 初始化缓存结构
+  if (is.null(cache_env$transaction_data)) {
+    cache_env$transaction_data <- list()
+  }
+  if (is.null(cache_env$transaction_metadata)) {
+    cache_env$transaction_metadata <- list()
+  }
+  
+  # 获取账户的最后更新时间
+  last_updated_query <- "
+    SELECT MAX(updated_at) AS LastUpdated
+    FROM transactions
+    WHERE AccountType = ?
+  "
+  last_updated_db <- dbGetQuery(con, last_updated_query, params = list(account_type))$LastUpdated[1]
+  
+  # 检查缓存是否有效
+  cached_metadata <- cache_env$transaction_metadata[[account_type]]
+  if (!is.null(cached_metadata)) {
+    cached_last_updated <- cached_metadata$last_updated
+    
+    # 如果更新时间未改变，返回缓存的数据
+    if (!is.na(last_updated_db) && last_updated_db == cached_last_updated) {
+      return(cache_env$transaction_data[[account_type]])
+    }
+  }
+  
+  # 从数据库获取最新数据
+  query <- "SELECT * FROM transactions WHERE AccountType = ? ORDER BY TransactionTime DESC"
+  data <- dbGetQuery(con, query, params = list(account_type))
+  
+  # 格式化数据
+  formatted_data <- data %>%
+    mutate(
+      TransactionTime = format(as.POSIXct(TransactionTime), "%Y-%m-%d %H:%M:%S"),
+      AmountIn = ifelse(Amount > 0, sprintf("%.2f", Amount), NA),
+      AmountOut = ifelse(Amount < 0, sprintf("%.2f", abs(Amount)), NA),
+      Balance = sprintf("%.2f", Balance)
+    )
+  
+  rownames(formatted_data) <- NULL
+  
+  # 更新缓存
+  cache_env$transaction_data[[account_type]] <- formatted_data
+  cache_env$transaction_metadata[[account_type]] <- list(
+    last_updated = last_updated_db
+  )
+  
+  return(formatted_data)
+}
+
+# 从账目表中获取信息填入左侧
+fetchInputFromTable <- function(account_type, selected_row) {
+  if (!is.null(selected_row)) {
+    # 获取指定账户的数据
+    data <- fetchAndFormatTransactionData(account_type)
+    
+    # 检查选中行是否有效
+    if (selected_row > nrow(data) || selected_row <= 0 || nrow(data) == 0) {
+      showNotification("选中的行无效或数据为空！", type = "error")
+      return(NULL)
+    }
+    
+    # 提取选中行的数据
+    selected_data <- data[selected_row, ]
+    
+    # 更新输入框内容
+    updateNumericInput(session, "amount", value = ifelse(!is.na(selected_data$AmountIn), 
+                                                         as.numeric(selected_data$AmountIn), 
+                                                         as.numeric(selected_data$AmountOut)))
+    updateRadioButtons(session, "transaction_type", selected = ifelse(!is.na(selected_data$AmountIn), "in", "out"))
+    updateDateInput(session, "custom_date", value = as.Date(selected_data$TransactionTime))
+    updateTimeInput(session, "custom_time", value = format(as.POSIXct(selected_data$TransactionTime), "%H:%M:%S"))
+    updateTextAreaInput(session, "remarks", value = selected_data$Remarks)
+    
+    # 返回 TransactionID 和 TransactionImagePath
+    return(list(
+      TransactionID = selected_data$TransactionID,
+      TransactionImagePath = selected_data$TransactionImagePath
+    ))
+  }
+  
+  return(NULL)  # 未选中行时返回 NULL
+}
+
+# 从分页上获取当前账户名
+getAccountType <- function(input) {
+  switch(
+    input$transaction_tabs,
+    "工资卡" = "工资卡",
+    "美元卡" = "美元卡",
+    "买货卡" = "买货卡",
+    "一般户卡" = "一般户卡",
+    NULL
+  )
+}
+
+# 转账截图点击看大图
+handleTransactionImageClick <- function(account_type, input_table, image_col_index) {
+  observeEvent(input[[paste0(input_table, "_cell_clicked")]], {
+    info <- input[[paste0(input_table, "_cell_clicked")]]
+    
+    # 检查是否点击了图片列
+    if (!is.null(info) && !is.null(info$col) && !is.null(info$row)) {
+      if (info$col == image_col_index) {  # 图片列的索引
+        # 获取点击的图片路径
+        selected_data <- fetchInputFromTable(account_type, input[[paste0(input_table, "_rows_selected")]])
+        img_path <- selected_data$TransactionImagePath
+        
+        req(img_path)  # 确保图片路径存在且不为空
+        
+        img_host_path <- paste0(host_url, "/images/", basename(img_path))
+        
+        # 弹出模态框显示图片
+        showModal(modalDialog(
+          title = "转账截图预览",
+          tags$div(
+            style = "overflow: auto; max-height: 700px; text-align: center;",
+            tags$img(
+              src = img_host_path,
+              style = "max-width: 100%; height: auto; display: inline-block;"
+            )
+          ),
+          size = "l",
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }
+    }
+  })
+}
+
+# 重置回登记模式
+resetToCreateMode <- function() {
+  is_update_mode(FALSE)  # 切换回登记模式
+  selected_TransactionID(NULL)  # 清空选中的 TransactionID
+  selected_TransactionImagePath(NULL)  # 清空选中的 TransactionImagePath
+  
+  # 更新按钮为“登记”
+  updateActionButton(session, "record_transaction", label = "登记", icon = icon("save"))
+}
+
+# 重置账务登记表
+resetTransactionForm <- function(session) {
+  updateNumericInput(session, "amount", value = 0)  # 重置金额
+  updateRadioButtons(session, "transaction_type", selected = "out")  # 重置为“转出”
+  updateDateInput(session, "custom_date", value = Sys.Date())  # 重置为当前日期
+  updateTimeInput(session, "custom_time", value = format(Sys.time(), "%H:%M:%S"))  # 重置为当前时间
+  updateTextAreaInput(session, "remarks", value = "")  # 清空备注
+  image_transactions$reset()  # 重置图片上传组件
+}
+
+# 重置资产转移表
+resetTransferForm <- function(session) {
+  updateNumericInput(session, "transfer_amount", value = 0)  # 重置金额
+  updateSelectInput(session, "from_account", selected = "美元卡")
+  updateSelectInput(session, "to_account", selected = "工资卡")
+  updateTextAreaInput(session, "transfer_remarks", value = "")  # 清空备注
+  image_transfer$reset()  # 重置图片上传组件
+}
+
+# 定义一个函数封装更新逻辑
+update_balance <- function(account_type, con) {
+  # 初始化会话变量
+  dbExecute(con, "SET @current_balance = 0;")
+  
+  # 执行更新语句
+  query <- paste0(
+    "UPDATE transactions ",
+    "SET Balance = (@current_balance := @current_balance + Amount) ",
+    "WHERE AccountType = '", account_type, "' ",
+    "ORDER BY TransactionTime;"
+  )
+  
+  dbExecute(con, query)
+  showNotification("余额记录已重新计算", type = "message")
+}
+
+#####
+
+
+# 自定义函数
+`%||%` <- function(a, b) {
+  if (!is.null(a)) a else b
+}
+
 # 清理未被记录的图片 (每天运行一次)
 clean_untracked_images <- function() {
   # 数据库连接信息
