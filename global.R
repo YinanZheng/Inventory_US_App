@@ -70,6 +70,17 @@ common_columns <<- list(
   # Defect = "瑕疵态"
 )
 
+# 通用账务表列名映射
+transaction_common_columns <- list(
+  TransactionTime = "转账时间",
+  AmountIn = "转入金额",
+  AmountOut = "转出金额",
+  Balance = "当前余额",
+  TransactionImagePath = "转账截图",
+  Remarks = "备注"
+)
+
+# 通用订单表列名映射
 orders_table_columns <<- list(
   OrderID = "订单号",
   OrderImagePath = "订单图",
@@ -111,3 +122,6 @@ defect_statuses <<- c("瑕疵", "修复", "无瑕")
 
 # 定义管理员密码
 admin_password <<- "1029"
+
+client_id <<- "NzfGxVtsAiw6Y0IIYpg8ivmjHiTWuZJqH3ZOdTaLSPJpSm5H"
+client_secret <<- "h1LCAMKRiwa0hqaBpRTRZZeFdLXJGvibmGhM3W7YVaO7vBfWoHV7MRGA4nED0GKD"
