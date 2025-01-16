@@ -10,35 +10,7 @@ ui <- navbarPage(
     
     tags$head(
       tags$style(HTML("
-      
-      /* 默认显示导航栏标题 */
-      .navbar-brand {
-        display: inline-block !important;
-      }
-  
-      /* 强制导航栏水平滚动，禁止换行 */
-      .navbar-nav {
-        display: flex !important; /* 使用 Flex 布局 */
-        flex-wrap: nowrap !important; /* 禁止换行 */
-        overflow-x: auto !important; /* 启用水平滚动 */
-        white-space: nowrap !important; /* 确保内容不换行 */
-      }
-    
-      /* 美化滚动条 */
-      .navbar-nav::-webkit-scrollbar {
-        height: 6px; /* 滚动条高度 */
-      }
-      .navbar-nav::-webkit-scrollbar-thumb {
-        background: #007BFF; /* 滚动条颜色 */
-        border-radius: 10px;
-      }
-    
-      /* 禁止导航栏高度扩展 */
-      .navbar {
-        background-color: #4b0363 !important; /* 设置背景颜色 */
-        white-space: nowrap !important; /* 确保所有子元素在单行内 */
-      }
-      
+
       /* 鼠标悬停时修改标题颜色 */
       .navbar-brand:hover {
         color: #FFD700 !important; /* 悬停时标题文字颜色 */
@@ -48,26 +20,58 @@ ui <- navbarPage(
         color: #FFD700 !important;           /* 悬停文字颜色 */
         background-color: #4b0363 !important;/* 悬停背景颜色 */
       }
-    
-     /* 当屏幕宽度小于 1380px 时，隐藏标题 */
+
+      /* --------------------------------------------------------- */
+
+      /* 强制导航栏支持水平滚动 */
+      .navbar-nav {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        max-width: 100% !important; /* 防止宽度限制 */
+      }
+      
+      /* 导航栏滚动条样式 */
+      .navbar-nav::-webkit-scrollbar {
+        height: 6px;
+      }
+      .navbar-nav::-webkit-scrollbar-thumb {
+        background: #007BFF;
+        border-radius: 10px;
+      }
+      
+      /* 强制显示滚动条，小于1380px时 */
       @media (max-width: 1380px) {
+        .navbar-nav {
+          overflow-x: scroll !important;
+        }
         .navbar-brand {
-          display: none !important;
+          display: none !important; /* 隐藏标题 */
         }
       }
-    
-      /* 当屏幕宽度小于 768px 时，调整导航项的字体和间距 */
-      @media (max-width: 768px) {
+      
+      /* 限制 .navbar 的宽度扩展 */
+      .navbar {
+        display: block !important;
+        overflow: hidden !important;
+        width: 100% !important;
+      }
+      
+      /* 小屏幕调整字体和间距 */
+      @media (max-width: 900px) {
         .navbar-nav > li > a {
-          font-size: 12px !important; /* 调整字体大小适配小屏幕 */
-          padding: 6px 8px !important; /* 减少间距 */
+          font-size: 12px !important;
+          padding: 6px 8px !important;
         }
       }
-    
-    
+      
+      /* 为导航栏顶部留出空间 */
       body {
-        padding-top: 70px; /* 为导航栏腾出空间 */
+        padding-top: 70px !important;
       }
+      
+      /* --------------------------------------------------------- */
       
       /* Flexbox 容器 */
       .layout-container {
