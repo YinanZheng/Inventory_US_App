@@ -2526,7 +2526,6 @@ server <- function(input, output, session) {
       } else {
         # 如果有多个物流单号或为空，清空输入框并提示用户
         updateTextInput(session, "intl_tracking_number", value = "")
-        showNotification("选中行包含多个不同的物流单号或为空！", type = "warning")
       }
     }, error = function(e) {
       showNotification(paste("操作失败：", e$message), type = "error")
