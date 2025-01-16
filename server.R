@@ -34,6 +34,9 @@ server <- function(input, output, session) {
   shelf_items <- reactiveVal(create_empty_shelf_box())
   box_items <- reactiveVal(create_empty_shelf_box())
   
+  # 创建全局环境变量用于存储缓存数据
+  cache_env <- new.env()
+  
   ####################################################################################################################################
   
   # 应用启动时加载数据: item_type_data
