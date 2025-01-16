@@ -410,7 +410,9 @@ server <- function(input, output, session) {
       status_input_id = "logistic_filter-status",
       item_name_input_id = "logistic_filter-name",
       sold_date_range_id = "logistic_filter-sold_date_range",
-      exit_date_range_id = "logistic_filter-exit_date_range"
+      only_show_sold_id = "logistic_filter-only_show_sold",
+      exit_date_range_id = "logistic_filter-exit_date_range",
+      only_show_exit_id = "logistic_filter-only_show_exit"
     )
     
     shipping_method <- input$intl_shipping_method

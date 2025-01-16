@@ -1098,7 +1098,9 @@ filter_unique_items_data_by_inputs <- function(
     item_name_input_id, 
     purchase_date_range_id = NULL, 
     sold_date_range_id = NULL,
-    exit_date_range_id = NULL
+    only_show_sold_id = NULL,
+    exit_date_range_id = NULL,
+    only_show_exit_id = NULL
 ) {
   req(data)  # 确保数据不为空
   
@@ -1112,9 +1114,9 @@ filter_unique_items_data_by_inputs <- function(
     data <- data %>% filter(Status %in% input[[status_input_id]])
   }
   
-  # 按商品名称筛选
+  # 按商品名称模糊匹配筛选
   if (!is.null(item_name_input_id) && !is.null(input[[item_name_input_id]]) && input[[item_name_input_id]] != "") {
-    data <- data %>% filter(ItemName == input[[item_name_input_id]])
+    data <- data %>% filter(grepl(input[[item_name_input_id]], ItemName, ignore.case = TRUE))
   }
   
   # 按采购日期筛选
@@ -1130,7 +1132,6 @@ filter_unique_items_data_by_inputs <- function(
       !is.null(input[[sold_date_range_id]]) && 
       length(input[[sold_date_range_id]]) == 2) {
     sold_date_range <- as.Date(input[[sold_date_range_id]])
-    only_show_sold_id <- paste0(sold_date_range_id, "_only_show_sold")
     
     if (!is.null(input[[only_show_sold_id]]) && input[[only_show_sold_id]]) {
       data <- data %>%
@@ -1146,7 +1147,6 @@ filter_unique_items_data_by_inputs <- function(
       !is.null(input[[exit_date_range_id]]) && 
       length(input[[exit_date_range_id]]) == 2) {
     exit_date_range <- as.Date(input[[exit_date_range_id]])
-    only_show_exit_id <- paste0(exit_date_range_id, "_only_show_exit")
     
     if (!is.null(input[[only_show_exit_id]]) && input[[only_show_exit_id]]) {
       data <- data %>%
@@ -1160,7 +1160,7 @@ filter_unique_items_data_by_inputs <- function(
   return(data)
 }
 
-
+# 编辑库存数量
 adjust_inventory_quantity <- function(con, sku, adjustment) {
   tryCatch({
     sku <- trimws(sku)  # 清理空格
