@@ -1164,31 +1164,40 @@ filter_unique_items_data_by_inputs <- function(
 adjust_inventory_quantity <- function(con, sku, adjustment) {
   tryCatch({
     sku <- trimws(sku)  # 清理空格
+    
     # 查询现有库存
     existing_item <- dbGetQuery(con, "SELECT * FROM inventory WHERE SKU = ?", params = list(sku))
     
     if (nrow(existing_item) > 0) {
-      # SKU 存在，计算新的库存
-      new_quantity <- existing_item$Quantity + adjustment
+      # SKU 存在，获取当前库存数量
+      current_quantity <- existing_item$Quantity
+      
+      # 如果调整量为 0，仅返回当前库存
+      if (adjustment == 0) {
+        return(current_quantity)
+      }
+      
+      # 计算新的库存
+      new_quantity <- current_quantity + adjustment
       
       # 库存不足的校验（仅在减少库存时检查）
       if (adjustment < 0 && new_quantity < 0) {
         showNotification("库存不足，无法完成操作！", type = "error")
-        return(FALSE)
+        return(current_quantity)
       }
       
       # 更新库存数量到数据库
       dbExecute(con, "UPDATE inventory SET Quantity = ? WHERE SKU = ?", params = list(new_quantity, sku))
       
       showNotification(paste("库存已成功调整! SKU:", sku), type = "message")
-      return(TRUE)
+      return(new_quantity)
     } else {
       showNotification(paste("SKU 不存在，无法调整库存！SKU:", sku), type = "error")
-      return(FALSE)
+      return(NULL)
     }
   }, error = function(e) {
     showNotification(paste("调整库存时发生错误：", e$message), type = "error")
-    return(FALSE)
+    return(NULL)
   })
 }
 

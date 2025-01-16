@@ -1853,94 +1853,19 @@ server <- function(input, output, session) {
     updateTextInput(session, "shipping_bill_number", value = tracking_number)
   })
   
+  
+  
   ################################################################
   ##                                                            ##
   ## 物品管理分页                                               ##
   ##                                                            ##
   ################################################################
   
+  # 物品表过滤模块
   itemFilterServer(
     id = "manage_filter",
     makers_items_map = makers_items_map
   )
-  
-  # 监听删除按钮点击事件，弹出确认框
-  observeEvent(input$confirm_delete_btn, {
-    selected_rows <- unique_items_table_manage_selected_row()
-    
-    # 如果没有选中行，提示用户
-    if (is.null(selected_rows) || length(selected_rows) == 0) {
-      showNotification("请先选择要删除的物品！", type = "error")
-      return()
-    }
-    
-    # 显示确认框
-    showModal(deleteConfirmationModal(length(selected_rows)))
-  })
-  
-  # 确认框内 "确认删除" 按钮逻辑
-  observeEvent(input$confirm_delete_final, {
-    selected_rows <- unique_items_table_manage_selected_row()
-    
-    # 如果没有选中行，提示用户
-    if (is.null(selected_rows) || length(selected_rows) == 0) {
-      showNotification("没有选中任何物品！", type = "error")
-      return()
-    }
-    
-    tryCatch({
-      # 获取选中物品的 UniqueID 和 SKU
-      selected_items <- filtered_unique_items_data_manage()[selected_rows, ]
-      
-      dbBegin(con) # 开启事务
-      
-      for (i in seq_len(nrow(selected_items))) {
-        unique_id <- selected_items$UniqueID[i]
-        sku <- selected_items$SKU[i]
-        
-        # 删除 unique_items 中对应的记录
-        dbExecute(con, "
-          DELETE FROM unique_items
-          WHERE UniqueID = ?", params = list(selected_items$UniqueID[i]))
-        
-        # 删除 item_status_history 中对应的历史状态记录
-        dbExecute(con, "
-          DELETE FROM item_status_history
-          WHERE UniqueID = ?", params = list(unique_id))
-        
-        remaining_items <- dbGetQuery(con, "
-                            SELECT COUNT(*) AS RemainingCount
-                            FROM unique_items
-                            WHERE SKU = ?", params = list(sku))
-        
-        if (remaining_items$RemainingCount[1] > 0) {
-          # 库存减一
-          adjust_inventory_quantity(con, sku, adjustment = -1)
-        } else {
-          # 如果没有剩余记录，删除 inventory 表中的该 SKU
-          dbExecute(con, "
-            DELETE FROM inventory
-            WHERE SKU = ?", params = list(sku))
-        }
-        inventory_refresh_trigger(!inventory_refresh_trigger())
-      }
-      
-      dbCommit(con) # 提交事务
-      
-      # 通知用户成功删除
-      showNotification("物品及其历史状态记录删除成功！", type = "message")
-      
-      # 更新数据并触发 UI 刷新
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-      
-    }, error = function(e) {
-      dbRollback(con) # 回滚事务
-      showNotification(paste("删除物品时发生错误：", e$message), type = "error")
-    })
-    
-    # 关闭确认框
-    removeModal()
-  })
   
   # 采购商品图片处理模块
   image_manage <- imageModuleServer("image_manage")
@@ -1954,7 +1879,7 @@ server <- function(input, output, session) {
     }
     
     # 从选中的行获取 SKU
-    selected_item <- unique_items_data()[selected_rows, ]
+    selected_item <- filtered_unique_items_data_manage()[selected_rows, ]
     selected_sku <- selected_item$SKU
     
     if (is.null(selected_sku) || selected_sku == "") {
@@ -2006,6 +1931,181 @@ server <- function(input, output, session) {
     
     # 重置图片上传状态
     image_manage$reset()
+  })
+  
+  # 处理更新物品信息
+  observeEvent(input$update_info_btn, {
+    # 获取所有选中行索引
+    selected_rows <- unique_items_table_manage_selected_row()
+    
+    # 验证是否有选中行
+    if (is.null(selected_rows) || length(selected_rows) == 0) {
+      showNotification("请至少选中一行进行更新！", type = "error")
+      return()
+    }
+    
+    # 获取过滤后的数据
+    selected_items <- filtered_unique_items_data_manage()[selected_rows, ]
+    
+    # 验证用户输入的新数据
+    new_product_cost <- input$update_product_cost
+    new_shipping_cost <- input$update_shipping_cost
+    new_purchase_date <- input$update_purchase_date
+    
+    if (is.null(new_product_cost) || new_product_cost < 0) {
+      showNotification("请输入有效的单价！", type = "error")
+      return()
+    }
+    if (is.null(new_shipping_cost) || new_shipping_cost < 0) {
+      showNotification("请输入有效的国内运费！", type = "error")
+      return()
+    }
+    if (is.null(new_purchase_date) || !lubridate::is.Date(as.Date(new_purchase_date))) {
+      showNotification("请输入有效的采购日期！", type = "error")
+      return()
+    }
+    
+    # 遍历选中行并更新数据库
+    tryCatch({
+      lapply(1:nrow(selected_items), function(i) {
+        unique_id <- selected_items$UniqueID[i]
+        
+        # 更新数据库
+        dbExecute(
+          con,
+          "UPDATE unique_items 
+                 SET ProductCost = ?, DomesticShippingCost = ?, PurchaseTime = ? 
+                 WHERE UniqueID = ?",
+          params = list(new_product_cost, new_shipping_cost, as.Date(new_purchase_date), unique_id)
+        )
+      })
+      
+      # 刷新数据表
+      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
+      
+      # 显示成功通知
+      showNotification(paste0("成功更新了 ", nrow(selected_items), " 项物品的信息！"), type = "message")
+    }, error = function(e) {
+      showNotification(paste("更新失败：", e$message), type = "error")
+    })
+  })
+  
+  # 点击填写物品信息
+  observeEvent(unique_items_table_manage_selected_row(), {
+    selected_rows <- unique_items_table_manage_selected_row()
+    
+    # 检查是否有选中行
+    if (!is.null(selected_rows) && length(selected_rows) > 0) {
+      # 获取最新点击的行索引
+      latest_row <- tail(selected_rows, n = 1)
+      
+      # 获取过滤后的数据
+      data <- filtered_unique_items_data_manage()
+      
+      # 确保数据框不为空且行索引有效
+      if (!is.null(data) && nrow(data) >= latest_row) {
+        selected_data <- data[latest_row, ]  # 提取最新点击的行数据
+        
+        # 更新输入框
+        updateNumericInput(session, "update_product_cost", value = selected_data$ProductCost)
+        updateNumericInput(session, "update_shipping_cost", value = selected_data$DomesticShippingCost)
+        updateDateInput(session, "update_purchase_date", value = as.Date(selected_data$PurchaseTime))
+        
+      } else {
+        showNotification("选中的行无效或数据为空！", type = "error")
+      }
+    } else {
+      showNotification("未选中任何行！", type = "warning")
+    }
+  })
+  
+  # 清空
+  observeEvent(input$clear_info_btn, {
+    # 清空单价和运费输入框
+    updateNumericInput(session, "update_product_cost", value = "")
+    updateNumericInput(session, "update_shipping_cost", value = "")
+    updateDateInput(session, "update_purchase_date", value = Sys.Date())
+    
+    showNotification("商品信息已清空！", type = "message")
+  })
+  
+  ###
+  
+  # 监听删除按钮点击事件，弹出确认框
+  observeEvent(input$confirm_delete_btn, {
+    selected_rows <- unique_items_table_manage_selected_row()
+    
+    # 如果没有选中行，提示用户
+    if (is.null(selected_rows) || length(selected_rows) == 0) {
+      showNotification("请先选择要删除的物品！", type = "error")
+      return()
+    }
+    
+    # 显示确认框
+    showModal(deleteConfirmationModal(length(selected_rows)))
+  })
+  
+  # 确认框内 "确认删除" 按钮逻辑
+  observeEvent(input$confirm_delete_final, {
+    selected_rows <- unique_items_table_manage_selected_row()
+    
+    # 如果没有选中行，提示用户
+    if (is.null(selected_rows) || length(selected_rows) == 0) {
+      showNotification("没有选中任何物品！", type = "error")
+      return()
+    }
+    
+    tryCatch({
+      # 获取选中物品的 UniqueID 和 SKU
+      selected_items <- filtered_unique_items_data_manage()[selected_rows, ]
+      
+      dbBegin(con) # 开启事务
+      
+      for (i in seq_len(nrow(selected_items))) {
+        unique_id <- selected_items$UniqueID[i]
+        sku <- selected_items$SKU[i]
+        status <- selected_items$Status[i]  # 获取物品状态
+        
+        # 删除 unique_items 中对应的记录
+        dbExecute(con, "
+              DELETE FROM unique_items
+              WHERE UniqueID = ?", params = list(unique_id))
+        
+        # 删除 item_status_history 中对应的历史状态记录
+        dbExecute(con, "
+              DELETE FROM item_status_history
+              WHERE UniqueID = ?", params = list(unique_id))
+        
+        if (status != "采购") {  # 如果状态不是采购，调整库存
+          remaining_quantity <- adjust_inventory_quantity(con, sku, adjustment = -1)
+          
+          if (is.null(remaining_quantity)) {
+            showNotification(paste("无法调整库存，SKU:", sku), type = "error")
+          } else if (remaining_quantity == 0) {
+            # 如果库存为 0，删除 inventory 表中的该 SKU
+            dbExecute(con, "
+                      DELETE FROM inventory
+                      WHERE SKU = ?", params = list(sku))
+            showNotification(paste0(sku, "已从库存表中移除！"), type = "message")
+          }
+        }
+      }
+      
+      dbCommit(con) # 提交事务
+      
+      # 通知用户成功删除
+      showNotification("物品及其历史状态记录删除成功！", type = "message")
+      
+      # 更新数据并触发 UI 刷新
+      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
+      
+    }, error = function(e) {
+      dbRollback(con) # 回滚事务
+      showNotification(paste("删除物品时发生错误：", e$message), type = "error")
+    })
+    
+    # 关闭确认框
+    removeModal()
   })
   
   
