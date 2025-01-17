@@ -817,7 +817,7 @@ ui <- navbarPage(
                    fluidRow(
                      column(12, div(
                        class = "card shadow-lg",
-                       style = "background: #1F1F1F; color: white; padding: 40px; text-align: center; border-radius: 16px; margin-bottom: 40px; border: 2px solid #FFC107;",
+                       style = "background: #1F1F1F; color: white; padding: 40px; text-align: center; border-radius: 16px; margin-top: 20px; margin-bottom: 40px; border: 2px solid #FFC107;",
                        tags$h4("总余额", style = "font-weight: bold; font-size: 30px; margin-bottom: 20px; letter-spacing: 1.5px;"),
                        tags$h3(
                          textOutput("total_balance"),
