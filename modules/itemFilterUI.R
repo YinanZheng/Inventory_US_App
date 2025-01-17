@@ -35,7 +35,7 @@ itemFilterUI <- function(
       if (use_status) {
         fluidRow(
           column(7, 
-                 selectizeInput(ns("maker"), "供应商:", choices = NULL, width = "100%",
+                 selectizeInput(ns("maker"), "供应商", choices = NULL, width = "100%",
                                 options = list(placeholder = '名称(或拼音)...', 
                                                maxOptions = 500,
                                                create = FALSE))
@@ -53,7 +53,7 @@ itemFilterUI <- function(
       } else {
         fluidRow(
           column(12, 
-                 selectizeInput(ns("maker"), "供应商:", choices = NULL, width = "100%",
+                 selectizeInput(ns("maker"), "供应商", choices = NULL, width = "100%",
                                 options = list(placeholder = '名称(或拼音)...', 
                                                maxOptions = 500,
                                                create = FALSE))
@@ -67,7 +67,7 @@ itemFilterUI <- function(
       column(12, 
              selectizeInput(
                ns("name"),                
-               label = "商品名:",         
+               label = "商品名",         
                choices = NULL,            
                options = list(
                  placeholder = "商品名...",
