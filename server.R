@@ -929,7 +929,6 @@ server <- function(input, output, session) {
   # 清空运单号逻辑
   observeEvent(input$shipping_bill_number, {
     if (is.null(input$shipping_bill_number) || input$shipping_bill_number == "") {
-      updateTextInput(session, "shipping_bill_number", value = "")
       current_order_id(NULL)  # 清空当前订单 ID
       output$order_items_title <- renderUI({ NULL })  # 清空标题
       renderOrderItems(output, "shipping_order_items_cards", data.frame())  # 清空物品卡片
