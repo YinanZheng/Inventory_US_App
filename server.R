@@ -1092,7 +1092,7 @@ server <- function(input, output, session) {
       return()
     }
     
-    # 更新状态为“美国发货”
+    # 自动更新物品状态为“美国发货”
     tryCatch({
       update_status(
         con = con,
@@ -1405,14 +1405,25 @@ server <- function(input, output, session) {
                 )
       )
       
-      # 更新物品状态和订单号
-      unique_ids <- paste0("'", paste(items$UniqueID, collapse = "','"), "'")
-      dbExecute(con,
-                sprintf("UPDATE unique_items
-               SET Status = '美国发货', OrderID = '%s'
-               WHERE UniqueID IN (%s)",
-                        order$OrderID, unique_ids)
-      )
+      # 使用逐条更新逻辑更新物品状态和订单号
+      for (i in seq_len(nrow(items))) {
+        next_item <- items[i, ]
+        
+        # 更新状态
+        update_status(
+          con = con,
+          unique_id = next_item$UniqueID,
+          new_status = "美国发货",
+          refresh_trigger = NULL
+        )
+        
+        # 更新订单号
+        update_order_id(
+          con = con,
+          unique_id = next_item$UniqueID,
+          order_id = order$OrderID
+        )
+      }
       
       # 调整库存
       for (sku in unique(items$SKU)) {
