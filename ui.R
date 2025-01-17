@@ -117,13 +117,21 @@ ui <- navbarPage(
         padding: 15px;
       }
       
+      # .main-panel {
+      #   position: relative;
+      #   flex-grow: 1; /* 允许主面板扩展 */
+      #   padding: 20px;
+      #   padding-top: 0px;
+      #   background-color: #ffffff;
+      #   overflow: hidden; /* 避免主面板影响滚动条 */
+      # }
+      
+       /* 主面板 */
       .main-panel {
-        position: relative;
-        flex-grow: 1; /* 允许主面板扩展 */
+        flex-grow: 1; /* 占据剩余空间 */
         padding: 20px;
         padding-top: 0px;
         background-color: #ffffff;
-        overflow: hidden; /* 避免主面板影响滚动条 */
       }
       
       /* 自定义 selectize 样式 */
