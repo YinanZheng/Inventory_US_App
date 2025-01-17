@@ -1876,6 +1876,31 @@ update_balance <- function(account_type, con) {
   if (!is.null(a)) a else b
 }
 
+
+# 加载时清除无效和冗余的状态流转记录
+clear_invalid_item_status_history <- function(con) {
+  tryCatch({
+    # 删除不以 "采购" 为起始状态的记录
+    dbExecute(con, "
+      DELETE FROM item_status_history
+      WHERE UniqueID IN (
+        SELECT UniqueID
+        FROM (
+          SELECT UniqueID, MIN(previous_status_timestamp) AS first_change_time
+          FROM item_status_history
+          GROUP BY UniqueID
+          HAVING MAX(CASE WHEN previous_status = '采购' THEN 1 ELSE 0 END) = 0
+        ) subquery
+      )
+    ")
+    showNotification("无效历史记录已清除！", type = "message")
+  }, error = function(e) {
+    showNotification(paste("清除无效记录失败：", e$message), type = "error")
+  })
+}
+
+
+
 # 清理未被记录的图片 (每天运行一次)
 clean_untracked_images <- function() {
   # 数据库连接信息
