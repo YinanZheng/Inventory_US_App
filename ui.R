@@ -317,7 +317,7 @@ ui <- navbarPage(
         class = "sticky-sidebar",
         tabsetPanel(
           id = "shipping_tabs",
-          
+          type = "pills",
           tabPanel(
             "国内售出发货", icon = tags$img(src = paste0(host_url, "icons/icons8-china-48.png"), height = '20px', style = 'margin-right: 5px;'),
             div(
