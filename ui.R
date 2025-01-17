@@ -72,6 +72,10 @@ ui <- navbarPage(
         background-color: #4b0363 !important;/* 悬停背景颜色 */
       }
       
+      .nav-pills > li.active > a {
+        background-color: #4b0363 !important; /* 设置激活选项卡的背景颜色 */
+      }
+      
       /* --------------------------------------------------------- */
       
       
