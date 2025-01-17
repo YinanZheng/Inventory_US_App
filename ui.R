@@ -344,7 +344,9 @@ ui <- navbarPage(
               style = "padding: 20px; border: 1px solid #28A745; border-radius: 8px; margin-bottom: 20px;",
               tags$h4("美国售出订单发货", style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"),
               textInput("us_shipping_bill_number", "运单号:", placeholder = "请扫描运单号", width = "100%"),
-              textInput("us_shipping_sku_input", "SKU:", placeholder = "请扫描SKU条形码", width = "100%"),
+              hidden(  # 默认隐藏
+                textInput("us_shipping_sku_input", "SKU:", placeholder = "请扫描SKU条形码", width = "100%", id = "sku_input")
+              ),              
               selectInput(
                 "us_shipping_platform",
                 "平台:",

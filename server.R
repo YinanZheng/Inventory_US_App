@@ -1356,12 +1356,15 @@ server <- function(input, output, session) {
       renderOrderInfo(output, "order_info_card", data.frame())  # 清空订单信息卡片
       output$order_items_title <- renderUI({ NULL })  # 清空标题
       renderOrderItems(output, "shipping_order_items_cards", data.frame())  # 清空物品卡片
+      shinyjs::hide("us_shipping_sku_input")
     } else {
       # 延迟后执行的逻辑
+      shinyjs::show("us_shipping_sku_input")
       runjs("document.getElementById('us_shipping_sku_input').focus();")
     }
   })
   
+  # 发货按钮
   observeEvent(input$us_ship_order_btn, {
     req(new_order(), new_order_items())
     
@@ -1457,9 +1460,6 @@ server <- function(input, output, session) {
       updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
     })
   })
-  
-  
-  
   
   # 订单物品删除逻辑 （美国售出only）
   observeEvent(input$delete_card, {
