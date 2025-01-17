@@ -132,6 +132,7 @@ ui <- navbarPage(
         padding: 20px;
         padding-top: 0px;
         background-color: #ffffff;
+        overflow: hidden; /* 避免主面板影响滚动条 */
       }
       
       /* 自定义 selectize 样式 */
