@@ -526,7 +526,7 @@ renderItemInfo <- function(output, output_name, item_info, img_path, count_label
   output[[output_name]] <- renderUI({
     fluidRow(
       column(
-        4,
+        6,
         div(
           style = "text-align: center;",
           img(
@@ -537,7 +537,7 @@ renderItemInfo <- function(output, output_name, item_info, img_path, count_label
         )
       ),
       column(
-        8,
+        6,
         div(
           style = "padding: 20px; background-color: #f7f7f7; border: 1px solid #e0e0e0; border-radius: 8px;
                              box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); height: 300px;",
