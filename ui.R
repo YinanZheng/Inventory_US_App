@@ -480,7 +480,7 @@ ui <- navbarPage(
         # 添加 TabsetPanel 组织不同功能
         tabsetPanel(
           id = "manage_tabs",
-          type = "tabs",
+          type = "pills",
           tabPanel(
             "更新图片", icon = icon("image"),  # 图标
             div(
