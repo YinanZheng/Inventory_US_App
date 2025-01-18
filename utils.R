@@ -438,7 +438,7 @@ update_status <- function(con, unique_id, new_status = NULL, defect_status = NUL
   }
 }
 
-
+# 更新订单ID
 update_order_id <- function(con, unique_id, order_id) {
   tryCatch({
     if (is.null(order_id)) {
@@ -468,6 +468,42 @@ update_order_id <- function(con, unique_id, order_id) {
   }, error = function(e) {
     # 错误提示
     showNotification(paste("更新订单号时发生错误：", e$message), type = "error")
+  })
+}
+
+# 更新订单状态
+update_order_status <- function(order_id, new_status, updated_notes = NULL, refresh_trigger = NULL, con) {
+  tryCatch({
+    if (is.null(updated_notes)) {
+      # 仅更新状态
+      dbExecute(
+        con,
+        "UPDATE orders
+         SET OrderStatus = ?, 
+             updated_at = CURRENT_TIMESTAMP 
+         WHERE OrderID = ?",
+        params = list(new_status, order_id)
+      )
+      showNotification(sprintf("订单 %s 状态更新为 '%s'！", order_id, new_status), type = "message")
+    } else {
+      # 同时更新状态和备注
+      dbExecute(
+        con,
+        "UPDATE orders
+         SET OrderStatus = ?, 
+             OrderNotes = ?, 
+             updated_at = CURRENT_TIMESTAMP 
+         WHERE OrderID = ?",
+        params = list(new_status, updated_notes, order_id)
+      )
+      showNotification(sprintf("订单 %s 状态更新为 '%s'，备注已更新！", order_id, new_status), type = "message")
+      # 触发刷新
+      if (!is.null(refresh_trigger)) {
+        refresh_trigger(!refresh_trigger())
+      }
+    }
+  }, error = function(e) {
+    showNotification(sprintf("更新订单状态和备注时发生错误：%s", e$message), type = "error")
   })
 }
 

@@ -1166,24 +1166,15 @@ server <- function(input, output, session) {
   
   # 确认装箱逻辑
   observeEvent(input$confirm_shipping_btn, {
-    
     if (!all(order_items()$Status == "美国发货")) {
       showNotification("还有未完成操作的物品，请核对！", type = "warning")
       return()
     }
     
-    # 更新当前订单状态
-    tryCatch({
-      dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(current_order_id()))
-      
-      orders_refresh_trigger(!orders_refresh_trigger())
-      
-      showNotification(paste0("订单 ", current_order_id(), " 已成功装箱！"), type = "message")
-      
-      removeModal()
-    }, error = function(e) {
-      showNotification(paste("更新订单状态时发生错误：", e$message), type = "error")
-    })
+    update_order_status(current_order_id(), "装箱", refreseh_trigger = orders_refresh_trigger, con)
+    
+    removeModal()
+    
     runjs("document.getElementById('shipping_bill_number').focus();")
   })
   
@@ -1226,20 +1217,7 @@ server <- function(input, output, session) {
   # 手动发货按钮功能
   observeEvent(input$ship_order_btn, {
     req(current_order_id())  # 确保当前订单ID存在
-    
-    tryCatch({
-      # 更新订单状态为“装箱”
-      dbExecute(con, "UPDATE orders SET OrderStatus = '装箱' WHERE OrderID = ?", params = list(current_order_id()))
-      
-      orders_refresh_trigger(!orders_refresh_trigger())
-      
-      showNotification(paste0("订单 ", current_order_id(), " 已手动登记为装箱状态！"), type = "message")
-      
-      # 清空订单ID
-      current_order_id(NULL)
-    }, error = function(e) {
-      showNotification(paste("发货操作失败：", e$message), type = "error")
-    })
+    update_order_status(current_order_id(), "装箱", refreseh_trigger = orders_refresh_trigger, con)
   })
   
   
@@ -1590,25 +1568,7 @@ server <- function(input, output, session) {
     # 在 R 中拼接备注内容
     new_notes <- paste(existing_notes, sprintf("【调货完成 %s】", format(Sys.Date(), "%Y-%m-%d")))
     
-    tryCatch({
-      # 使用拼接后的备注信息进行 SQL 更新
-      dbExecute(con, "
-      UPDATE orders
-      SET OrderStatus = '备货',
-          OrderNotes = ?
-      WHERE OrderID = ?
-    ", params = list(new_notes, order_id))
-      
-      # 重新加载最新的 orders 数据
-      orders_refresh_trigger(!orders_refresh_trigger())
-      
-      # 通知用户操作成功
-      showNotification(sprintf("订单 #%s 已更新为备货状态！", order_id), type = "message")
-      
-    }, error = function(e) {
-      # 捕获错误并通知用户
-      showNotification(sprintf("更新订单状态时发生错误：%s", e$message), type = "error")
-    })
+    update_order_status(order_id, "备货", updated_notes = new_notes, refresh_trigger = orders_refresh_trigger, con)
   })
   
   # 渲染物品信息卡片  
