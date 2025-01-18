@@ -3598,60 +3598,60 @@ server <- function(input, output, session) {
   #################################################################
   
   # 库存总览数据统计
-  overview_data <- reactive({
-    data <- unique_items_data()
-    domestic <- data %>% filter(Status == "国内入库")
-    logistics <- data %>% filter(Status == "国内出库" & !is.na(IntlTracking))
-    us <- data %>% filter(Status == "美国入库")
-    sold <- data %>% filter(Status %in% c("国内售出", "美国调货", "美国发货"))
-    
-    list(
-      domestic = list(
-        count = nrow(domestic),
-        value = sum(domestic$ProductCost, na.rm = TRUE),
-        shipping = sum(domestic$IntlShippingCost + domestic$DomesticShippingCost, na.rm = TRUE)
-      ),
-      logistics = list(
-        count = nrow(logistics),
-        value = sum(logistics$ProductCost, na.rm = TRUE),
-        shipping = sum(logistics$IntlShippingCost + logistics$DomesticShippingCost, na.rm = TRUE)
-      ),
-      us = list(
-        count = nrow(us),
-        value = sum(us$ProductCost, na.rm = TRUE),
-        shipping = sum(us$IntlShippingCost + us$DomesticShippingCost, na.rm = TRUE)
-      ),
-      sold = list(
-        count = nrow(sold),
-        us_shipping_count = nrow(sold %>% filter(Status == "美国发货")),
-        value = sum(sold$ProductCost, na.rm = TRUE),
-        shipping = sum(sold$IntlShippingCost + sold$DomesticShippingCost, na.rm = TRUE)
-      )
-    )
-  })
-  
-  # 输出卡片数据
-  output$domestic_total_count <- renderText({ overview_data()$domestic$count })
-  output$domestic_total_value <- renderText({ sprintf("¥%.2f", overview_data()$domestic$value) })
-  output$domestic_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$domestic$shipping) })
-  
-  output$logistics_total_count <- renderText({ overview_data()$logistics$count })
-  output$logistics_total_value <- renderText({ sprintf("¥%.2f", overview_data()$logistics$value) })
-  output$logistics_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$logistics$shipping) })
-  
-  output$us_total_count <- renderText({ overview_data()$us$count })
-  output$us_total_value <- renderText({ sprintf("¥%.2f", overview_data()$us$value) })
-  output$us_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$us$shipping) })
-  
-  output$sold_total_count <- renderText({ overview_data()$sold$count })
-  output$sold_total_count_with_shipping <- renderText({
-    count <- overview_data()$sold$count
-    us_shipping_count <- overview_data()$sold$us_shipping_count
-    paste0(count, " (", us_shipping_count, ")")
-  })
-  output$sold_total_value <- renderText({ sprintf("¥%.2f", overview_data()$sold$value) })
-  output$sold_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$sold$shipping) })
-  
+  # overview_data <- reactive({
+  #   data <- unique_items_data()
+  #   domestic <- data %>% filter(Status == "国内入库")
+  #   logistics <- data %>% filter(Status == "国内出库" & !is.na(IntlTracking))
+  #   us <- data %>% filter(Status == "美国入库")
+  #   sold <- data %>% filter(Status %in% c("国内售出", "美国调货", "美国发货"))
+  #   
+  #   list(
+  #     domestic = list(
+  #       count = nrow(domestic),
+  #       value = sum(domestic$ProductCost, na.rm = TRUE),
+  #       shipping = sum(domestic$IntlShippingCost + domestic$DomesticShippingCost, na.rm = TRUE)
+  #     ),
+  #     logistics = list(
+  #       count = nrow(logistics),
+  #       value = sum(logistics$ProductCost, na.rm = TRUE),
+  #       shipping = sum(logistics$IntlShippingCost + logistics$DomesticShippingCost, na.rm = TRUE)
+  #     ),
+  #     us = list(
+  #       count = nrow(us),
+  #       value = sum(us$ProductCost, na.rm = TRUE),
+  #       shipping = sum(us$IntlShippingCost + us$DomesticShippingCost, na.rm = TRUE)
+  #     ),
+  #     sold = list(
+  #       count = nrow(sold),
+  #       us_shipping_count = nrow(sold %>% filter(Status == "美国发货")),
+  #       value = sum(sold$ProductCost, na.rm = TRUE),
+  #       shipping = sum(sold$IntlShippingCost + sold$DomesticShippingCost, na.rm = TRUE)
+  #     )
+  #   )
+  # })
+  # 
+  # # 输出卡片数据
+  # output$domestic_total_count <- renderText({ overview_data()$domestic$count })
+  # output$domestic_total_value <- renderText({ sprintf("¥%.2f", overview_data()$domestic$value) })
+  # output$domestic_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$domestic$shipping) })
+  # 
+  # output$logistics_total_count <- renderText({ overview_data()$logistics$count })
+  # output$logistics_total_value <- renderText({ sprintf("¥%.2f", overview_data()$logistics$value) })
+  # output$logistics_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$logistics$shipping) })
+  # 
+  # output$us_total_count <- renderText({ overview_data()$us$count })
+  # output$us_total_value <- renderText({ sprintf("¥%.2f", overview_data()$us$value) })
+  # output$us_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$us$shipping) })
+  # 
+  # output$sold_total_count <- renderText({ overview_data()$sold$count })
+  # output$sold_total_count_with_shipping <- renderText({
+  #   count <- overview_data()$sold$count
+  #   us_shipping_count <- overview_data()$sold$us_shipping_count
+  #   paste0(count, " (", us_shipping_count, ")")
+  # })
+  # output$sold_total_value <- renderText({ sprintf("¥%.2f", overview_data()$sold$value) })
+  # output$sold_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$sold$shipping) })
+  # 
   # # 状态流转桑基图
   # output$status_sankey <- renderSankeyNetwork({
   #   # 获取物品状态历史数据
