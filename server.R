@@ -3652,70 +3652,70 @@ server <- function(input, output, session) {
   output$sold_total_value <- renderText({ sprintf("¥%.2f", overview_data()$sold$value) })
   output$sold_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$sold$shipping) })
   
-  # 状态流转桑基图
-  output$status_sankey <- renderSankeyNetwork({
-    # 获取物品状态历史数据
-    history_data <- item_status_history()
-    
-    filtered_data <- history_data %>%
-      # 标记含有重复状态的 UniqueID
-      left_join(
-        history_data %>%
-          group_by(UniqueID, previous_status) %>%
-          filter(n() > 1) %>%  # 找到重复状态的 UniqueID
-          summarise(
-            first_occurrence = min(change_time),
-            last_occurrence = max(change_time),
-            .groups = "drop"
-          ) %>%
-          distinct(UniqueID, first_occurrence, last_occurrence),  # 保留 UniqueID 的时间范围
-        by = "UniqueID"
-      ) %>%
-      # 删除重复状态的中间记录
-      filter(
-        is.na(first_occurrence) | !(change_time >= first_occurrence & change_time < last_occurrence)
-      ) %>%
-      # 按 UniqueID 和 change_time 排序
-      arrange(UniqueID, change_time)
-    
-    # 确保状态流转顺序正确
-    links <- filtered_data %>%
-      group_by(UniqueID) %>%
-      arrange(previous_status_timestamp, .by_group = TRUE) %>%
-      mutate(next_status = lead(previous_status)) %>%  # 获取下一个状态
-      filter(!is.na(next_status)) %>%  # 过滤掉没有后续状态的记录
-      ungroup() %>%
-      group_by(source = previous_status, target = next_status) %>%
-      summarise(value = n(), .groups = "drop")  # 汇总每对状态的流转次数
-    
-    links <- as.data.frame(links)
-    
-    # 定义节点
-    nodes <- data.frame(name = unique(c(links$source, links$target)))
-    
-    # 映射 source 和 target 到节点索引
-    links <- links %>%
-      mutate(source = match(source, nodes$name) - 1,
-             target = match(target, nodes$name) - 1)
-    
-    # 校验 links 和 nodes 是否有效
-    if (nrow(links) == 0 || nrow(nodes) == 0) {
-      showNotification("没有可用的状态流转数据，请检查数据源。", type = "error")
-      return(NULL)
-    }
-    
-    # 渲染桑基图
-    sankeyNetwork(
-      Links = links,
-      Nodes = nodes,
-      Source = "source",
-      Target = "target",
-      Value = "value",
-      NodeID = "name",
-      fontSize = 12,
-      nodeWidth = 30
-    )
-  })
+  # # 状态流转桑基图
+  # output$status_sankey <- renderSankeyNetwork({
+  #   # 获取物品状态历史数据
+  #   history_data <- item_status_history()
+  #   
+  #   filtered_data <- history_data %>%
+  #     # 标记含有重复状态的 UniqueID
+  #     left_join(
+  #       history_data %>%
+  #         group_by(UniqueID, previous_status) %>%
+  #         filter(n() > 1) %>%  # 找到重复状态的 UniqueID
+  #         summarise(
+  #           first_occurrence = min(change_time),
+  #           last_occurrence = max(change_time),
+  #           .groups = "drop"
+  #         ) %>%
+  #         distinct(UniqueID, first_occurrence, last_occurrence),  # 保留 UniqueID 的时间范围
+  #       by = "UniqueID"
+  #     ) %>%
+  #     # 删除重复状态的中间记录
+  #     filter(
+  #       is.na(first_occurrence) | !(change_time >= first_occurrence & change_time < last_occurrence)
+  #     ) %>%
+  #     # 按 UniqueID 和 change_time 排序
+  #     arrange(UniqueID, change_time)
+  #   
+  #   # 确保状态流转顺序正确
+  #   links <- filtered_data %>%
+  #     group_by(UniqueID) %>%
+  #     arrange(previous_status_timestamp, .by_group = TRUE) %>%
+  #     mutate(next_status = lead(previous_status)) %>%  # 获取下一个状态
+  #     filter(!is.na(next_status)) %>%  # 过滤掉没有后续状态的记录
+  #     ungroup() %>%
+  #     group_by(source = previous_status, target = next_status) %>%
+  #     summarise(value = n(), .groups = "drop")  # 汇总每对状态的流转次数
+  #   
+  #   links <- as.data.frame(links)
+  #   
+  #   # 定义节点
+  #   nodes <- data.frame(name = unique(c(links$source, links$target)))
+  #   
+  #   # 映射 source 和 target 到节点索引
+  #   links <- links %>%
+  #     mutate(source = match(source, nodes$name) - 1,
+  #            target = match(target, nodes$name) - 1)
+  #   
+  #   # 校验 links 和 nodes 是否有效
+  #   if (nrow(links) == 0 || nrow(nodes) == 0) {
+  #     showNotification("没有可用的状态流转数据，请检查数据源。", type = "error")
+  #     return(NULL)
+  #   }
+  #   
+  #   # 渲染桑基图
+  #   sankeyNetwork(
+  #     Links = links,
+  #     Nodes = nodes,
+  #     Source = "source",
+  #     Target = "target",
+  #     Value = "value",
+  #     NodeID = "name",
+  #     fontSize = 12,
+  #     nodeWidth = 30
+  #   )
+  # })
   
   
   #################################################################
