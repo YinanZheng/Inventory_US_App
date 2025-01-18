@@ -1,7 +1,7 @@
 # global.R
 
 # Load required libraries
-\library(shiny)
+library(shiny)
 library(shinyjs)
 library(shinyWidgets)
 library(shinythemes)
