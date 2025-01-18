@@ -3122,7 +3122,12 @@ server <- function(input, output, session) {
   }, {
     if (input$inventory_us == "查询" && input$query_tabs == "商品状态") {
       inventory_refresh_trigger(!inventory_refresh_trigger())
-      showNotification("库存表已更新！", type = "message")
+      showNotification("库存表已加载！", type = "message")
+    }
+    
+    if (input$inventory_us == "查询" && input$query_tabs == "库存总览") {
+      item_status_history_refresh_trigger(!item_status_history_refresh_trigger())
+      showNotification("库存状态历史已加载！", type = "message")
     }
   }, ignoreInit = TRUE)  # 忽略初始值
   
@@ -3319,33 +3324,29 @@ server <- function(input, output, session) {
     })
   })
   
+  #################################################################
+  
   # 开销统计
   expense_summary_data <- reactive({
-    req(input$time_range) # 确保时间范围存在
+    req(input$time_range)
     data <- unique_items_data()
     
-    # 获取时间范围
     start_date <- as.Date(input$time_range[1])
     end_date <- as.Date(input$time_range[2])
     
-    # 根据统计单位生成完整时间序列
     time_sequence <- switch(input$precision,
                             "天" = seq.Date(from = start_date, to = end_date, by = "day"),
                             "周" = seq.Date(from = floor_date(start_date, "week"),
-                                           to = floor_date(end_date, "week"),
-                                           by = "week"),
+                                           to = floor_date(end_date, "week"), by = "week"),
                             "月" = seq.Date(from = floor_date(start_date, "month"),
-                                           to = floor_date(end_date, "month"),
-                                           by = "month"),
+                                           to = floor_date(end_date, "month"), by = "month"),
                             "年" = seq.Date(from = floor_date(start_date, "year"),
-                                           to = floor_date(end_date, "year"),
-                                           by = "year"))
+                                           to = floor_date(end_date, "year"), by = "year"))
     
-    # 转换为数据框
     time_df <- data.frame(GroupDate = time_sequence)
     
-    # 数据过滤并按选择的单位分组
     summarized_data <- data %>%
+      filter(!is.na(PurchaseTime) & PurchaseTime >= start_date & PurchaseTime <= end_date) %>%
       mutate(
         GroupDate = case_when(
           input$precision == "天" ~ as.Date(PurchaseTime),
@@ -3355,99 +3356,368 @@ server <- function(input, output, session) {
         )
       ) %>%
       group_by(GroupDate) %>%
-      summarize(
-        TotalExpense = sum(ProductCost + DomesticShippingCost + IntlShippingCost, na.rm = TRUE),
-        ProductCost = sum(ProductCost, na.rm = TRUE),
-        ShippingCost = sum(DomesticShippingCost + IntlShippingCost, na.rm = TRUE),
+      summarise(
+        Cost_Domestic = round(sum(ProductCost + DomesticShippingCost, na.rm = TRUE), 2),
+        ProductCost = round(sum(ProductCost, na.rm = TRUE), 2),
+        DomesticShippingCost = round(sum(DomesticShippingCost, na.rm = TRUE), 2),
+        IntlShippingCost = round(sum(IntlShippingCost, na.rm = TRUE), 2),
+        TotalExpense = round(sum(ProductCost + DomesticShippingCost + IntlShippingCost, na.rm = TRUE), 2),
+        AllPurchaseCheck = all(PurchaseCheck == 1, na.rm = TRUE), # 是否全部为1
         .groups = "drop"
       )
     
-    # 将时间序列与统计数据合并，填充缺失值为 0
     complete_data <- time_df %>%
       left_join(summarized_data, by = "GroupDate") %>%
-      replace_na(list(TotalExpense = 0, ProductCost = 0, ShippingCost = 0))
+      replace_na(list(
+        Cost_Domestic = 0,
+        ProductCost = 0,
+        DomesticShippingCost = 0,
+        IntlShippingCost = 0,
+        TotalExpense = 0,
+        AllPurchaseCheck = FALSE # 默认设置为 FALSE
+      ))
     
     complete_data
   })
   
-  # 开销柱状图  
-  output$bar_chart <- renderPlotly({
+  # 定义 reactiveVal 用于存储观察器状态
+  is_observer_click_suspended <- reactiveVal(TRUE)
+  
+  # 存储选定的时间范围
+  selected_range <- reactiveVal(NULL) # 存储时间范围
+  
+  # 开销柱状图
+  output$expense_chart <- renderPlotly({
+    req(expense_summary_data())
     data <- expense_summary_data()
     
-    # 根据用户选择的内容决定显示的 Y 轴数据
+    # 获取用户选择的 Y 轴变量及颜色
     y_var <- switch(input$expense_type,
                     "total" = "TotalExpense",
                     "cost" = "ProductCost",
-                    "shipping" = "ShippingCost")
-    
+                    "domestic_shipping" = "DomesticShippingCost",
+                    "intl_shipping" = "IntlShippingCost",
+                    "cost_domestic" = "Cost_Domestic")
     color <- switch(input$expense_type,
                     "total" = "#007BFF",
                     "cost" = "#4CAF50",
-                    "shipping" = "#FF5733")
+                    "domestic_shipping" = "#FF5733",
+                    "intl_shipping" = "#FFC107",
+                    "cost_domestic" = "#17A2B8")
     
-    # 绘制柱状图
-    plot_ly(data, x = ~GroupDate, y = ~get(y_var), type = "bar",
-            name = NULL, marker = list(color = color),
-            text = ~round(get(y_var), 2), # 显示数值，保留两位小数
-            textposition = "outside") %>% # 数值显示在柱顶外侧
+    # 根据精度生成时间范围标签
+    data <- data %>%
+      mutate(
+        GroupLabel = case_when(
+          input$precision == "天" ~ format(GroupDate, "%Y-%m-%d"),
+          input$precision == "周" ~ paste(
+            format(floor_date(GroupDate, "week"), "%Y-%m-%d"),
+            "\n至\n",
+            format(ceiling_date(GroupDate, "week") - 1, "%Y-%m-%d")
+          ),
+          input$precision == "月" ~ format(GroupDate, "%Y-%m"),
+          input$precision == "年" ~ format(GroupDate, "%Y")
+        )
+      )
+    
+    # 创建柱状图
+    p <- plot_ly(
+      data,
+      x = ~GroupLabel,
+      y = ~get(y_var),
+      type = "bar",
+      name = NULL,
+      marker = list(color = color),
+      text = ~round(get(y_var), 2),
+      textposition = "outside",
+      source = "expense_chart" # 确保 source 唯一
+    ) %>%
+      # 注册事件
+      event_register("plotly_click") %>%
+      event_register("plotly_selected") %>%
+      # 显示圆底对勾
+      add_trace(
+        type = "scatter",
+        mode = "markers+text", # 同时使用 markers 和 text 模式
+        x = ~GroupLabel,
+        y = ~get(y_var) + (max(data[[y_var]], na.rm = TRUE) * 0.15), # 在柱子顶部留出空间
+        marker = list(
+          size = 20, # 圆点的大小
+          color = ~ifelse(AllPurchaseCheck, "#039e2a", "#D3D3D3"), # 根据状态设置深绿色或浅灰色
+          line = list(width = 0) # 移除外边框
+        ),
+        text = ~ifelse(AllPurchaseCheck, "\u2714", "\u2714"), # 使用 Unicode 的白色勾
+        textfont = list(
+          size = 14, # 增大字体，增强可见度
+          color = "white", # 勾的颜色为白色
+          weight = "bold" # 加粗字体
+        ),
+        textposition = "middle center", # 勾的位置在圆点正中央
+        showlegend = FALSE # 不显示图例
+      ) %>%
+      # 添加布局和其他设置
       layout(
         xaxis = list(
-          title = "", # 移除 X 轴标题
-          tickvals = data$GroupDate, # 显示完整时间序列
-          ticktext = format(data$GroupDate, "%Y-%m-%d"), # 格式化为日期
-          tickangle = -45, # 倾斜日期标签
+          title = "",
+          tickvals = data$GroupLabel,
+          tickangle = -45,
           tickfont = list(size = 12),
-          showgrid = FALSE # 隐藏网格线
+          showgrid = FALSE
         ),
         yaxis = list(
-          title = "采购开销（元）", # 隐藏 Y 轴标题
+          title = "开销（元）",
           tickfont = list(size = 12),
-          range = c(0, max(data[[y_var]], na.rm = TRUE) * 1.2) # 调整 Y 轴范围，留出空间显示数值
+          showgrid = TRUE  # 保留网格线
         ),
-        margin = list(l = 50, r = 20, t = 20, b = 50), # 调整边距
-        showlegend = FALSE, # 隐藏图例
-        plot_bgcolor = "#F9F9F9", # 背景颜色
-        paper_bgcolor = "#FFFFFF" # 图表纸张背景颜色
+        margin = list(l = 50, r = 20, t = 20, b = 50),
+        showlegend = FALSE,
+        plot_bgcolor = "#F9F9F9",
+        paper_bgcolor = "#FFFFFF"
       )
+    
+    # 激活观察器
+    if (is_observer_click_suspended()) {
+      observer_click$resume()
+      is_observer_click_suspended(FALSE)
+    }
+    
+    p
   })
   
-  # 总开销分布
+  # 定义点击观察器，初始状态为 suspended = TRUE
+  observer_click <- observeEvent(event_data("plotly_click", source = "expense_chart"), suspended = TRUE, {
+    clicked_point <- event_data("plotly_click", source = "expense_chart")
+    if (!is.null(clicked_point)) {
+      precision <- input$precision # 当前精度（天、周、月、年）
+      
+      # 根据精度解析点击的时间点
+      clicked_date <- switch(
+        precision,
+        "年" = as.Date(paste0(clicked_point$x, "-01-01")), # 对"年"进行特殊处理
+        as.Date(clicked_point$x) # 其他情况直接转为日期
+      )
+      
+      # 根据精度计算时间范围
+      range <- switch(precision,
+                      "天" = c(clicked_date, clicked_date),
+                      "周" = c(floor_date(clicked_date, "week"), ceiling_date(clicked_date, "week") - 1),
+                      "月" = c(floor_date(clicked_date, "month"), ceiling_date(clicked_date, "month") - 1),
+                      "年" = c(floor_date(clicked_date, "year"), ceiling_date(clicked_date, "year") - 1)
+      )
+      
+      # 调用 updateDateRangeInput 更新用户界面的时间范围选择
+      updateDateRangeInput(
+        session,
+        inputId = "time_range",
+        start = range[1],
+        end = range[2]
+      )
+      
+      selected_range(range)
+    }
+  })
+  
+  # 筛选物品详情数据
+  filtered_items <- reactive({
+    req(selected_range()) # 确保时间范围存在
+    range <- selected_range()
+    
+    # 从物品数据中筛选出时间范围内的数据
+    unique_items_data() %>%
+      filter(PurchaseTime >= range[1] & PurchaseTime <= range[2]) %>%
+      arrange(PurchaseTime) # 按采购时间升序排列
+  })
+  
+  # 渲染筛选
+  callModule(uniqueItemsTableServer, "expense_details_table",
+             column_mapping = c(common_columns, list(
+               DomesticShippingCost = "国内运费",
+               IntlShippingCost = "国际运费",
+               PurchaseTime = "采购时间",
+               PurchaseCheck = "核对"
+             )),
+             data = filtered_items
+  )
+  
+  # 总开销分布饼图
   output$pie_chart <- renderPlotly({
     data <- expense_summary_data()
     
     # 饼图数据：计算总开销分布
     total_product_cost <- sum(data$ProductCost, na.rm = TRUE)
-    total_shipping_cost <- sum(data$ShippingCost, na.rm = TRUE)
+    total_domestic_shipping_cost <- sum(data$DomesticShippingCost, na.rm = TRUE)
+    total_intl_shipping_cost <- sum(data$IntlShippingCost, na.rm = TRUE)
+    
     pie_data <- data.frame(
-      Category = c("商品成本", "运费开销"),
-      Value = c(total_product_cost, total_shipping_cost)
+      Category = c("商品成本", "国内运费", "国际运费"),
+      Value = c(total_product_cost, total_domestic_shipping_cost, total_intl_shipping_cost)
     )
     
     # 获取时间范围
     time_range <- paste(as.Date(input$time_range[1]), "至", as.Date(input$time_range[2]))
     
     # 绘制饼图
-    plot_ly(pie_data, labels = ~Category, values = ~Value, type = "pie",
-            textinfo = "value", # 仅显示实际数值
-            hoverinfo = "label+percent", # 悬停时显示类别和百分比
-            insidetextorientation = "radial",
-            marker = list(colors = c("#4CAF50", "#FF5733"))) %>%
+    plot_ly(
+      pie_data,
+      labels = ~Category,
+      values = ~Value,
+      type = "pie",
+      textinfo = "label+value",  # 显示标签和数值
+      hoverinfo = "label+percent",  # 悬停显示类别和百分比
+      insidetextorientation = "radial",
+      marker = list(colors = c("#4CAF50", "#FF5733", "#FFC107"))
+    ) %>%
       layout(
-        title = list(
-          text = "总采购开销分布",
-          font = list(size = 16, color = "#333", family = "Arial")
-        ),
         annotations = list(
-          x = 0.5, y = -0.1, # 调整注释的位置
+          x = 0.5, y = -0.2,  # 调整注释的位置
           text = paste("统计时间范围：", time_range),
           showarrow = FALSE,
           font = list(size = 12, color = "#666")
         ),
-        showlegend = TRUE, # 显示图例
-        paper_bgcolor = "#F9F9F9" # 设置整个图表容器背景色
+        showlegend = FALSE,  # 隐藏图例
+        paper_bgcolor = "#F9F9F9",  # 背景颜色
+        margin = list(l = 50, r = 30, t = 80, b = 50)  # 增加左右和底部边距
       )
   })
   
+  # 重置时间范围
+  observeEvent(input$reset_time_range, {
+    # 重置时间范围到默认值（最近30天）
+    default_start <- Sys.Date() - 30
+    default_end <- Sys.Date()
+    
+    updateDateRangeInput(
+      session,
+      inputId = "time_range",
+      start = default_start,
+      end = default_end
+    )
+  })
+  
+  #################################################################
+  
+  # 库存总览数据统计
+  overview_data <- reactive({
+    data <- unique_items_data()
+    domestic <- data %>% filter(Status == "国内入库")
+    logistics <- data %>% filter(Status == "国内出库" & !is.na(IntlTracking))
+    us <- data %>% filter(Status == "美国入库")
+    sold <- data %>% filter(Status %in% c("国内售出", "美国调货", "美国发货"))
+    
+    list(
+      domestic = list(
+        count = nrow(domestic),
+        value = sum(domestic$ProductCost, na.rm = TRUE),
+        shipping = sum(domestic$IntlShippingCost + domestic$DomesticShippingCost, na.rm = TRUE)
+      ),
+      logistics = list(
+        count = nrow(logistics),
+        value = sum(logistics$ProductCost, na.rm = TRUE),
+        shipping = sum(logistics$IntlShippingCost + logistics$DomesticShippingCost, na.rm = TRUE)
+      ),
+      us = list(
+        count = nrow(us),
+        value = sum(us$ProductCost, na.rm = TRUE),
+        shipping = sum(us$IntlShippingCost + us$DomesticShippingCost, na.rm = TRUE)
+      ),
+      sold = list(
+        count = nrow(sold),
+        us_shipping_count = nrow(sold %>% filter(Status == "美国发货")),
+        value = sum(sold$ProductCost, na.rm = TRUE),
+        shipping = sum(sold$IntlShippingCost + sold$DomesticShippingCost, na.rm = TRUE)
+      )
+    )
+  })
+  
+  # 输出卡片数据
+  output$domestic_total_count <- renderText({ overview_data()$domestic$count })
+  output$domestic_total_value <- renderText({ sprintf("¥%.2f", overview_data()$domestic$value) })
+  output$domestic_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$domestic$shipping) })
+  
+  output$logistics_total_count <- renderText({ overview_data()$logistics$count })
+  output$logistics_total_value <- renderText({ sprintf("¥%.2f", overview_data()$logistics$value) })
+  output$logistics_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$logistics$shipping) })
+  
+  output$us_total_count <- renderText({ overview_data()$us$count })
+  output$us_total_value <- renderText({ sprintf("¥%.2f", overview_data()$us$value) })
+  output$us_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$us$shipping) })
+  
+  output$sold_total_count <- renderText({ overview_data()$sold$count })
+  output$sold_total_count_with_shipping <- renderText({
+    count <- overview_data()$sold$count
+    us_shipping_count <- overview_data()$sold$us_shipping_count
+    paste0(count, " (", us_shipping_count, ")")
+  })
+  output$sold_total_value <- renderText({ sprintf("¥%.2f", overview_data()$sold$value) })
+  output$sold_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$sold$shipping) })
+  
+  # 状态流转桑基图
+  output$status_sankey <- renderSankeyNetwork({
+    # 获取物品状态历史数据
+    history_data <- item_status_history()
+    
+    filtered_data <- history_data %>%
+      # 标记含有重复状态的 UniqueID
+      left_join(
+        history_data %>%
+          group_by(UniqueID, previous_status) %>%
+          filter(n() > 1) %>%  # 找到重复状态的 UniqueID
+          summarise(
+            first_occurrence = min(change_time),
+            last_occurrence = max(change_time),
+            .groups = "drop"
+          ) %>%
+          distinct(UniqueID, first_occurrence, last_occurrence),  # 保留 UniqueID 的时间范围
+        by = "UniqueID"
+      ) %>%
+      # 删除重复状态的中间记录
+      filter(
+        is.na(first_occurrence) | !(change_time >= first_occurrence & change_time < last_occurrence)
+      ) %>%
+      # 按 UniqueID 和 change_time 排序
+      arrange(UniqueID, change_time)
+    
+    # 确保状态流转顺序正确
+    links <- filtered_data %>%
+      group_by(UniqueID) %>%
+      arrange(previous_status_timestamp, .by_group = TRUE) %>%
+      mutate(next_status = lead(previous_status)) %>%  # 获取下一个状态
+      filter(!is.na(next_status)) %>%  # 过滤掉没有后续状态的记录
+      ungroup() %>%
+      group_by(source = previous_status, target = next_status) %>%
+      summarise(value = n(), .groups = "drop")  # 汇总每对状态的流转次数
+    
+    links <- as.data.frame(links)
+    
+    # 定义节点
+    nodes <- data.frame(name = unique(c(links$source, links$target)))
+    
+    # 映射 source 和 target 到节点索引
+    links <- links %>%
+      mutate(source = match(source, nodes$name) - 1,
+             target = match(target, nodes$name) - 1)
+    
+    # 校验 links 和 nodes 是否有效
+    if (nrow(links) == 0 || nrow(nodes) == 0) {
+      showNotification("没有可用的状态流转数据，请检查数据源。", type = "error")
+      return(NULL)
+    }
+    
+    # 渲染桑基图
+    sankeyNetwork(
+      Links = links,
+      Nodes = nodes,
+      Source = "source",
+      Target = "target",
+      Value = "value",
+      NodeID = "name",
+      fontSize = 12,
+      nodeWidth = 30
+    )
+  })
+  
+  
+  #################################################################
   
   # 清空sku输入框
   observeEvent(input$clear_query_sku_btn, {
