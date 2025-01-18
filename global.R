@@ -1,6 +1,7 @@
 # global.R
 
 # Load required libraries
+# Load required libraries
 library(shiny)
 library(shinyjs)
 library(shinyWidgets)
@@ -13,14 +14,11 @@ library(stringi)
 library(baRcodeR)
 library(DBI)
 library(RMariaDB)
-library(uuid)
 library(plotly)
+library(networkD3)
 library(openxlsx)
-library(lubridate)
 library(tidyr)
-library(tesseract)
-library(pdftools)
-library(later)
+
 
 # Source all modular functions
 source("./modules/typeModuleUI.R", local = TRUE)
