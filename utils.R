@@ -1929,7 +1929,6 @@ clear_invalid_item_status_history <- function(con) {
         ) subquery
       )
     ")
-    showNotification("无效历史记录已清除！", type = "message")
   }, error = function(e) {
     showNotification(paste("清除无效记录失败：", e$message), type = "error")
   })
