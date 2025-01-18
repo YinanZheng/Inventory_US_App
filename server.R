@@ -24,6 +24,9 @@ server <- function(input, output, session) {
   # 触发order刷新
   orders_refresh_trigger <- reactiveVal(FALSE)
   
+  # 触发item_status_history刷新
+  item_status_history_refresh_trigger <- reactiveVal(FALSE)
+  
   # 用于存储条形码 PDF 文件路径
   barcode_pdf_file_path <- reactiveVal(NULL)
   
@@ -3126,10 +3129,10 @@ server <- function(input, output, session) {
       showNotification("库存表已加载！", type = "message")
     }
     
-    # if (input$inventory_us == "查询" && input$query_tabs == "库存总览") {
-    #   item_status_history_refresh_trigger(!item_status_history_refresh_trigger())
-    #   showNotification("库存状态历史已加载！", type = "message")
-    # }
+    if (input$inventory_us == "查询" && input$query_tabs == "库存总览") {
+      item_status_history_refresh_trigger(!item_status_history_refresh_trigger())
+      showNotification("库存状态历史已加载！", type = "message")
+    }
   }, ignoreInit = TRUE)  # 忽略初始值
   
   # 物品表过滤模块
@@ -3598,125 +3601,124 @@ server <- function(input, output, session) {
   #################################################################
   
   # 库存总览数据统计
-  # overview_data <- reactive({
-  #   data <- unique_items_data()
-  #   domestic <- data %>% filter(Status == "国内入库")
-  #   logistics <- data %>% filter(Status == "国内出库" & !is.na(IntlTracking))
-  #   us <- data %>% filter(Status == "美国入库")
-  #   sold <- data %>% filter(Status %in% c("国内售出", "美国调货", "美国发货"))
-  #   
-  #   list(
-  #     domestic = list(
-  #       count = nrow(domestic),
-  #       value = sum(domestic$ProductCost, na.rm = TRUE),
-  #       shipping = sum(domestic$IntlShippingCost + domestic$DomesticShippingCost, na.rm = TRUE)
-  #     ),
-  #     logistics = list(
-  #       count = nrow(logistics),
-  #       value = sum(logistics$ProductCost, na.rm = TRUE),
-  #       shipping = sum(logistics$IntlShippingCost + logistics$DomesticShippingCost, na.rm = TRUE)
-  #     ),
-  #     us = list(
-  #       count = nrow(us),
-  #       value = sum(us$ProductCost, na.rm = TRUE),
-  #       shipping = sum(us$IntlShippingCost + us$DomesticShippingCost, na.rm = TRUE)
-  #     ),
-  #     sold = list(
-  #       count = nrow(sold),
-  #       us_shipping_count = nrow(sold %>% filter(Status == "美国发货")),
-  #       value = sum(sold$ProductCost, na.rm = TRUE),
-  #       shipping = sum(sold$IntlShippingCost + sold$DomesticShippingCost, na.rm = TRUE)
-  #     )
-  #   )
-  # })
-  # 
-  # # 输出卡片数据
-  # output$domestic_total_count <- renderText({ overview_data()$domestic$count })
-  # output$domestic_total_value <- renderText({ sprintf("¥%.2f", overview_data()$domestic$value) })
-  # output$domestic_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$domestic$shipping) })
-  # 
-  # output$logistics_total_count <- renderText({ overview_data()$logistics$count })
-  # output$logistics_total_value <- renderText({ sprintf("¥%.2f", overview_data()$logistics$value) })
-  # output$logistics_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$logistics$shipping) })
-  # 
-  # output$us_total_count <- renderText({ overview_data()$us$count })
-  # output$us_total_value <- renderText({ sprintf("¥%.2f", overview_data()$us$value) })
-  # output$us_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$us$shipping) })
-  # 
-  # output$sold_total_count <- renderText({ overview_data()$sold$count })
-  # output$sold_total_count_with_shipping <- renderText({
-  #   count <- overview_data()$sold$count
-  #   us_shipping_count <- overview_data()$sold$us_shipping_count
-  #   paste0(count, " (", us_shipping_count, ")")
-  # })
-  # output$sold_total_value <- renderText({ sprintf("¥%.2f", overview_data()$sold$value) })
-  # output$sold_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$sold$shipping) })
-  # 
-  # # 状态流转桑基图
-  # output$status_sankey <- renderSankeyNetwork({
-  #   # 获取物品状态历史数据
-  #   history_data <- item_status_history()
-  #   
-  #   filtered_data <- history_data %>%
-  #     # 标记含有重复状态的 UniqueID
-  #     left_join(
-  #       history_data %>%
-  #         group_by(UniqueID, previous_status) %>%
-  #         filter(n() > 1) %>%  # 找到重复状态的 UniqueID
-  #         summarise(
-  #           first_occurrence = min(change_time),
-  #           last_occurrence = max(change_time),
-  #           .groups = "drop"
-  #         ) %>%
-  #         distinct(UniqueID, first_occurrence, last_occurrence),  # 保留 UniqueID 的时间范围
-  #       by = "UniqueID"
-  #     ) %>%
-  #     # 删除重复状态的中间记录
-  #     filter(
-  #       is.na(first_occurrence) | !(change_time >= first_occurrence & change_time < last_occurrence)
-  #     ) %>%
-  #     # 按 UniqueID 和 change_time 排序
-  #     arrange(UniqueID, change_time)
-  #   
-  #   # 确保状态流转顺序正确
-  #   links <- filtered_data %>%
-  #     group_by(UniqueID) %>%
-  #     arrange(previous_status_timestamp, .by_group = TRUE) %>%
-  #     mutate(next_status = lead(previous_status)) %>%  # 获取下一个状态
-  #     filter(!is.na(next_status)) %>%  # 过滤掉没有后续状态的记录
-  #     ungroup() %>%
-  #     group_by(source = previous_status, target = next_status) %>%
-  #     summarise(value = n(), .groups = "drop")  # 汇总每对状态的流转次数
-  #   
-  #   links <- as.data.frame(links)
-  #   
-  #   # 定义节点
-  #   nodes <- data.frame(name = unique(c(links$source, links$target)))
-  #   
-  #   # 映射 source 和 target 到节点索引
-  #   links <- links %>%
-  #     mutate(source = match(source, nodes$name) - 1,
-  #            target = match(target, nodes$name) - 1)
-  #   
-  #   # 校验 links 和 nodes 是否有效
-  #   if (nrow(links) == 0 || nrow(nodes) == 0) {
-  #     showNotification("没有可用的状态流转数据，请检查数据源。", type = "error")
-  #     return(NULL)
-  #   }
-  #   
-  #   # 渲染桑基图
-  #   sankeyNetwork(
-  #     Links = links,
-  #     Nodes = nodes,
-  #     Source = "source",
-  #     Target = "target",
-  #     Value = "value",
-  #     NodeID = "name",
-  #     fontSize = 12,
-  #     nodeWidth = 30
-  #   )
-  # })
-  
+  overview_data <- reactive({
+    data <- unique_items_data()
+    domestic <- data %>% filter(Status == "国内入库")
+    logistics <- data %>% filter(Status == "国内出库" & !is.na(IntlTracking))
+    us <- data %>% filter(Status == "美国入库")
+    sold <- data %>% filter(Status %in% c("国内售出", "美国调货", "美国发货"))
+
+    list(
+      domestic = list(
+        count = nrow(domestic),
+        value = sum(domestic$ProductCost, na.rm = TRUE),
+        shipping = sum(domestic$IntlShippingCost + domestic$DomesticShippingCost, na.rm = TRUE)
+      ),
+      logistics = list(
+        count = nrow(logistics),
+        value = sum(logistics$ProductCost, na.rm = TRUE),
+        shipping = sum(logistics$IntlShippingCost + logistics$DomesticShippingCost, na.rm = TRUE)
+      ),
+      us = list(
+        count = nrow(us),
+        value = sum(us$ProductCost, na.rm = TRUE),
+        shipping = sum(us$IntlShippingCost + us$DomesticShippingCost, na.rm = TRUE)
+      ),
+      sold = list(
+        count = nrow(sold),
+        us_shipping_count = nrow(sold %>% filter(Status == "美国发货")),
+        value = sum(sold$ProductCost, na.rm = TRUE),
+        shipping = sum(sold$IntlShippingCost + sold$DomesticShippingCost, na.rm = TRUE)
+      )
+    )
+  })
+
+  # 输出卡片数据
+  output$domestic_total_count <- renderText({ overview_data()$domestic$count })
+  output$domestic_total_value <- renderText({ sprintf("¥%.2f", overview_data()$domestic$value) })
+  output$domestic_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$domestic$shipping) })
+
+  output$logistics_total_count <- renderText({ overview_data()$logistics$count })
+  output$logistics_total_value <- renderText({ sprintf("¥%.2f", overview_data()$logistics$value) })
+  output$logistics_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$logistics$shipping) })
+
+  output$us_total_count <- renderText({ overview_data()$us$count })
+  output$us_total_value <- renderText({ sprintf("¥%.2f", overview_data()$us$value) })
+  output$us_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$us$shipping) })
+
+  output$sold_total_count <- renderText({ overview_data()$sold$count })
+  output$sold_total_count_with_shipping <- renderText({
+    count <- overview_data()$sold$count
+    us_shipping_count <- overview_data()$sold$us_shipping_count
+    paste0(count, " (", us_shipping_count, ")")
+  })
+  output$sold_total_value <- renderText({ sprintf("¥%.2f", overview_data()$sold$value) })
+  output$sold_shipping_cost <- renderText({ sprintf("¥%.2f", overview_data()$sold$shipping) })
+
+  # 状态流转桑基图
+  output$status_sankey <- renderSankeyNetwork({
+    # 获取物品状态历史数据
+    history_data <- item_status_history()
+
+    filtered_data <- history_data %>%
+      # 标记含有重复状态的 UniqueID
+      left_join(
+        history_data %>%
+          group_by(UniqueID, previous_status) %>%
+          filter(n() > 1) %>%  # 找到重复状态的 UniqueID
+          summarise(
+            first_occurrence = min(change_time),
+            last_occurrence = max(change_time),
+            .groups = "drop"
+          ) %>%
+          distinct(UniqueID, first_occurrence, last_occurrence),  # 保留 UniqueID 的时间范围
+        by = "UniqueID"
+      ) %>%
+      # 删除重复状态的中间记录
+      filter(
+        is.na(first_occurrence) | !(change_time >= first_occurrence & change_time < last_occurrence)
+      ) %>%
+      # 按 UniqueID 和 change_time 排序
+      arrange(UniqueID, change_time)
+
+    # 确保状态流转顺序正确
+    links <- filtered_data %>%
+      group_by(UniqueID) %>%
+      arrange(previous_status_timestamp, .by_group = TRUE) %>%
+      mutate(next_status = lead(previous_status)) %>%  # 获取下一个状态
+      filter(!is.na(next_status)) %>%  # 过滤掉没有后续状态的记录
+      ungroup() %>%
+      group_by(source = previous_status, target = next_status) %>%
+      summarise(value = n(), .groups = "drop")  # 汇总每对状态的流转次数
+
+    links <- as.data.frame(links)
+
+    # 定义节点
+    nodes <- data.frame(name = unique(c(links$source, links$target)))
+
+    # 映射 source 和 target 到节点索引
+    links <- links %>%
+      mutate(source = match(source, nodes$name) - 1,
+             target = match(target, nodes$name) - 1)
+
+    # 校验 links 和 nodes 是否有效
+    if (nrow(links) == 0 || nrow(nodes) == 0) {
+      showNotification("没有可用的状态流转数据，请检查数据源。", type = "error")
+      return(NULL)
+    }
+
+    # 渲染桑基图
+    sankeyNetwork(
+      Links = links,
+      Nodes = nodes,
+      Source = "source",
+      Target = "target",
+      Value = "value",
+      NodeID = "name",
+      fontSize = 12,
+      nodeWidth = 30
+    )
+  })
   
   #################################################################
   
