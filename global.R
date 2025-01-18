@@ -17,7 +17,7 @@ library(plotly)
 library(networkD3)
 library(openxlsx)
 library(tidyr)
-
+library(lubridate)
 
 # Source all modular functions
 source("./modules/typeModuleUI.R", local = TRUE)
