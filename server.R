@@ -132,6 +132,7 @@ server <- function(input, output, session) {
       unique_items.UsRelocationTime,
       unique_items.UsSoldTime,
       unique_items.ReturnTime,
+      unique_items.PurchaseCheck,
       unique_items.updated_at,
       inventory.Maker,
       inventory.MajorType,
