@@ -3798,7 +3798,7 @@ server <- function(input, output, session) {
   
   
   # 下载物品汇总表为 Excel
-  output$download_details_xlsx <- downloadHandler(
+  output$download_summary_xlsx <- downloadHandler(
     filename = function() {
       paste("物品汇总表（按采购日期）-", format(Sys.time(), "%Y%m%d-%H%M%S", tz = "Asia/Shanghai"), ".xlsx", sep = "")
     },
@@ -3924,7 +3924,7 @@ server <- function(input, output, session) {
   
   
   # 下载物品明细表为 Excel
-  output$download_summary_xlsx <- downloadHandler(
+  output$download_details_xlsx <- downloadHandler(
     filename = function() {
       paste("物品明细表-", format(Sys.time(), "%Y%m%d-%H%M%S", tz = "Asia/Shanghai"), ".xlsx", sep = "")
     },

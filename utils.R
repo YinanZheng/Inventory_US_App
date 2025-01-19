@@ -1704,14 +1704,7 @@ refreshTransactionTable <- function(account_type) {
       data = data,
       column_mapping = transaction_common_columns,
       image_column = "TransactionImagePath",  # 图片列名
-      options = list(
-        scrollY = "600px",
-        scrollX = TRUE,
-        paging = TRUE,
-        pageLength = 30,
-        dom = 'frtip',
-        searching = TRUE
-      )
+      options = modifyList(table_default_options, list(scrollY = "600px", searching = TRUE))
     )
     
     # 更新输出
