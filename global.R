@@ -111,7 +111,8 @@ table_default_options <<- list(
   paging = TRUE,
   pageLength = 30,
   dom = 'frtip',
-  searching = FALSE
+  searching = FALSE,
+  language = list(search = "搜索：")
 )
 
 # 定义瑕疵和修复的状态
