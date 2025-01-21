@@ -1208,16 +1208,33 @@ server <- function(input, output, session) {
   
   # 确认装箱逻辑
   observeEvent(input$confirm_shipping_btn, {
-    # if (!all(order_items()$Status == "美国发货")) {
-    #   showNotification("还有未完成操作的物品，请核对！", type = "warning")
-    #   return()
-    # }
-    
-    update_order_status(current_order_id(), "装箱", refreseh_trigger = orders_refresh_trigger, con)
-    
-    removeModal()
-    
-    runjs("document.getElementById('shipping_bill_number').focus();")
+    tryCatch({
+      # 检查所有物品是否状态为“美国发货”
+      if (!all(order_items()$Status == "美国发货")) {
+        showNotification("还有未完成操作的物品，请核对！", type = "warning")
+        return()
+      }
+      
+      # 更新订单状态为“装箱”
+      update_order_status(
+        order_id = current_order_id(),
+        new_status = "装箱",
+        refresh_trigger = orders_refresh_trigger,
+        con = con
+      )
+      
+      # 关闭模态框
+      removeModal()
+      
+      # 聚焦输入框
+      runjs("document.getElementById('shipping_bill_number').focus();")
+      
+      # 成功通知
+      showNotification("订单状态已更新为“装箱”！", type = "message")
+    }, error = function(e) {
+      # 捕获错误并通知用户
+      showNotification(paste("发生错误：", e$message), type = "error")
+    })
   })
   
   # 清空运单号和 SKU 输入框
