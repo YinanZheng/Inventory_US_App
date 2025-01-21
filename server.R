@@ -2240,12 +2240,16 @@ server <- function(input, output, session) {
     id = "logistic_filter",
     makers_items_map = makers_items_map)
   
+  ######################
+  ### 国际运单登记分页
+  ######################
+  
   # 登记运单信息
   observeEvent(input$register_shipment_btn, {
     req(input$intl_tracking_number, input$intl_shipping_method, input$intl_total_shipping_cost)
     
     # 获取用户输入的值
-    tracking_number <- input$intl_tracking_number
+    tracking_number <- trimws(input$intl_tracking_number)
     shipping_method <- input$intl_shipping_method
     total_cost <- as.numeric(input$intl_total_shipping_cost)
     
@@ -2254,7 +2258,7 @@ server <- function(input, output, session) {
       dbExecute(
         con,
         "INSERT INTO intl_shipments (TrackingNumber, ShippingMethod, TotalCost, Status)
-       VALUES (?, ?, ?, '待分配')
+       VALUES (?, ?, ?, '运单创建')
        ON DUPLICATE KEY UPDATE 
          ShippingMethod = VALUES(ShippingMethod), 
          TotalCost = VALUES(TotalCost),
@@ -2263,7 +2267,7 @@ server <- function(input, output, session) {
       )
       
       # 生成交易记录的备注
-      remarks <- paste("[国际运费登记]", "运单号:", tracking_number, "运输方式:", shipping_method)
+      remarks <- paste0("[国际运费登记]", " 运单号：", tracking_number, " 运输方式：", shipping_method)
       
       # 生成交易记录的 ID
       transaction_id <- generate_transaction_id("一般户卡", total_cost, remarks, Sys.time())
@@ -2282,7 +2286,7 @@ server <- function(input, output, session) {
         )
       )
       
-      showNotification("国际运单登记成功，相关费用已记录到'一般户卡（541）'！", type = "message", duration = 5)
+      showNotification("国际运单登记成功，相关费用已记录到'一般户卡（541）'！", type = "message")
       
       # 重新计算所有balance记录
       update_balance("一般户卡", con)
@@ -2302,16 +2306,15 @@ server <- function(input, output, session) {
       updateSelectInput(session, "intl_shipping_method", selected = "空运")
       updateNumericInput(session, "intl_total_shipping_cost", value = 0)
       shinyjs::disable("link_tracking_btn")  # 禁用挂靠运单按钮
+      output$intl_status_display <- renderText({ "" })  # 清空状态显示
       return()
     }
-    
-    tracking_number <- input$intl_tracking_number
     
     tryCatch({
       # 查询运单号对应的信息
       shipment_info <- dbGetQuery(
         con,
-        "SELECT ShippingMethod, TotalCost FROM intl_shipments WHERE TrackingNumber = ?",
+        "SELECT ShippingMethod, TotalCost, Status FROM intl_shipments WHERE TrackingNumber = ?",
         params = list(tracking_number)
       )
       
@@ -2320,16 +2323,29 @@ server <- function(input, output, session) {
         updateSelectInput(session, "intl_shipping_method", selected = shipment_info$ShippingMethod[1])
         updateNumericInput(session, "intl_total_shipping_cost", value = shipment_info$TotalCost[1])
         shinyjs::enable("link_tracking_btn")  # 启用挂靠运单按钮
-        showNotification("已加载运单信息，可执行挂靠操作！", type = "message", duration = 5)
+        
+        # 显示物流状态
+        output$intl_status_display <- renderText({
+          paste("物流状态:", shipment_info$Status[1])
+        })
+        
       } else {
         # 如果运单号不存在，清空相关字段并禁用按钮
         updateSelectInput(session, "intl_shipping_method", selected = "空运")
         updateNumericInput(session, "intl_total_shipping_cost", value = 0)
         shinyjs::disable("link_tracking_btn")  # 禁用挂靠运单按钮
-        showNotification("未找到对应的运单信息，请登记新运单！", type = "warning", duration = 5)
+        
+        # 提示未找到状态
+        output$intl_status_display <- renderText({
+          "未找到对应的运单信息，可以登记新运单！"
+        })
       }
     }, error = function(e) {
-      shinyjs::disable("link_tracking_btn")  # 遇到错误时禁用按钮
+      # 遇到错误时禁用按钮并清空状态显示
+      shinyjs::disable("link_tracking_btn")
+      output$intl_status_display <- renderText({
+        paste("查询失败：", e$message)
+      })
       showNotification(paste("加载运单信息失败：", e$message), type = "error")
     })
   })
@@ -2339,7 +2355,7 @@ server <- function(input, output, session) {
     tracking_number <- input$intl_tracking_number
     
     if (is.null(tracking_number) || tracking_number == "") {
-      showNotification("请输入运单号后再执行此操作！", type = "error", duration = 5)
+      showNotification("请输入运单号后再执行此操作！", type = "error")
       return()
     }
     
@@ -2427,59 +2443,71 @@ server <- function(input, output, session) {
     tracking_number <- input$intl_tracking_number
     
     if (is.null(tracking_number) || tracking_number == "") {
-      showNotification("请输入运单号后再执行此操作！", type = "error", duration = 5)
+      showNotification("请输入运单号后再执行此操作！", type = "error",  )
       return()
     }
     
-    # 弹出确认对话框
-    showModal(modalDialog(
-      title = HTML("<strong style='color: #C70039;'>确认删除国际运单</strong>"),
-      HTML(paste0(
-        "<p>您确定要删除国际运单号 <strong>", tracking_number, "</strong> 吗？此操作不可逆！</p>"
-      )),
-      easyClose = FALSE,
-      footer = tagList(
-        modalButton("取消"),
-        actionButton("confirm_delete_shipment_btn", "确认删除", class = "btn-danger")
+    tryCatch({
+      # 检查运单是否存在于 intl_shipments 表中
+      shipment_exists <- dbGetQuery(
+        con,
+        "SELECT COUNT(*) AS count FROM intl_shipments WHERE TrackingNumber = ?",
+        params = list(tracking_number)
       )
-    ))
+      
+      if (shipment_exists$count == 0) {
+        showNotification("运单号不存在，无法删除！", type = "warning")
+        return()
+      }
+      
+      # 如果运单存在，弹出确认对话框
+      showModal(modalDialog(
+        title = HTML("<strong style='color: #C70039;'>确认删除国际运单</strong>"),
+        HTML(paste0(
+          "<p>您确定要删除国际运单号 <strong>", tracking_number, "</strong> 吗？关联物品的国际运单信息也会被同时清空。此操作不可逆！</p>"
+        )),
+        easyClose = FALSE,
+        footer = tagList(
+          modalButton("取消"),
+          actionButton("confirm_delete_shipment_btn", "确认删除", class = "btn-danger")
+        )
+      ))
+    }, error = function(e) {
+      showNotification(paste("检查运单时发生错误：", e$message), type = "error")
+    })
   })
   
-  # 监听确认删除按钮的点击事件
+  
+  # 监听确认删除运单按钮的点击事件
   observeEvent(input$confirm_delete_shipment_btn, {
-    tracking_number <- input$intl_tracking_number
+    tracking_number <- trimws(input$intl_tracking_number)
     
     tryCatch({
       # 开始事务
       dbBegin(con)
       
-      # 从 intl_shipments 表中删除对应的运单号
-      rows_affected <- dbExecute(
-        con,
-        "DELETE FROM intl_shipments WHERE TrackingNumber = ?",
-        params = list(tracking_number)
-      )
+      # 清空 unique_items 表中与运单号相关的运费
+      dbExecute(con, "UPDATE unique_items SET IntlShippingCost = 0.00 WHERE IntlTracking = ?", params = list(tracking_number))
       
-      if (rows_affected > 0) {
-        # 如果删除成功
-        showNotification("运单已成功删除！", type = "message", duration = 5)
-        
-        # 更新 unique_items 表中相关记录的平摊国际运费为 0.00
-        dbExecute(
-          con,
-          "UPDATE unique_items 
-         SET IntlShippingCost = 0.00 
-         WHERE IntlTracking IS NULL AND IntlShippingCost > 0.00"
-        )
-        
-        # 清空输入框
-        updateTextInput(session, "intl_tracking_number", value = "")
-        updateSelectInput(session, "intl_shipping_method", selected = "空运")
-        updateNumericInput(session, "intl_total_shipping_cost", value = 0)
-      } else {
-        # 如果没有找到对应的运单号
-        showNotification("未找到该运单，删除失败！", type = "warning", duration = 5)
-      }
+      # 从 intl_shipments 表中删除对应的运单号 (unique_items表会同时触发运单删除操作)
+      dbExecute(con, "DELETE FROM intl_shipments WHERE TrackingNumber = ?", params = list(tracking_number))
+      
+      # 删除 transactions 表中与运单号相关的记录
+      dbExecute(con, "DELETE FROM transactions WHERE Remarks LIKE ?", params = list(paste0("%[国际运费登记] 运单号：", tracking_number, "%")))
+      
+      # 提示删除成功
+      showNotification("运单、关联的物品信息、账务记录已成功删除！", type = "message")
+      
+      # 重新计算所有balance记录
+      update_balance("一般户卡", con)
+      
+      # 刷新物品表
+      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
+      
+      # 清空输入框和相关字段
+      updateTextInput(session, "intl_tracking_number", value = "")
+      updateSelectInput(session, "intl_shipping_method", selected = "空运")
+      updateNumericInput(session, "intl_total_shipping_cost", value = 0)
       
       # 提交事务
       dbCommit(con)
@@ -2489,7 +2517,8 @@ server <- function(input, output, session) {
       showNotification(paste("删除失败：", e$message), type = "error")
     })
     
-    shinyjs::disable("link_tracking_btn")  # 禁用按钮
+    # 禁用挂靠按钮
+    shinyjs::disable("link_tracking_btn")
     
     # 更新数据并触发 UI 刷新
     unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
@@ -2498,13 +2527,27 @@ server <- function(input, output, session) {
     removeModal()
   })
   
+  # 清空填写按钮逻辑
+  observeEvent(input$clean_shipment_btn, {
+    # 清空输入字段
+    updateTextInput(session, "intl_tracking_number", value = "")  # 清空国际运单号
+    updateSelectInput(session, "intl_shipping_method", selected = "空运")  # 重置国际运输方式为默认值
+    updateNumericInput(session, "intl_total_shipping_cost", value = 0)  # 重置国际物流总运费为 0
+    output$intl_status_display <- renderText({ "" })  # 清空状态显示
+    
+    # 提示用户清空完成
+    showNotification("填写内容已清空！", type = "message")
+  })
+  
   # 点击行自动填写运单号
   observeEvent(unique_items_table_logistics_selected_row(), {
     selected_rows <- unique_items_table_logistics_selected_row()
     
     if (is.null(selected_rows) || length(selected_rows) == 0) {
-      # 如果没有选中行，清空运单号输入框
+      # 如果没有选中行，清空运单号输入框，并禁用挂靠按钮
       updateTextInput(session, "intl_tracking_number", value = "")
+      shinyjs::disable("link_tracking_btn")  # 禁用按钮
+      shinyjs::disable("unlink_tracking_btn")  # 禁用按钮
       return()
     }
     
@@ -2515,28 +2558,124 @@ server <- function(input, output, session) {
       # 提取所有选中行的国际物流单号（IntlTracking）
       unique_tracking_numbers <- unique(selected_data$IntlTracking)
       
-      if (length(unique_tracking_numbers) == 1 && !is.na(unique_tracking_numbers)) {
-        # 如果只有一个唯一的物流单号，填写到输入框
-        updateTextInput(session, "intl_tracking_number", value = unique_tracking_numbers)
-        showNotification("已根据选中行填写运单号！", type = "message")
+      # 检查选中的物品是否已经挂靠国际运单
+      if (any(!is.na(selected_data$IntlTracking))) {
+        # 如果所有物品都未挂靠国际运单
+        if (length(unique_tracking_numbers) == 1 && !is.na(unique_tracking_numbers)) {
+          # 如果只有一个唯一的物流单号，填写到输入框
+          updateTextInput(session, "intl_tracking_number", value = unique_tracking_numbers)
+          showNotification("已根据选中行填写运单号！", type = "message")
+        } else {
+          # 如果没有唯一物流单号，取最新点击的那个
+          updateTextInput(session, "intl_tracking_number", value = selected_data$IntlTracking[nrow(selected_data)])
+        }
+        # 如果选中物品中存在已挂靠国际运单的物品
+        shinyjs::disable("link_tracking_btn")  # 禁用按钮
+        shinyjs::enable("unlink_tracking_btn")  # 启用按钮
       } else {
-        # 如果有多个物流单号或为空，清空输入框并提示用户
-        updateTextInput(session, "intl_tracking_number", value = "")
+        # 如果所有物品都未挂靠国际运单
+        shinyjs::enable("link_tracking_btn")  # 启用按钮
+        shinyjs::disable("unlink_tracking_btn")  # 禁用按钮
       }
     }, error = function(e) {
+      # 捕获错误并提示
+      shinyjs::disable("link_tracking_btn")  # 禁用按钮
+      shinyjs::disable("unlink_tracking_btn")  # 禁用按钮
       showNotification(paste("操作失败：", e$message), type = "error")
+    })
+  })
+  
+  
+  
+  ######################
+  ### 挂靠管理分页
+  ######################
+  
+  # 监听页面切换事件
+  observeEvent(input$intl_shipment_tabs, {
+    if (input$intl_shipment_tabs == "link_management") {
+      tryCatch({
+        # 查询数据库中状态为“运单新建”的最新运单
+        latest_shipment <- dbGetQuery(
+          con,
+          "SELECT TrackingNumber
+         FROM intl_shipments
+         WHERE Status = '运单创建'
+         ORDER BY CreatedAt DESC
+         LIMIT 1"
+        )
+        
+        if (nrow(latest_shipment) > 0) {
+          # 填写到 intl_link_tracking_number
+          updateTextInput(session, "intl_link_tracking_number", value = latest_shipment$TrackingNumber[1])
+          showNotification("已自动填充最新的‘运单创建’状态的运单号！", type = "message")
+        } else {
+          # 未找到符合条件的运单
+          updateTextInput(session, "intl_link_tracking_number", value = "")
+          showNotification("未找到状态为‘运单创建’的运单！", type = "warning")
+        }
+      }, error = function(e) {
+        # 捕获错误并提示
+        showNotification(paste("检查运单状态时发生错误：", e$message), type = "error")
+      })
+    }
+  })
+  
+  # 监听待挂靠运单号输入
+  observeEvent(input$intl_link_tracking_number, {
+    tracking_number <- input$intl_link_tracking_number  # 获取用户输入的运单号
+    
+    if (is.null(tracking_number) || tracking_number == "") {
+      shinyjs::disable("link_tracking_btn")  # 禁用按钮
+      shinyjs::disable("unlink_tracking_btn")  # 禁用按钮
+      
+      output$intl_link_display <- renderText({
+        "请输入运单号以查看运单信息"
+      })
+      return()
+    }
+    
+    tryCatch({
+      # 查询运单信息
+      shipment_info <- dbGetQuery(
+        con,
+        "SELECT Status, TotalCost, ShippingMethod, CreatedAt FROM intl_shipments WHERE TrackingNumber = ?",
+        params = list(tracking_number)
+      )
+      
+      if (nrow(shipment_info) == 0) {
+        shinyjs::disable("link_tracking_btn")  # 禁用按钮
+        shinyjs::disable("unlink_tracking_btn")  # 禁用按钮
+        
+        output$intl_link_display <- renderText({
+          "未找到对应的运单信息，请检查"
+        })
+        return()
+      }
+      
+      # 显示运单状态和运费
+      output$intl_link_display <- renderUI({
+        HTML(paste0(
+          "物流状态:   ", shipment_info$Status[1], "<br>",
+          "运输方式：  ", shipment_info$ShippingMethod[1], "<br>",
+          "国际运费:   ￥", format(shipment_info$TotalCost[1], big.mark = ",", nsmall = 2), "<br>",
+          "创建日期:   ", format(as.Date(shipment_info$CreatedAt[1]), "%Y-%m-%d")
+        ))
+      })
+    }, error = function(e) {
+      output$intl_link_display <- renderText({
+        paste("查询运单信息失败：", e$message)
+      })
     })
   })
   
   # 挂靠运单号逻辑
   observeEvent(input$link_tracking_btn, {
+    tracking_number <- input$intl_link_tracking_number  # 获取用户输入的运单号
     selected_rows <- unique_items_table_logistics_selected_row()  # 获取用户选择的物品行
-    tracking_number <- input$intl_tracking_number  # 获取输入的运单号
-    shipping_method <- input$intl_shipping_method  # 获取选择的物流方式
     
-    # 校验输入和选择
     if (is.null(selected_rows) || length(selected_rows) == 0) {
-      showNotification("请先选择物品！", type = "error")
+      showNotification("请先选择需要挂靠的物品行！", type = "error")
       return()
     }
     
@@ -2546,19 +2685,10 @@ server <- function(input, output, session) {
     }
     
     tryCatch({
-      # 获取选中的物品数据
+      # 获取选中行的物品数据
       selected_items <- filtered_unique_items_data_logistics()[selected_rows, ]
       
-      # 检查物流方式是否一致
-      inconsistent_methods <- selected_items %>%
-        filter(is.na(IntlShippingMethod) | IntlShippingMethod != shipping_method)
-      
-      if (nrow(inconsistent_methods) > 0) {
-        showNotification("选中物品的物流方式与当前选择的物流方式不一致！", type = "error")
-        return()
-      }
-      
-      # 批量更新数据库中的 `IntlTracking`
+      # 更新挂靠信息
       dbBegin(con)
       for (i in seq_len(nrow(selected_items))) {
         dbExecute(
@@ -2568,21 +2698,6 @@ server <- function(input, output, session) {
         )
       }
       
-      # 查询运单的总运费
-      shipment_info <- dbGetQuery(
-        con,
-        "SELECT TotalCost FROM intl_shipments WHERE TrackingNumber = ?",
-        params = list(tracking_number)
-      )
-      
-      if (nrow(shipment_info) == 0) {
-        showNotification("未找到该运单的总运费信息，请检查运单号是否正确。", type = "error")
-        dbRollback(con)
-        return()
-      }
-      
-      total_cost <- as.numeric(shipment_info$TotalCost)
-      
       # 查询挂靠到该运单的所有物品
       related_items <- dbGetQuery(
         con,
@@ -2591,76 +2706,109 @@ server <- function(input, output, session) {
       )
       
       if (nrow(related_items) == 0) {
-        showNotification("未找到挂靠到该运单的物品。", type = "error")
+        showNotification("当前运单号没有关联的物品！", type = "warning")
         dbRollback(con)
         return()
       }
       
-      # 计算平摊运费并更新到 `unique_items`
+      # 计算平摊运费
+      shipment_info <- dbGetQuery(
+        con,
+        "SELECT TotalCost FROM intl_shipments WHERE TrackingNumber = ?",
+        params = list(tracking_number)
+      )
+      total_cost <- as.numeric(shipment_info$TotalCost)
       per_item_cost <- total_cost / nrow(related_items)
+      
+      # 更新平摊运费
       dbExecute(
         con,
         "UPDATE unique_items SET IntlShippingCost = ? WHERE IntlTracking = ?",
         params = list(per_item_cost, tracking_number)
       )
-      
       dbCommit(con)
       
-      # 更新数据并触发 UI 刷新
+      # 数据刷新触发
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-      
-      showNotification("运单号已成功挂靠，平摊运费已更新！", type = "message")
+      showNotification("运单号挂靠成功，平摊运费已更新！", type = "message")
     }, error = function(e) {
-      # 回滚事务并通知用户
       dbRollback(con)
       showNotification(paste("挂靠失败：", e$message), type = "error")
     })
   })
   
   # 解除运单号挂靠逻辑
-  observeEvent(input$delete_tracking_btn, {
-    selected_rows <- unique_items_table_logistics_selected_row()
+  observeEvent(input$unlink_tracking_btn, {
+    selected_rows <- unique_items_table_logistics_selected_row()  # 获取用户选择的物品行
+    tracking_number <- input$intl_link_tracking_number  # 获取用户输入的运单号
     
+    # 校验用户选择的物品行
     if (is.null(selected_rows) || length(selected_rows) == 0) {
-      showNotification("请先选择需要删除运单号的物品！", type = "error")
+      showNotification("请先选择需要解除挂靠的物品行！", type = "error")
+      return()
+    }
+    
+    # 校验运单号
+    if (is.null(tracking_number) || tracking_number == "") {
+      showNotification("运单号不能为空！", type = "error")
       return()
     }
     
     tryCatch({
+      # 查询运单信息
+      shipment_info <- dbGetQuery(
+        con,
+        "SELECT TotalCost FROM intl_shipments WHERE TrackingNumber = ?",
+        params = list(tracking_number)
+      )
+      
+      if (nrow(shipment_info) == 0) {
+        showNotification("未找到对应的运单信息，请检查输入的运单号！", type = "error")
+        return()
+      }
+      
       # 获取选中行的物品数据
       selected_items <- filtered_unique_items_data_logistics()[selected_rows, ]
       selected_tracking_numbers <- unique(na.omit(selected_items$IntlTracking))
+      
+      # 开启事务处理
+      dbBegin(con)
       
       # 批量解除挂靠并清零运费
       dbExecute(
         con,
         "UPDATE unique_items 
-       SET IntlTracking = NULL, IntlShippingCost = 0.00 
-       WHERE UniqueID IN (?)",
+         SET IntlTracking = NULL, IntlShippingCost = 0.00 
+         WHERE UniqueID IN (?)",
         params = list(selected_items$UniqueID)
       )
       
-      # 直接使用 SQL 语句重新计算平摊运费
+      # 重新计算剩余挂靠物品的平摊运费
       dbExecute(
-        con,
-        "
-      UPDATE unique_items ui
-      JOIN (
-        SELECT IntlTracking, TotalCost / COUNT(*) AS PerItemCost
-        FROM unique_items
-        JOIN intl_shipments ON unique_items.IntlTracking = intl_shipments.TrackingNumber
-        WHERE IntlTracking IN (?)
-        GROUP BY IntlTracking
-      ) calc ON ui.IntlTracking = calc.IntlTracking
-      SET ui.IntlShippingCost = calc.PerItemCost",
+        con, "
+        UPDATE unique_items ui
+        JOIN (
+          SELECT IntlTracking, TotalCost / COUNT(*) AS PerItemCost
+          FROM unique_items
+          JOIN intl_shipments ON unique_items.IntlTracking = intl_shipments.TrackingNumber
+          WHERE IntlTracking IN (?)
+          GROUP BY IntlTracking
+        ) calc ON ui.IntlTracking = calc.IntlTracking
+        SET ui.IntlShippingCost = calc.PerItemCost",
+        
         params = list(selected_tracking_numbers)
       )
+      
+      # 提交事务
+      dbCommit(con)
       
       # 刷新数据触发 UI 更新
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       showNotification("运单号已成功解除挂靠，相关物品的平摊运费已重新计算！", type = "message")
       
     }, error = function(e) {
+      # 回滚事务
+      dbRollback(con)
       showNotification(paste("解除挂靠失败：", e$message), type = "error")
     })
   })

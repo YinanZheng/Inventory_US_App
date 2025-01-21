@@ -644,58 +644,91 @@ ui <- navbarPage(
     )
   ), # end of 瑕疵品管理 tab
   
-  
   tabPanel(
     "国际物流管理", icon = icon("globe"),
     div(
       class = "layout-container",
       div(
         class = "sticky-sidebar",
-        
         itemFilterUI(id = "logistic_filter", 
                      use_purchase_date = FALSE,
-                     use_sold_date = TRUE, use_exit_date = TRUE,
+                     use_sold_date = TRUE, use_exit_date = TRUE, use_status = FALSE,
                      border_color = "#28A745", text_color = "#28A745"),
         
         tags$hr(style = "margin: 5px 0; border: none;"),
         
-        div(
-          class = "card shadow-sm",
-          style = "padding: 10px; border: 1px solid #007BFF; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
+        tabsetPanel(
+          id = "intl_shipment_tabs",
+          type = "pills",
           
-          # Card 标题
-          tags$h4("登记国际运单", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
-          
-          # 输入内容
-          fluidRow(
-            column(12, textInput("intl_tracking_number", "国际运单号:", placeholder = "请输入空运或海运运单号", width = "100%")),
-            column(12, selectInput("intl_shipping_method", "国际运输方式:", choices = c("空运" = "空运", "海运" = "海运"), selected = "空运", width = "100%")),
-            column(12, numericInput("intl_total_shipping_cost", "国际物流总运费 (元):", value = 0, min = 0, width = "100%"))
+          # 第一个 Tab：登记国际运单
+          tabPanel(
+            title = tagList(icon("file-alt"), "登记国际运单"),
+            value = "register_shipment",
+            div(
+              class = "card shadow-sm",
+              style = "padding: 10px; border: 1px solid #007BFF; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
+              
+              # Card 标题
+              tags$h4("登记国际运单", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
+              
+              # 输入内容
+              fluidRow(
+                column(12, textInput("intl_tracking_number", "国际运单号:", placeholder = "请输入空运或海运运单号", width = "100%")),
+                column(12, textOutput("intl_status_display"), style = "color: blue; font-weight: bold; margin-bottom: 20px;"),
+                column(12, selectInput("intl_shipping_method", "国际运输方式:", choices = c("空运" = "空运", "海运" = "海运"), selected = "空运", width = "100%")),
+                column(12, numericInput("intl_total_shipping_cost", "国际物流总运费 (元):", value = 0, min = 0, width = "100%"))
+              ),
+              
+              # 按钮
+              fluidRow(
+                column(6, actionButton("register_shipment_btn", "登记运单", icon = icon("save"), class = "btn-primary", style = "margin-top: 20px; width: 100%; font-size: 16px;")),
+                column(6, actionButton("batch_value_btn", "包裹货值", icon = icon("dollar-sign"), class = "btn-success", style = "margin-top: 20px; width: 100%; font-size: 16px;"))
+              ),
+              fluidRow(
+                column(6, actionButton("delete_shipment_btn", "删除运单", icon = icon("trash"), class = "btn-danger", style = "margin-top: 20px; width: 100%; font-size: 16px;")),
+                column(6, actionButton("clean_shipment_btn", "清空填写", icon = icon("trash"), class = "btn-info", style = "margin-top: 20px; width: 100%; font-size: 16px;"))
+              )
+            )
           ),
           
-          fluidRow(
-            column(4, actionButton("register_shipment_btn", "登记", icon = icon("save"), class = "btn-info", style = "margin-top: 20px; width: 100%; font-size: 16px;")),
-            column(4, actionButton("batch_value_btn", "货值", icon = icon("dollar-sign"), class = "btn-success", style = "margin-top: 20px; width: 100%; font-size: 16px;")),
-            column(4, actionButton("delete_shipment_btn", "删除", icon = icon("trash"), class = "btn-danger", style = "margin-top: 20px; width: 100%; font-size: 16px;"))
-          )
-        ),
-        
-        fluidRow(
-          column(6, actionButton("link_tracking_btn", "挂靠运单", icon = icon("link"), class = "btn-primary", style = "margin-top: 20px; width: 100%;", disabled = TRUE)),
-          column(6, actionButton("delete_tracking_btn", "解除挂靠", icon = icon("link-slash"), class = "btn-danger", style = "margin-top: 20px; width: 100%;"))
-        )
-      ),
-      div(
-        class = "main-panel",
-        div(
-          style = "display: flex; flex-direction: column;",
-          div(
-            style = "flex-grow: 1; overflow-y: auto; padding-top: 10px;",  # 表格自适应高度
+          # 挂靠管理
+          tabPanel(
+            title = tagList(icon("link"), "挂靠管理"),
+            value = "link_management",  # 添加唯一标识值
             div(
-              id = "item_table_container_logistics",
-              uniqueItemsTableUI("unique_items_table_logistics")
+              class = "card shadow-sm",
+              style = "padding: 10px; border: 1px solid #28A745; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
+              
+              # Card 标题
+              tags$h4("挂靠管理", style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"),
+              
+              fluidRow(
+                column(12, textInput("intl_link_tracking_number", "", placeholder = "请输入要挂靠的运单号", width = "100%")),
+                column(12, htmlOutput("intl_link_display"), style = "color: blue; font-weight: bold; margin-bottom: 20px;")
+              ),
+              
+              # 挂靠和解除挂靠按钮
+              fluidRow(
+                column(6, actionButton("link_tracking_btn", "挂靠运单", icon = icon("link"), class = "btn-primary", style = "margin-top: 20px; width: 100%;", disabled = TRUE)),
+                column(6, actionButton("unlink_tracking_btn", "解除挂靠", icon = icon("link-slash"), class = "btn-danger", style = "margin-top: 20px; width: 100%;", disabled = TRUE))
+              )
             )
           )
+        )
+      ),
+      
+      div(
+        class = "resizable-divider",  # 用于调整宽度的分隔条
+        style = "cursor: ew-resize; background-color: #ccc; width: 5px; flex-shrink: 0;"
+      ),
+      
+      div(
+        class = "main-panel",
+        
+        div(
+          id = "item_table_container_logistics",
+          uniqueItemsTableUI("unique_items_table_logistics")
         )
       )
     )
