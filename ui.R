@@ -847,11 +847,6 @@ ui <- navbarPage(
       ),
       
       div(
-        class = "resizable-divider",  # 用于调整宽度的分隔条
-        style = "cursor: ew-resize; background-color: #ccc; width: 5px; flex-shrink: 0;"
-      ),
-      
-      div(
         class = "main-panel",
         tabsetPanel(
           id = "transaction_tabs",  # 绑定到 input$tabs
