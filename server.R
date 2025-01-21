@@ -1161,43 +1161,6 @@ server <- function(input, output, session) {
         refresh_trigger = unique_items_data_refresh_trigger
       )
       
-      # # 检查是否所有物品状态均为“美国发货”
-      # if (all(order_items()$Status == "美国发货")) {
-      #   # 获取当前订单备注
-      #   order_notes <- matching_orders() %>% 
-      #     filter(OrderID == current_order_id()) %>% 
-      #     pull(OrderNotes)
-      #   
-      #   # 判断备注中是否包含“调货”字样
-      #   if (grepl("调货", order_notes, fixed = TRUE)) {
-      #     # 弹窗提示用户订单涉及调货
-      #     showModal(modalDialog(
-      #       title = "订单涉及调货",
-      #       easyClose = FALSE,
-      #       div(
-      #         style = "padding: 10px; font-size: 16px; color: #FF0000;",
-      #         paste0("订单 ", current_order_id(), " 涉及调货物品，请核对物品备齐后手动发货。")
-      #       ),
-      #       footer = tagList(
-      #         modalButton("关闭")
-      #       )
-      #     ))
-      #   } else {
-      #     # 弹窗提示订单已完成装箱
-      #     showModal(modalDialog(
-      #       title = "确认装箱",
-      #       easyClose = FALSE,
-      #       div(
-      #         style = "padding: 10px; font-size: 16px;",
-      #         paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
-      #       ),
-      #       footer = tagList(
-      #         actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
-      #       )
-      #     ))
-      #   }
-      # }
-      
       # 清空输入框
       updateTextInput(session, "sku_input", value = "")
       
@@ -1209,12 +1172,6 @@ server <- function(input, output, session) {
   # 确认装箱逻辑
   observeEvent(input$confirm_shipping_btn, {
     tryCatch({
-      # 检查所有物品是否状态为“美国发货”
-      if (!all(order_items()$Status == "美国发货")) {
-        showNotification("还有未完成操作的物品，请核对！", type = "warning")
-        return()
-      }
-      
       # 更新订单状态为“装箱”
       update_order_status(
         order_id = current_order_id(),
@@ -1226,7 +1183,8 @@ server <- function(input, output, session) {
       # 关闭模态框
       removeModal()
       
-      # 聚焦输入框
+      # 清空并聚焦运单输入框
+      updateTextInput(session, "shipping_bill_number", value = "")
       runjs("document.getElementById('shipping_bill_number').focus();")
       
       # 成功通知
