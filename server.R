@@ -1186,8 +1186,6 @@ server <- function(input, output, session) {
       # 聚焦运单输入框
       runjs("document.getElementById('shipping_bill_number').focus();")
       
-      # 成功通知
-      showNotification("订单状态已更新为“装箱”！", type = "message")
     }, error = function(e) {
       # 捕获错误并通知用户
       showNotification(paste("发生错误：", e$message), type = "error")
