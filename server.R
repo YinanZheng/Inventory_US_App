@@ -1088,11 +1088,8 @@ server <- function(input, output, session) {
       return()
     }
     
-    # 获取当前订单的所有物品
-    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
-    
     # 如果所有物品的状态均为“美国发货”
-    if (all(order_items$Status == "美国发货")) {
+    if (all(order_items()$Status == "美国发货")) {
       # 获取订单备注
       order_notes <- matching_orders() %>% 
         filter(OrderID == current_order_id()) %>% 
