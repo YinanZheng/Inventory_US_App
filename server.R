@@ -1183,8 +1183,7 @@ server <- function(input, output, session) {
       # 关闭模态框
       removeModal()
       
-      # 清空并聚焦运单输入框
-      # updateTextInput(session, "shipping_bill_number", value = "")
+      # 聚焦运单输入框
       runjs("document.getElementById('shipping_bill_number').focus();")
       
       # 成功通知
