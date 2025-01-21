@@ -1077,7 +1077,16 @@ server <- function(input, output, session) {
   
   # 观察是否符合装箱条件
   observe({
-    req(unique_items_data())
+    req(unique_items_data(), matching_orders(), current_order_id())
+    
+    # 获取当前订单
+    current_order <- matching_orders() %>% filter(OrderID == current_order_id())
+    
+    # 检查订单状态是否为“备货”
+    if (nrow(current_order) == 0 || current_order$OrderStatus != "备货") {
+      showNotification("当前订单状态不是“备货”，不可发货！", type = "error")
+      return()
+    }
     
     # 获取当前订单的所有物品
     order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
@@ -1125,17 +1134,6 @@ server <- function(input, output, session) {
     req(input$shipping_bill_number, input$sku_input)
     
     sku <- trimws(input$sku_input)
-    
-    # 获取当前订单
-    current_order <- matching_orders() %>% filter(OrderID == current_order_id())
-    
-    # 检查订单状态是否为“备货”
-    if (nrow(current_order) == 0 || current_order$OrderStatus != "备货") {
-      showNotification("当前订单状态不是“备货”，不可发货！", type = "error")
-      # 清空输入框
-      updateTextInput(session, "sku_input", value = "")
-      return()
-    }
     
     # 查找SKU对应的物品
     matching_item <- order_items() %>% filter(SKU == sku)
