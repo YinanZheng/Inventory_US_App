@@ -750,22 +750,23 @@ ui <- navbarPage(
             title = "账务登记", icon = icon("file-invoice-dollar"),
             tags$h4("账务登记", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
             
-            # 单一金额输入框
-            numericInput("amount", "金额:", value = 0, min = 0, width = "100%"),
-            
-            # 互斥勾选框
-            radioButtons(
-              inputId = "transaction_type",
-              label = "交易类型:",
-              choices = c("转出" = "out", "转入" = "in"),
-              selected = NULL,
-              inline = TRUE
+            fluidRow(
+              column(7, numericInput("amount", "金额:", value = 0, min = 0, width = "100%")),
+              column(5,  
+                     radioButtons(
+                       inputId = "transaction_type",
+                       label = "交易类型:",
+                       choices = c("转出" = "out", "转入" = "in"),
+                       selected = NULL,
+                       inline = FALSE
+                     )
+              )
             ),
             
             # 指定转款选择器
             fluidRow(
-              column(5, dateInput("custom_date", "转款日期:", value = Sys.Date(), width = "100%")),
-              column(7, timeInput("custom_time", "转款时间:", value = format(Sys.time(), "%H:%M:%S"), width = "100%"))
+              column(12, dateInput("custom_date", "转款日期:", value = Sys.Date(), width = "100%")),
+              column(12, timeInput("custom_time", "转款时间:", value = format(Sys.time(), "%H:%M:%S"), width = "100%"))
             ),
             
             # 转账证据图片上传
@@ -844,6 +845,12 @@ ui <- navbarPage(
           )
         )
       ),
+      
+      div(
+        class = "resizable-divider",  # 用于调整宽度的分隔条
+        style = "cursor: ew-resize; background-color: #ccc; width: 5px; flex-shrink: 0;"
+      ),
+      
       div(
         class = "main-panel",
         tabsetPanel(
