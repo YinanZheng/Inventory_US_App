@@ -1075,6 +1075,50 @@ server <- function(input, output, session) {
     }
   )
   
+  # 观察是否符合装箱条件
+  observe({
+    req(unique_items_data())
+    
+    # 获取当前订单的所有物品
+    order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
+    
+    # 如果所有物品的状态均为“美国发货”
+    if (all(order_items$Status == "美国发货")) {
+      # 获取订单备注
+      order_notes <- matching_orders() %>% 
+        filter(OrderID == current_order_id()) %>% 
+        pull(OrderNotes)
+      
+      # 判断备注中是否包含“调货”
+      if (grepl("调货", order_notes, fixed = TRUE)) {
+        # 弹窗提示订单涉及调货
+        showModal(modalDialog(
+          title = "订单涉及调货",
+          easyClose = FALSE,
+          div(
+            style = "padding: 10px; font-size: 16px; color: #FF0000;",
+            paste0("订单 ", current_order_id(), " 涉及调货物品，请核对物品备齐后手动发货。")
+          ),
+          footer = tagList(
+            modalButton("关闭")
+          )
+        ))
+      } else {
+        # 弹窗提示订单已完成装箱
+        showModal(modalDialog(
+          title = "确认装箱",
+          easyClose = FALSE,
+          div(
+            style = "padding: 10px; font-size: 16px;",
+            paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
+          ),
+          footer = tagList(
+            actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
+          )
+        ))
+      }
+    }
+  })
   
   # SKU 输入逻辑
   observeEvent(input$sku_input, {
@@ -1122,42 +1166,42 @@ server <- function(input, output, session) {
         refresh_trigger = unique_items_data_refresh_trigger
       )
       
-      # 检查是否所有物品状态均为“美国发货”
-      if (all(order_items()$Status == "美国发货")) {
-        # 获取当前订单备注
-        order_notes <- matching_orders() %>% 
-          filter(OrderID == current_order_id()) %>% 
-          pull(OrderNotes)
-        
-        # 判断备注中是否包含“调货”字样
-        if (grepl("调货", order_notes, fixed = TRUE)) {
-          # 弹窗提示用户订单涉及调货
-          showModal(modalDialog(
-            title = "订单涉及调货",
-            easyClose = FALSE,
-            div(
-              style = "padding: 10px; font-size: 16px; color: #FF0000;",
-              paste0("订单 ", current_order_id(), " 涉及调货物品，请核对物品备齐后手动发货。")
-            ),
-            footer = tagList(
-              modalButton("关闭")
-            )
-          ))
-        } else {
-          # 弹窗提示订单已完成装箱
-          showModal(modalDialog(
-            title = "确认装箱",
-            easyClose = FALSE,
-            div(
-              style = "padding: 10px; font-size: 16px;",
-              paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
-            ),
-            footer = tagList(
-              actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
-            )
-          ))
-        }
-      }
+      # # 检查是否所有物品状态均为“美国发货”
+      # if (all(order_items()$Status == "美国发货")) {
+      #   # 获取当前订单备注
+      #   order_notes <- matching_orders() %>% 
+      #     filter(OrderID == current_order_id()) %>% 
+      #     pull(OrderNotes)
+      #   
+      #   # 判断备注中是否包含“调货”字样
+      #   if (grepl("调货", order_notes, fixed = TRUE)) {
+      #     # 弹窗提示用户订单涉及调货
+      #     showModal(modalDialog(
+      #       title = "订单涉及调货",
+      #       easyClose = FALSE,
+      #       div(
+      #         style = "padding: 10px; font-size: 16px; color: #FF0000;",
+      #         paste0("订单 ", current_order_id(), " 涉及调货物品，请核对物品备齐后手动发货。")
+      #       ),
+      #       footer = tagList(
+      #         modalButton("关闭")
+      #       )
+      #     ))
+      #   } else {
+      #     # 弹窗提示订单已完成装箱
+      #     showModal(modalDialog(
+      #       title = "确认装箱",
+      #       easyClose = FALSE,
+      #       div(
+      #         style = "padding: 10px; font-size: 16px;",
+      #         paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
+      #       ),
+      #       footer = tagList(
+      #         actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
+      #       )
+      #     ))
+      #   }
+      # }
       
       # 清空输入框
       updateTextInput(session, "sku_input", value = "")
