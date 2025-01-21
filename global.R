@@ -99,7 +99,6 @@ status_columns <<- list(
   "国内售出" = "DomesticSoldTime",
   "美国入库" = "UsEntryTime",
   "美国发货" = "UsShippingTime",
-  "美国售出" = "UsSoldTime",
   "美国调货" = "UsRelocationTime",
   "退货" = "ReturnTime"
 )
