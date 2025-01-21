@@ -1471,7 +1471,7 @@ server <- function(input, output, session) {
       updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
     })
     
-    runjs("document.getElementById('us_shipping_sku_input').focus();") # 聚焦 SKU 输入框
+    runjs("document.getElementById('us_shipping_bill_number').focus();") # 聚焦 SKU 输入框
     new_order_items(NULL)  # 清空物品列表
   })
   
