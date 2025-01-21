@@ -504,14 +504,14 @@ server <- function(input, output, session) {
   
   selected_orders_table_arrived_row <- callModule(orderTableServer, "orders_table_arrived",
                                                   column_mapping = orders_table_columns,
-                                                  options = modifyList(table_default_options, list(scrollY = "650px", searching = TRUE)),
+                                                  options = modifyList(table_default_options, list(scrollY = "650px")),
                                                   data = filtered_orders_arrived,  # 数据源
                                                   selection = "single" # 单选模式
   )
   
   selected_orders_table_waiting_row <- callModule(orderTableServer, "orders_table_waiting",
                                                   column_mapping = orders_table_columns,
-                                                  options = modifyList(table_default_options, list(scrollY = "650px", searching = TRUE)),
+                                                  options = modifyList(table_default_options, list(scrollY = "650px")),
                                                   data = filtered_orders_waiting,  # 数据源
                                                   selection = "single" # 单选模式
   )
