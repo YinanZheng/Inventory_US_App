@@ -1731,7 +1731,6 @@ refreshTransactionTable <- function(account_type) {
     output[[table_map[[account_type]]]] <- renderDT({
       table_result$datatable
     })
-    message(paste(account_type, "数据已刷新。"))
   } else {
     showNotification("无效的账户类型！", type = "error")
   }

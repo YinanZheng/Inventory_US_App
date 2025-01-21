@@ -4057,7 +4057,7 @@ server <- function(input, output, session) {
           setRowHeights(wb, "物品汇总表", rows = row_to_insert, heights = image_height * 78)
           
         } else {
-          showNotification(paste("跳过不存在的图片:", image_path), type = "warning", duration = 5)
+          showNotification(paste("跳过不存在的图片:", image_path), type = "warning")
         }
       }
       
@@ -4069,7 +4069,7 @@ server <- function(input, output, session) {
       
       # 保存 Excel 文件
       saveWorkbook(wb, file, overwrite = TRUE)
-      showNotification("Excel 文件已成功下载", type = "message", duration = 5)
+      showNotification("Excel 文件已成功下载", type = "message")
     }
   )
   
@@ -4135,7 +4135,7 @@ server <- function(input, output, session) {
           setRowHeights(wb, "物品明细表", rows = row_to_insert, heights = image_height * 78)
           
         } else {
-          showNotification(paste("跳过不存在的图片:", image_path), type = "warning", duration = 5)
+          showNotification(paste("跳过不存在的图片:", image_path), type = "warning")
         }
       }
       
@@ -4147,7 +4147,7 @@ server <- function(input, output, session) {
       
       # 保存 Excel 文件
       saveWorkbook(wb, file, overwrite = TRUE)
-      showNotification("Excel 文件已成功下载", type = "message", duration = 5)
+      showNotification("Excel 文件已成功下载", type = "message")
     }
   )
   
