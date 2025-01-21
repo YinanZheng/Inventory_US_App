@@ -1464,12 +1464,15 @@ server <- function(input, output, session) {
       showNotification(paste("发货失败：", e$message), type = "error")
     })
     
-    # 延迟 3 秒清空输入框
-    shinyjs::delay(3000, {
+    # 延迟 2 秒清空输入框
+    shinyjs::delay(2000, {
       updateTextInput(session, "us_shipping_bill_number", value = "")
       updateTextInput(session, "us_shipping_sku_input", value = "")
       updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
     })
+    
+    runjs("document.getElementById('us_shipping_sku_input').focus();") # 聚焦 SKU 输入框
+    new_order_items(NULL)  # 清空物品列表
   })
   
   # 订单物品删除逻辑 （美国售出only）
