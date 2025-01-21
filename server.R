@@ -3328,7 +3328,7 @@ server <- function(input, output, session) {
             美国库存数 = sum(Status == "美国入库", na.rm = TRUE),
             在途库存数 = sum(Status == "国内出库", na.rm = TRUE),
             国内库存数 = sum(Status == "国内入库", na.rm = TRUE),
-            已售库存数 = sum(Status %in% c("国内售出", "美国售出", "美国调货", "美国发货"), na.rm = TRUE)
+            已售库存数 = sum(Status %in% c("国内售出", "美国调货", "美国发货"), na.rm = TRUE)
           )
         
         # 渲染图片和表格信息
@@ -3373,8 +3373,8 @@ server <- function(input, output, session) {
             summarise(Count = n(), .groups = "drop")
           
           # 定义固定类别顺序和颜色
-          status_levels <- c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国调货", "美国售出", "美国发货", "退货")
-          status_colors <- c("lightgray", "#c7e89b", "#9ca695", "#46a80d", "#6f52ff", "#529aff", "#869bb8", "#faf0d4", "red")
+          status_levels <- c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国调货", "美国发货", "退货")
+          status_colors <- c("lightgray", "#c7e89b", "#9ca695", "#46a80d", "#6f52ff", "#529aff", "#faf0d4", "red")
           
           # 确保数据按照固定类别顺序排列，并用 0 填充缺失类别
           inventory_status_data <- merge(
@@ -4183,7 +4183,7 @@ server <- function(input, output, session) {
         
         # 目标状态选择
         selectInput("admin_target_status", "目标库存状态改为：", 
-                    choices = c('采购','国内入库','国内出库','国内售出','美国入库','美国售出','美国发货','美国调货','退货'), 
+                    choices = c('采购','国内入库','国内出库','国内售出','美国入库','美国发货','美国调货','退货'), 
                     selected = NULL, width = "100%"),
         
         # 是否记录修改时间
