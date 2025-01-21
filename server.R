@@ -3818,8 +3818,8 @@ server <- function(input, output, session) {
           group_by(UniqueID, previous_status) %>%
           filter(n() > 1) %>%  # 找到重复状态的 UniqueID
           summarise(
-            first_occurrence = min(change_time, na.rm = TRUE),  # 添加 `na.rm = TRUE`，避免空值问题
-            last_occurrence = max(change_time, na.rm = TRUE),   # 添加 `na.rm = TRUE`，避免空值问题
+            first_occurrence = if (n() > 0) min(change_time, na.rm = TRUE) else NA,  # 如果数据为空返回 NA
+            last_occurrence = if (n() > 0) max(change_time, na.rm = TRUE) else NA,  # 如果数据为空返回 NA
             .groups = "drop"
           ) %>%
           distinct(UniqueID, first_occurrence, last_occurrence),  # 保留 UniqueID 的时间范围
