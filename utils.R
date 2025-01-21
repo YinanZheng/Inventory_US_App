@@ -1463,6 +1463,7 @@ renderOrderInfo <- function(output, output_name, matching_orders, clickable = TR
   })
 }
 
+# 渲染订单物品卡片
 renderOrderItems <- function(output, output_name, order_items, deletable = FALSE) {
   # 如果没有物品，返回提示信息
   if (is.null(order_items) || nrow(order_items) == 0) {
@@ -1483,6 +1484,19 @@ renderOrderItems <- function(output, output_name, order_items, deletable = FALSE
         placeholder_150px_path,
         paste0(host_url, "/images/", basename(item$ItemImagePath))
       )
+      
+      # 获取国际运单状态
+      intl_status <- if (!is.na(item$IntlTracking) && item$IntlTracking != "") {
+        # 查询数据库中的 Status
+        shipment_status <- dbGetQuery(
+          con,
+          "SELECT Status FROM intl_shipments WHERE TrackingNumber = ?",
+          params = list(item$IntlTracking)
+        )
+        if (nrow(shipment_status) > 0) shipment_status$Status[1] else "未知状态"
+      } else {
+        "未邮寄"
+      }
       
       # 动态添加蒙版和打勾图标
       mask_overlay <- if (item$Status == "美国发货") {
@@ -1539,12 +1553,17 @@ renderOrderItems <- function(output, output_name, order_items, deletable = FALSE
             tags$td(item$ItemName)
           ),
           tags$tr(
-            tags$td(tags$strong("状态:"), style = "padding: 0px;"),
+            tags$td(tags$strong("库存状态:"), style = "padding: 0px;"),
             tags$td(
-              paste0(
-                item$Status,
-                " (", ifelse(is.na(item$IntlTracking) || item$IntlTracking == "", "未邮寄", "已邮寄"), ")"
-              )
+              item$Status,
+              style = "color: #383efc; font-weight: bold;"  # 设置蓝色高亮
+            )
+          ),
+          tags$tr(
+            tags$td(tags$strong("国际物流:"), style = "padding: 0px;"),
+            tags$td(
+              intl_status,
+              style = "color: #209126; font-weight: bold;"  # 设置绿色高亮
             )
           ),
           tags$tr(
@@ -1562,6 +1581,7 @@ renderOrderItems <- function(output, output_name, order_items, deletable = FALSE
     do.call(tagList, item_cards)  # 返回卡片列表
   })
 }
+
 
 generate_order_id <- function(tracking_number, unique_ids) {
   # 验证 tracking_number 是否有效
