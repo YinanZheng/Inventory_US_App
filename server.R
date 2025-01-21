@@ -1208,10 +1208,10 @@ server <- function(input, output, session) {
   
   # 确认装箱逻辑
   observeEvent(input$confirm_shipping_btn, {
-    if (!all(order_items()$Status == "美国发货")) {
-      showNotification("还有未完成操作的物品，请核对！", type = "warning")
-      return()
-    }
+    # if (!all(order_items()$Status == "美国发货")) {
+    #   showNotification("还有未完成操作的物品，请核对！", type = "warning")
+    #   return()
+    # }
     
     update_order_status(current_order_id(), "装箱", refreseh_trigger = orders_refresh_trigger, con)
     
