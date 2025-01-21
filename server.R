@@ -1472,6 +1472,7 @@ server <- function(input, output, session) {
     })
     
     runjs("document.getElementById('us_shipping_bill_number').focus();") # 聚焦 SKU 输入框
+    new_order(NULL) # 清空订单数据
     new_order_items(NULL)  # 清空物品列表
   })
   
@@ -1495,6 +1496,8 @@ server <- function(input, output, session) {
     updateTextInput(session, "us_shipping_bill_number", value = "")
     updateTextInput(session, "us_shipping_sku_input", value = "")
     updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
+    new_order(NULL) # 清空订单数据
+    new_order_items(NULL)  # 清空物品列表
   })
   
   
