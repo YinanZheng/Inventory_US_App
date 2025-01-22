@@ -953,6 +953,7 @@ server <- function(input, output, session) {
       current_order_id(NULL)  # 清空当前订单 ID
       output$order_items_title <- renderUI({ NULL })  # 清空标题
       renderOrderItems(output, "shipping_order_items_cards", data.frame())  # 清空物品卡片
+      output$dynamic_ship_button <- renderUI({ NULL })
     }
   })
   
