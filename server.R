@@ -975,7 +975,7 @@ server <- function(input, output, session) {
     runjs("document.getElementById('sku_input').focus();")
   })
   
-  # 监视订单信息状态，提示操作
+  # 监视订单信息状态，提示操作，动态显示按钮
   observe({
     req(unique_items_data(), matching_orders(), current_order_id())
     
@@ -1053,7 +1053,7 @@ server <- function(input, output, session) {
     }
     
     # 动态显示下载运单按钮
-    output$dynamic_download_button <- renderUI({
+    output$dynamic_label_download_button <- renderUI({
       label_text <- switch(
         current_order$LabelStatus,
         "无" = "无运单文件",
@@ -1069,7 +1069,7 @@ server <- function(input, output, session) {
           style = "background-color: grey; color: white; cursor: not-allowed; padding: 6px 12px; border-radius: 4px; display: inline-block; text-align: center;"
         )
       } else {
-        downloadButton("download_pdf", label = label_text, class = "btn btn-primary")
+        downloadButton("download_shipping_label_pdf", label = label_text, class = "btn btn-primary")
       }
     })
     
@@ -1088,175 +1088,6 @@ server <- function(input, output, session) {
       return(NULL)
     })
   })
-  
-  
-  # # 判断选中订单状态，提示用户操作
-  # observe({
-  #   req(matching_orders(), current_order_id())
-  #   
-  #   # 获取当前选中订单信息
-  #   current_order <- matching_orders() %>% filter(OrderID == current_order_id())
-  #   
-  #   # 确保选中订单存在
-  #   req(nrow(current_order) > 0)
-  # 
-  #   # 存储运单文件路径
-  #   label_pdf_file_path(file.path("/var/uploads/shiplabels", paste0(current_order$UsTrackingNumber, ".pdf")))
-  #   
-  #   # 获取当前订单内的物品
-  #   current_items <- order_items()
-  #   
-  #   if (nrow(current_items) == 0) {
-  #     # 如果订单内没有物品
-  #     showModal(modalDialog(
-  #       title = "订单内无物品",
-  #       div(
-  #         "当前订单内未检测到任何物品，请核对订单信息无误后手动发货",
-  #         style = "font-size: 16px; margin-bottom: 10px;"
-  #       ),
-  #       footer = NULL,  # 移除确认按钮，避免多余交互
-  #       easyClose = TRUE  # 允许点击背景关闭，但主要通过自动关闭处理
-  #     ))
-  #     
-  #     # 延迟 2 秒后自动关闭弹窗
-  #     shinyjs::delay(2000, removeModal())
-  #     
-  #     return()  # 停止后续逻辑
-  #   }
-  #   
-  #   # 检查订单状态
-  #   if (current_order$OrderStatus[1] != "装箱") {
-  #     if (current_order$OrderStatus[1] != "备货") {
-  #       showNotification(
-  #         paste0("当前订单状态为 '", current_order$OrderStatus[1], "' ，操作可能受限！请核对后继续。"),
-  #         type = "warning"
-  #       )
-  #     } else {
-  #       # 提示扫描SKU条码
-  #       runjs("document.getElementById('sku_input').focus();")
-  #       showNotification(
-  #         paste0("请为订单 ", current_order_id(), " 扫描或输入SKU条码！"),
-  #         type = "message"
-  #       )
-  #     }
-  #   }
-  # })
-  # 
-  # # 动态生成下载运单按钮
-  # output$dynamic_download_button <- renderUI({
-  #   req(matching_orders(), current_order_id())
-  #   
-  #   current_order <- matching_orders() %>% filter(OrderID == current_order_id())
-  #   
-  #   if (is.null(current_order)) {
-  #     return(NULL)
-  #   }
-  #   
-  #   # 根据 LabelStatus 动态生成按钮或文本
-  #   label_text <- switch(
-  #     current_order$LabelStatus,
-  #     "无" = "无运单文件",
-  #     "已上传" = "下载运单",
-  #     "已打印" = "运单已打印",
-  #     "无运单文件" # 默认值
-  #   )
-  #   
-  #   if (current_order$LabelStatus == "无") {
-  #     div(
-  #       label_text,
-  #       class = "btn btn-secondary",
-  #       style = "background-color: grey; color: white; cursor: not-allowed; padding: 6px 12px; border-radius: 4px; display: inline-block; text-align: center;"
-  #     )
-  #   } else {
-  #     downloadButton("download_pdf", label = label_text, class = "btn btn-primary")
-  #   }
-  # })
-  # 
-  # # 观察是否符合装箱条件
-  # observe({
-  #   req(unique_items_data(), matching_orders(), current_order_id())
-  #   
-  #   # 获取当前订单
-  #   current_order <- matching_orders() %>% filter(OrderID == current_order_id())
-  #   
-  #   # 检查订单状态是否为“备货”
-  #   if (nrow(current_order) == 0 || current_order$OrderStatus != "备货") {
-  #     showNotification("当前订单状态不是“备货”，不可发货！", type = "error")
-  #     return()
-  #   }
-  #   
-  #   # 如果所有物品的状态均为“美国发货”
-  #   if (all(order_items()$Status == "美国发货")) {
-  #     # 获取订单备注
-  #     order_notes <- matching_orders() %>% 
-  #       filter(OrderID == current_order_id()) %>% 
-  #       pull(OrderNotes)
-  #     
-  #     # 判断备注中是否包含“调货”
-  #     if (grepl("调货", order_notes, fixed = TRUE)) {
-  #       # 弹窗提示订单涉及调货
-  #       showModal(modalDialog(
-  #         title = "订单涉及调货",
-  #         easyClose = FALSE,
-  #         div(
-  #           style = "padding: 10px; font-size: 16px; color: #FF0000;",
-  #           paste0("订单 ", current_order_id(), " 涉及调货物品，请核对物品备齐后手动发货。")
-  #         ),
-  #         footer = tagList(
-  #           modalButton("关闭")
-  #         )
-  #       ))
-  #     } else {
-  #       # 弹窗提示订单已完成装箱
-  #       showModal(modalDialog(
-  #         title = "确认装箱",
-  #         easyClose = FALSE,
-  #         div(
-  #           style = "padding: 10px; font-size: 16px;",
-  #           paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
-  #         ),
-  #         footer = tagList(
-  #           actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
-  #         )
-  #       ))
-  #     }
-  #   }
-  # })
-  # 
-  # # 动态显示“手动发货”按钮
-  # output$dynamic_ship_button <- renderUI({
-  #   # 确保匹配订单和当前订单 ID 存在
-  #   req(matching_orders(), current_order_id())
-  #   
-  #   # 从 matching_orders() 获取当前订单信息
-  #   order <- matching_orders() %>% filter(OrderID == current_order_id())
-  #   
-  #   # 确保找到当前订单
-  #   req(nrow(order) > 0)
-  #   
-  #   # 如果订单状态为“装箱”，隐藏按钮
-  #   if (order$OrderStatus == "装箱") {
-  #     return(NULL)
-  #   }
-  #   
-  #   # 提取备注字段
-  #   order_notes <- order$OrderNotes
-  #   
-  #   # 检查订单备注是否包含“调货”
-  #   has_transfer_note <- grepl("调货", order_notes, fixed = TRUE)
-  #   
-  #   # 获取当前订单内的物品
-  #   items <- order_items()
-  #   
-  #   # 判断按钮显示条件
-  #   if (nrow(items) == 0 || (all(items$Status == "美国发货") && has_transfer_note)) {
-  #     # 如果订单内没有物品，或者订单内物品状态全为“美国发货”且备注包含“调货”
-  #     return(actionButton("ship_order_btn", "手动发货", icon = icon("paper-plane"), class = "btn-success", style = "margin-top: 10px;", width = "100%"))
-  #   }
-  #   
-  #   # 如果条件不满足，隐藏按钮
-  #   return(NULL)
-  # })
   
   # SKU 输入逻辑
   observeEvent(input$sku_input, {
@@ -1340,8 +1171,8 @@ server <- function(input, output, session) {
     )  
   })
   
-  # 定义下载处理器
-  output$download_pdf <- downloadHandler(
+  # 定义运单下载处理器
+  output$download_shipping_label_pdf <- downloadHandler(
     filename = function() {
       basename(label_pdf_file_path())
     },
@@ -1684,7 +1515,7 @@ server <- function(input, output, session) {
               class = "btn-success",
               style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
             ),
-            downloadButton("download_pdf_manage", label = "下载运单", class = "btn btn-primary", 
+            downloadButton("download_shipping_label_pdf_manage", label = "下载运单", class = "btn btn-primary", 
                            style = "height: 34px; margin-left: 10px; font-size: 14px; padding: 5px 10px;")
           )
         } else {
@@ -1938,7 +1769,7 @@ server <- function(input, output, session) {
   })
   
   # 定义运单下载处理器
-  output$download_pdf_manage <- downloadHandler(
+  output$download_shipping_label_pdf_manage <- downloadHandler(
     filename = function() {
       basename(label_pdf_file_path())
     },
