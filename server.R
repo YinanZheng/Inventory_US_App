@@ -998,6 +998,7 @@ server <- function(input, output, session) {
           type = "warning"
         )
       } else { #如果订单状态为备货
+        # 如果订单内无物品
         if (nrow(current_items) == 0) {
           showModal(modalDialog(
             title = "订单内无物品",
@@ -1008,46 +1009,44 @@ server <- function(input, output, session) {
             footer = NULL,
             easyClose = TRUE
           ))
-          
           shinyjs::delay(2000, removeModal())
-          return() # 终止后续逻辑
-        }
-        
-        runjs("document.getElementById('sku_input').focus();")
-        showNotification(
-          paste0("请为订单 ", current_order_id(), " 扫描或输入SKU条码！"),
-          type = "message"
-        )
-        
-        # 检查是否符合装箱条件
-        if (all(current_items$Status == "美国发货")) {
-          order_notes <- current_order$OrderNotes
-          has_transfer_note <- grepl("调货", order_notes, fixed = TRUE)
+        } else { # 如果订单内有物品
+          runjs("document.getElementById('sku_input').focus();")
+          showNotification(
+            paste0("请为订单 ", current_order_id(), " 扫描或输入SKU条码！"),
+            type = "message"
+          )
           
-          if (has_transfer_note) {
-            showModal(modalDialog(
-              title = "调货物品",
-              easyClose = FALSE,
-              div(
-                style = "padding: 10px; font-size: 16px; color: #FF0000;",
-                paste0("订单 ", current_order_id(), " 混合了调货物品，请核对物品备齐后手动发货。")
-              ),
-              footer = tagList(
-                modalButton("关闭")
-              )
-            ))
-          } else {
-            showModal(modalDialog(
-              title = "确认装箱",
-              easyClose = FALSE,
-              div(
-                style = "padding: 10px; font-size: 16px;",
-                paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
-              ),
-              footer = tagList(
-                actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
-              )
-            ))
+          # 检查是否符合装箱条件
+          if (all(current_items$Status == "美国发货")) {
+            order_notes <- current_order$OrderNotes
+            has_transfer_note <- grepl("调货", order_notes, fixed = TRUE)
+            
+            if (has_transfer_note) {
+              showModal(modalDialog(
+                title = "调货物品",
+                easyClose = FALSE,
+                div(
+                  style = "padding: 10px; font-size: 16px; color: #FF0000;",
+                  paste0("订单 ", current_order_id(), " 混合了调货物品，请核对物品备齐后手动发货。")
+                ),
+                footer = tagList(
+                  modalButton("关闭")
+                )
+              ))
+            } else {
+              showModal(modalDialog(
+                title = "确认装箱",
+                easyClose = FALSE,
+                div(
+                  style = "padding: 10px; font-size: 16px;",
+                  paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
+                ),
+                footer = tagList(
+                  actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
+                )
+              ))
+            }
           }
         }
       }
