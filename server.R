@@ -1206,6 +1206,11 @@ server <- function(input, output, session) {
     # 确保找到当前订单
     req(nrow(order) > 0)
     
+    # 如果订单状态为“装箱”，隐藏按钮
+    if (order$OrderStatus == "装箱") {
+      return(NULL)
+    }
+    
     # 提取备注字段
     order_notes <- order$OrderNotes
     
