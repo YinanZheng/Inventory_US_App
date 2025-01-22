@@ -857,9 +857,6 @@ server <- function(input, output, session) {
     if (is.null(current_order_id()) || trimws(current_order_id()) == "") {
       return(data.frame())  # 返回空数据框
     }
-    
-    req(current_order_id())  # 确保当前订单 ID 不为空
-    
     # 筛选当前订单的物品
     unique_items_data() %>% filter(OrderID == current_order_id())
   })
@@ -1230,7 +1227,6 @@ server <- function(input, output, session) {
   
   # 手动发货按钮功能
   observeEvent(input$ship_order_btn, {
-    req(current_order_id())  # 确保当前订单ID存在
     update_order_status(current_order_id(), "装箱", refreseh_trigger = orders_refresh_trigger, con)
   })
   
