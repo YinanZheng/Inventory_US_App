@@ -1157,9 +1157,10 @@ server <- function(input, output, session) {
     })
   })
   
-  # 清空运单号和 SKU 输入框
+  # 清空国内售出发货填写逻辑
   observeEvent(input$clear_shipping_bill_btn, {
     updateTextInput(session, "shipping_bill_number", value = "")
+    label_pdf_file_path(NULL)  # 清空运单文件路径
     showNotification("运单号和 SKU 输入框已清空！", type = "message")
   })
   
