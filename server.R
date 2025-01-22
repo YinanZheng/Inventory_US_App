@@ -1054,6 +1054,8 @@ server <- function(input, output, session) {
     
     # 动态显示下载运单按钮
     output$dynamic_label_download_button <- renderUI({
+      req(label_pdf_file_path())  # 确保 label_pdf_file_path 不为空
+      
       label_text <- switch(
         current_order$LabelStatus,
         "无" = "无运单文件",
