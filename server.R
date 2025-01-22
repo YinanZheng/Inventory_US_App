@@ -1227,7 +1227,12 @@ server <- function(input, output, session) {
   
   # 手动发货按钮功能
   observeEvent(input$ship_order_btn, {
-    update_order_status(current_order_id(), "装箱", refreseh_trigger = orders_refresh_trigger, con)
+    update_order_status(
+      order_id = current_order_id(),
+      new_status = "装箱",
+      refresh_trigger = orders_refresh_trigger,
+      con = con
+    )  
   })
   
   
@@ -1582,7 +1587,11 @@ server <- function(input, output, session) {
     # 在 R 中拼接备注内容
     new_notes <- paste(existing_notes, sprintf("【调货完成 %s】", format(Sys.Date(), "%Y-%m-%d")))
     
-    update_order_status(order_id, "备货", updated_notes = new_notes, refresh_trigger = orders_refresh_trigger, con)
+    update_order_status(order_id = order_id, 
+                        new_status = "备货", 
+                        updated_notes = new_notes, 
+                        refresh_trigger = orders_refresh_trigger, 
+                        con = con)
   })
   
   # 渲染物品信息卡片  
