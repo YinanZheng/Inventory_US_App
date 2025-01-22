@@ -1069,7 +1069,7 @@ server <- function(input, output, session) {
           style = "background-color: grey; color: white; cursor: not-allowed; padding: 6px 12px; border-radius: 4px; display: inline-block; text-align: center;"
         )
       } else {
-        downloadButton("download_shipping_label_pdf", label = label_text, class = "btn btn-primary")
+        downloadButton("download_shipping_label_pdf", label = label_text, class = "btn btn-primary", width = "100%")
       }
     })
     
