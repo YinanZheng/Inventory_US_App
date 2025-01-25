@@ -2238,30 +2238,30 @@ server <- function(input, output, session) {
         params = list(tracking_number, shipping_method, total_cost)
       )
       
-      # 生成交易记录的备注
-      remarks <- paste0("[国际运费登记]", " 运单号：", tracking_number, " 运输方式：", shipping_method)
-      
-      # 生成交易记录的 ID
-      transaction_id <- generate_transaction_id("一般户卡", total_cost, remarks, Sys.time())
-      
-      # 插入交易记录到“一般户卡”
-      dbExecute(
-        con,
-        "INSERT INTO transactions (TransactionID, AccountType, Amount, Remarks, TransactionTime) 
-       VALUES (?, ?, ?, ?, ?)",
-        params = list(
-          transaction_id,
-          "一般户卡", 
-          -total_cost,  # 转出金额为负值
-          remarks,
-          Sys.time()
-        )
-      )
-      
-      showNotification("国际运单登记成功，相关费用已记录到'一般户卡（541）'！", type = "message")
-      
-      # 重新计算所有balance记录
-      update_balance("一般户卡", con)
+      # # 生成交易记录的备注
+      # remarks <- paste0("[国际运费登记]", " 运单号：", tracking_number, " 运输方式：", shipping_method)
+      # 
+      # # 生成交易记录的 ID
+      # transaction_id <- generate_transaction_id("一般户卡", total_cost, remarks, Sys.time())
+      # 
+      # # 插入交易记录到“一般户卡”
+      # dbExecute(
+      #   con,
+      #   "INSERT INTO transactions (TransactionID, AccountType, Amount, Remarks, TransactionTime) 
+      #  VALUES (?, ?, ?, ?, ?)",
+      #   params = list(
+      #     transaction_id,
+      #     "一般户卡", 
+      #     -total_cost,  # 转出金额为负值
+      #     remarks,
+      #     Sys.time()
+      #   )
+      # )
+      # 
+      # showNotification("国际运单登记成功，相关费用已记录到'一般户卡（541）'！", type = "message")
+      # 
+      # # 重新计算所有balance记录
+      # update_balance("一般户卡", con)
       
       shinyjs::enable("link_tracking_btn")  # 启用挂靠运单按钮
     }, error = function(e) {
@@ -2464,11 +2464,11 @@ server <- function(input, output, session) {
       # 从 intl_shipments 表中删除对应的运单号 (unique_items表会同时触发运单删除操作)
       dbExecute(con, "DELETE FROM intl_shipments WHERE TrackingNumber = ?", params = list(tracking_number))
       
-      # 删除 transactions 表中与运单号相关的记录
-      dbExecute(con, "DELETE FROM transactions WHERE Remarks LIKE ?", params = list(paste0("%[国际运费登记] 运单号：", tracking_number, "%")))
-      
+      # # 删除 transactions 表中与运单号相关的记录
+      # dbExecute(con, "DELETE FROM transactions WHERE Remarks LIKE ?", params = list(paste0("%[国际运费登记] 运单号：", tracking_number, "%")))
+  
       # 提示删除成功
-      showNotification("运单、关联的物品信息、账务记录已成功删除！", type = "message")
+      showNotification("运单与关联的物品信息已成功删除！", type = "message")
       
       # 重新计算所有balance记录
       update_balance("一般户卡", con)
