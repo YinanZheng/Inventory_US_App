@@ -844,9 +844,6 @@ server <- function(input, output, session) {
     }
   })
   
-  
-  
-  
   # SKU 和物品名称搜索预览
   observeEvent(c(input$search_sku, input$search_name), {
     req(trimws(input$search_sku) != "" | trimws(input$search_name) != "")  # 确保至少一个搜索条件不为空
@@ -903,7 +900,7 @@ server <- function(input, output, session) {
     }
   })
   
-  # 创建采购请求
+  # 库存品采购请求按钮
   observeEvent(input$add_request, {
     req(input$request_quantity > 0)  # 确保输入合法
     
@@ -945,6 +942,47 @@ server <- function(input, output, session) {
     }
   })
   
+  # 初始化图片上传模块
+  image_purchase_requests <- imageModuleServer("image_purchase_requests")
+  
+  # 新商品采购请求按钮
+  observeEvent(input$submit_custom_request, {
+    # 确保必要字段已填写
+    req(input$custom_quantity > 0)
+    
+    # 获取用户输入
+    custom_description <- trimws(input$custom_description)
+    custom_quantity <- input$custom_quantity
+    
+    # 使用图片上传模块的返回数据
+    custom_image_path <- process_image_upload(
+      sku = "New-Request",  # 自定义物品没有 SKU，可以设置为固定值或动态生成
+      file_data = image_purchase_requests$uploaded_file(),
+      pasted_data = image_purchase_requests$pasted_file()
+    )
+    
+    # 检查图片路径是否有效
+    req(!is.null(custom_image_path) && !is.na(custom_image_path))
+    
+    # 生成唯一 RequestID
+    request_id <- uuid::UUIDgenerate()
+    
+    # 将数据插入到数据库
+    dbExecute(con, 
+              "INSERT INTO purchase_requests (RequestID, SKU, ItemImage, ItemDescription, Quantity, RequestStatus) 
+             VALUES (?, ?, ?, ?, ?, '待处理')", 
+              params = list(request_id, "New-Request", custom_image_path, custom_description, custom_quantity))
+    
+    # 刷新任务板
+    refresh_todo_board()
+    
+    # 清空输入字段
+    updateTextAreaInput(session, "custom_description", value = "")
+    updateNumericInput(session, "custom_quantity", value = 1)
+    image_purchase_requests$reset()
+    showNotification("自定义请求已成功提交", type = "message")
+  })
+
   
   
   ################################################################

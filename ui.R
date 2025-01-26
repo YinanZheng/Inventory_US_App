@@ -187,7 +187,7 @@ ui <- navbarPage(
       div(
         class = "sticky-sidebar",
         div(
-          tags$h4("创建采购请求", style = "font-weight: bold; color: #007BFF;"),
+          tags$h4("库存品采购请求", style = "font-weight: bold; color: #007BFF;"),
           textInput("search_sku", "搜索 SKU", placeholder = "输入 SKU 进行搜索", width = "100%"),
           textInput("search_name", "搜索物品名称", placeholder = "输入物品名称进行搜索", width = "100%"),
           div(
@@ -201,8 +201,8 @@ ui <- navbarPage(
           numericInput("request_quantity", "采购数量", value = 1, min = 1, width = "100%"),
           actionButton("add_request", "创建请求", icon = icon("plus"), class = "btn-success", style = "width: 100%; margin-top: 10px;"),
           tags$hr(),
-          tags$h4("自定义新物品", style = "font-weight: bold; color: #007BFF;"),
-          fileInput("upload_image", "上传图片", accept = c('image/png', 'image/jpeg'), width = "100%"),
+          tags$h4("新商品采购请求", style = "font-weight: bold; color: #007BFF;"),
+          imageModuleUI("image_purchase_requests", label = "请求物品图片上传"),
           textAreaInput("custom_description", "物品描述", placeholder = "描述物品信息", width = "100%"),
           numericInput("custom_quantity", "采购数量", value = 1, min = 1, width = "100%"),
           actionButton("submit_custom_request", "提交请求", icon = icon("check"), class = "btn-primary", style = "width: 100%; margin-top: 10px;")
