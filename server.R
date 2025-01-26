@@ -953,6 +953,8 @@ server <- function(input, output, session) {
       # 刷新 todo_board 的输出
       refresh_todo_board()
       
+      bind_buttons(request_id) #绑定按钮逻辑
+      
       # 清空输入字段
       updateTextInput(session, "search_sku", value = "")
       updateTextInput(session, "search_name", value = "")
@@ -999,6 +1001,8 @@ server <- function(input, output, session) {
     
     # 刷新任务板
     refresh_todo_board()
+    
+    bind_buttons(request_id) #绑定按钮逻辑
     
     # 清空输入字段
     updateTextInput(session, "custom_description", value = "")
