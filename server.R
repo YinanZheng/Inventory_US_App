@@ -948,26 +948,20 @@ server <- function(input, output, session) {
         (SKU == search_sku & search_sku != "") |  # SKU 精准匹配
           (grepl(search_name, ItemName, ignore.case = TRUE) & search_name != "")  # 名称模糊匹配
       ) %>%
-      distinct(SKU)  # 去重
+      distinct(SKU, Maker, ItemName, ItemImagePath)  # 去重
     
     tryCatch({
       # 主逻辑
       if (nrow(filtered_data) == 1) {
-        item_sku <- filtered_data$SKU[1]
-        item_maker <- ifelse(is.na(filtered_data$Maker[1]), "", filtered_data$Maker[1])
-        item_description <- ifelse(is.na(filtered_data$ItemName[1]), "未知", filtered_data$ItemName[1])
-        item_image_path <- ifelse(is.na(filtered_data$ItemImagePath[1]), placeholder_150px_path, filtered_data$ItemImagePath[1])
-        
-        showNotification(item_sku)
-        showNotification(item_maker)
-        showNotification(item_description)
-        
         request_id <- uuid::UUIDgenerate()
         
+        item_image_path <- ifelse(is.na(filtered_data$ItemImagePath[1]), placeholder_150px_path, filtered_data$ItemImagePath[1])
+        item_description <- ifelse(is.na(filtered_data$ItemName[1]), "未知", filtered_data$ItemName[1])
+
         dbExecute(con, 
                   "INSERT INTO purchase_requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
               VALUES (?, ?, ?, ?, ?, ?, '待处理')", 
-                  params = list(request_id, item_sku, item_maker, item_image_path, item_description, input$request_quantity))
+                  params = list(request_id, filtered_data$SKU, filtered_data$Maker, item_image_path, item_description, input$request_quantity))
         
         refresh_todo_board()
         bind_buttons(request_id)
