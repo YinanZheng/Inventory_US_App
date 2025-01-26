@@ -618,7 +618,7 @@ server <- function(input, output, session) {
     current_remarks <- requests_data() %>% filter(RequestID == request_id) %>% pull(Remarks)
 
     # 如果当前 Remarks 为空或 NULL，则初始化为空列表
-    if (is.null(current_remarks) || current_remarks == "") {
+    if (is.null(current_remarks) || is.na(current_remarks)) {
       remarks <- list()  # 如果为空，则返回空列表
     } else {
       remarks <- rev(unlist(strsplit(trimws(current_remarks), ";")))  # 使用 ; 分隔记录，并按时间倒序排列
