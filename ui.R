@@ -181,6 +181,48 @@ ui <- navbarPage(
   ),
   
   tabPanel(
+    "协作", icon = icon("users"),
+    div(
+      class = "layout-container",
+      div(
+        class = "sticky-sidebar",
+        div(
+          tags$h4("创建采购请求", style = "font-weight: bold; color: #007BFF;"),
+          textInput("search_sku", "搜索 SKU", placeholder = "输入 SKU 进行搜索", width = "100%"),
+          textInput("search_name", "搜索物品名称", placeholder = "输入物品名称进行搜索", width = "100%"),
+          div(
+            style = "margin-top: 20px;",
+            div(
+              style = "border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px; background-color: #f9f9f9;",
+              tags$h5("物品预览", style = "font-weight: bold; color: #007BFF;"),
+              uiOutput("item_preview")
+            )
+          ),
+          numericInput("request_quantity", "采购数量", value = 1, min = 1, width = "100%"),
+          actionButton("add_request", "创建请求", icon = icon("plus"), class = "btn-success", style = "width: 100%; margin-top: 10px;"),
+          tags$hr(),
+          tags$h4("自定义新物品", style = "font-weight: bold; color: #007BFF;"),
+          fileInput("upload_image", "上传图片", accept = c('image/png', 'image/jpeg'), width = "100%"),
+          textAreaInput("custom_description", "物品描述", placeholder = "描述物品信息", width = "100%"),
+          numericInput("custom_quantity", "采购数量", value = 1, min = 1, width = "100%"),
+          actionButton("submit_custom_request", "提交请求", icon = icon("check"), class = "btn-primary", style = "width: 100%; margin-top: 10px;")
+        )
+      ),
+      div(
+        class = "main-panel",
+        tabsetPanel(
+          id = "collaboration_tabs",
+          type = "pills",
+          tabPanel(
+            title = "采购请求",  
+            uiOutput("todo_board")
+          )
+        )
+      )
+    )
+  ), # End of 协作 tab
+  
+  tabPanel(
     "入库", icon = icon("arrow-circle-down"),
     div(
       class = "layout-container",  # Flexbox 容器

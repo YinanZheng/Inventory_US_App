@@ -37,6 +37,8 @@ source("./modules/autocompleteInputServer.R", local = TRUE)
 
 source("utils.R", local = TRUE)
 
+system_type <<- "us"
+
 # 定义轮询间隔（以毫秒为单位）
 poll_interval <<- 10000  # 每 10 秒检查一次
 

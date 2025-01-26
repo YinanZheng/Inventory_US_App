@@ -602,6 +602,353 @@ server <- function(input, output, session) {
   
   ################################################################
   ##                                                            ##
+  ## 协作分页                                                   ##
+  ##                                                            ##
+  ################################################################
+  
+  registered_buttons <- reactiveVal(c())  # 记录所有已注册的按钮 ID
+  
+  # 渲染留言板
+  renderRemarks <- function(request_id) {
+    # 从数据库获取当前请求的 Remarks 字段
+    current_remarks <- dbGetQuery(con, paste0("SELECT Remarks FROM purchase_requests WHERE RequestID = '", request_id, "'"))
+    
+    # 如果当前 Remarks 为空或 NULL，则初始化为空列表
+    remarks <- if (nrow(current_remarks) > 0 && !is.na(current_remarks$Remarks[1]) && trimws(current_remarks$Remarks[1]) != "") {
+      # 使用 ; 分隔记录，并按时间倒序排列
+      rev(unlist(strsplit(trimws(current_remarks$Remarks[1]), ";")))
+    } else {
+      list()  # 如果为空，则返回空列表
+    }
+    
+    # 生成 HTML 字符串
+    remarks_html <- if (length(remarks) > 0) {
+      paste0(
+        lapply(remarks, function(h) {
+          # 将记录拆分为时间和内容
+          split_remarks <- strsplit(h, ": ", fixed = TRUE)[[1]]
+          remark_time <- ifelse(length(split_remarks) > 1, split_remarks[1], "")  # 时间部分
+          remark_text <- ifelse(length(split_remarks) > 1, split_remarks[2], split_remarks[1])  # 信息部分
+          
+          # 生成每条记录的 HTML
+          paste0(
+            "<div style='margin-bottom: 8px;'>",
+            "<p style='font-size: 10px; color: grey; text-align: right; margin: 0;'>", remark_time, "</p>",  # 时间灰色右对齐
+            "<p style='font-size: 12px; color: black; text-align: left; margin: 0;'>", remark_text, "</p>",  # 信息黑色左对齐
+            "</div>"
+          )
+        }),
+        collapse = ""
+      )
+    } else {
+      "<p style='font-size: 12px; color: grey;'>暂无留言</p>"  # 无记录时的默认内容
+    }
+    
+    # 渲染 HTML
+    renderUI({
+      HTML(remarks_html)
+    })
+  }
+  
+  # 渲染任务板与便签
+  refresh_todo_board <- function() {
+    requests <- dbGetQuery(
+      con, 
+      "SELECT * FROM purchase_requests 
+     WHERE RequestStatus IN ('待处理', '紧急', '已完成')
+     ORDER BY FIELD(RequestStatus, '紧急', '待处理', '已完成'), CreatedAt ASC"
+    )
+    
+    if (nrow(requests) == 0) {
+      output$todo_board <- renderUI({
+        div(style = "text-align: center; color: grey; margin-top: 20px;", tags$p("当前没有待处理事项"))
+      })
+    } else {
+      output$todo_board <- renderUI({
+        div(
+          style = "display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 10px; padding: 10px;",
+          lapply(1:nrow(requests), function(i) {
+            item <- requests[i, ]
+            request_id <- item$RequestID
+            
+            # 动态绑定留言记录到 UI
+            output[[paste0("remarks_", request_id)]] <- renderRemarks(request_id)
+            
+            # 根据状态设置便签背景颜色和边框颜色
+            card_colors <- switch(
+              item$RequestStatus,
+              "紧急" = list(bg = "#ffcdd2", border = "#e57373"),    # 红色背景，深红色边框
+              "待处理" = list(bg = "#fff9c4", border = "#ffd54f"),  # 橙色背景，深橙色边框
+              "已完成" = list(bg = "#c8e6c9", border = "#81c784")   # 绿色背景，深绿色边框
+            )
+            
+            # 渲染便签卡片
+            div(
+              class = "note-card",
+              style = sprintf("
+              position: relative;
+              width: 400px;
+              background-color: %s;
+              border: 2px solid %s;
+              border-radius: 10px;
+              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+              padding: 10px;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+            ", card_colors$bg, card_colors$border),
+              
+              # 图片和留言记录
+              div(
+                style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;",
+                tags$div(
+                  style = "width: 38%; display: flex; flex-direction: column; align-items: center;",
+                  tags$img(
+                    src = ifelse(is.na(item$ItemImage), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImage))),
+                    style = "width: 100%; max-height: 120px; object-fit: contain; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 5px;"
+                  ),
+                  tags$div(
+                    style = "width: 100%; text-align: center; font-size: 12px; color: #333;",
+                    tags$p(item$ItemDescription, style = "margin: 0;"),
+                    tags$p(item$SKU, style = "margin: 0;"),
+                    tags$p(
+                      tags$b("请求数量:"), 
+                      tags$span(item$Quantity, style = "color: red; font-weight: bold;"), 
+                      style = "margin: 0;"
+                    )
+                  )
+                ),
+                tags$div(
+                  style = "width: 58%; height: 176px; border: 1px solid #ddd; padding: 5px; background-color: #fff; overflow-y: auto; border-radius: 5px;",
+                  uiOutput(paste0("remarks_", item$RequestID))  # 使用 RequestID 动态绑定到具体记录
+                )
+              ),
+              
+              # 留言输入框和提交按钮
+              tags$div(
+                style = "width: 100%; display: flex; flex-direction: column; align-items: flex-start; margin-top: 5px;",
+                tags$div(
+                  style = "width: 100%; display: flex; justify-content: space-between;",
+                  textInput(paste0("remark_input_", request_id), NULL, placeholder = "输入留言", width = "72%"),
+                  actionButton(paste0("submit_remark_", request_id), "提交", class = "btn-success", style = "width: 25%; height: 45px;")
+                )
+              ),
+              
+              # 状态按钮
+              tags$div(
+                style = "width: 100%; display: flex; justify-content: space-between; margin-top: 5px;",
+                actionButton(paste0("mark_urgent_", request_id), "加急", class = "btn-danger", style = "width: 30%; height: 45px;"),
+                actionButton(paste0("complete_task_", request_id), "任务完成", class = "btn-primary", style = "width: 30%; height: 45px;"),
+                actionButton(paste0("delete_request_", request_id), "删除便签", class = "btn-warning", style = "width: 30%; height: 45px;")
+              )
+            )
+          })
+        )
+      })
+    }
+  }
+  
+  # 绑定按钮
+  bind_buttons <- function(request_id) {
+    # 动态绑定“加急”按钮逻辑
+    urgent_button_id <- paste0("mark_urgent_", request_id)
+    if (!(urgent_button_id %in% registered_buttons())) {
+      observeEvent(input[[urgent_button_id]], {
+        dbExecute(con, "UPDATE purchase_requests SET RequestStatus = '紧急' WHERE RequestID = ?", params = list(request_id))
+        refresh_todo_board()
+        showNotification("状态已标记为紧急", type = "warning")
+      })
+      registered_buttons(c(registered_buttons(), urgent_button_id))
+    }
+    
+    # 动态绑定“任务完成”按钮逻辑
+    complete_button_id <- paste0("complete_task_", request_id)
+    if (!(complete_button_id %in% registered_buttons())) {
+      observeEvent(input[[complete_button_id]], {
+        dbExecute(con, "UPDATE purchase_requests SET RequestStatus = '已完成' WHERE RequestID = ?", params = list(request_id))
+        refresh_todo_board()
+        showNotification("任务已完成", type = "message")
+      })
+      registered_buttons(c(registered_buttons(), complete_button_id))
+    }
+    
+    # 动态绑定“删除”按钮逻辑
+    delete_button_id <- paste0("delete_request_", request_id)
+    if (!(delete_button_id %in% registered_buttons())) {
+      observeEvent(input[[delete_button_id]], {
+        dbExecute(con, "DELETE FROM purchase_requests WHERE RequestID = ?", params = list(request_id))
+        refresh_todo_board()
+        showNotification("便签已删除", type = "message")
+      })
+      registered_buttons(c(registered_buttons(), delete_button_id))
+    }
+    
+    # 动态绑定“提交留言”按钮逻辑
+    submit_button_id <- paste0("submit_remark_", request_id)
+    if (!(submit_button_id %in% registered_buttons())) {
+      observeEvent(input[[submit_button_id]], {
+        remark <- input[[paste0("remark_input_", request_id)]]
+        req(remark != "")
+        
+        # 根据系统类型添加前缀
+        remark_prefix <- if (system_type == "china") {
+          "[京]"
+        } else if (system_type == "us") {
+          "[圳]"
+        } else {
+          ""
+        }
+        
+        # 拼接时间戳、前缀和留言
+        new_remark <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ": ", remark_prefix, " ", remark)
+        
+        # 获取当前 Remarks 并更新
+        current_remarks <- dbGetQuery(con, paste0("SELECT Remarks FROM purchase_requests WHERE RequestID = '", request_id, "'"))
+        current_remarks_text <- ifelse(is.na(current_remarks$Remarks[1]), "", current_remarks$Remarks[1])
+        updated_remarks <- if (current_remarks_text == "") new_remark else paste(current_remarks_text, new_remark, sep = ";")
+        
+        # 更新数据库中的 Remarks 字段
+        dbExecute(con, "UPDATE purchase_requests SET Remarks = ? WHERE RequestID = ?", params = list(updated_remarks, request_id))
+        
+        # 刷新对应的留言记录
+        output[[paste0("remarks_", request_id)]] <- renderRemarks(request_id)
+        
+        # 清空输入框
+        updateTextInput(session, paste0("remark_input_", request_id), value = "")
+        
+        # 显示通知
+        showNotification("留言已成功提交", type = "message")
+      })
+      registered_buttons(c(registered_buttons(), submit_button_id))
+    }
+  }
+  
+  # 页面加载时调用 refresh_todo_board
+  refresh_todo_board()
+  
+  # 动态绑定按钮逻辑
+  observe({
+    # 查询所有请求
+    requests <- dbGetQuery(
+      con, 
+      "SELECT * FROM purchase_requests 
+     WHERE RequestStatus IN ('待处理', '紧急', '已完成')
+     ORDER BY FIELD(RequestStatus, '紧急', '待处理', '已完成'), CreatedAt ASC"
+    )
+    
+    if (nrow(requests) > 0) {
+      # 为每条记录绑定按钮逻辑
+      lapply(requests$RequestID, function(request_id) {
+        bind_buttons(request_id)  # 调用封装的函数
+      })
+    }
+  })
+  
+  
+  
+  
+  # SKU 和物品名称搜索预览
+  observeEvent(c(input$search_sku, input$search_name), {
+    req(trimws(input$search_sku) != "" | trimws(input$search_name) != "")  # 确保至少一个搜索条件不为空
+    
+    # 获取清理后的输入值
+    search_sku <- trimws(input$search_sku)
+    search_name <- trimws(input$search_name)
+    
+    # 使用 unique_items_data() 进行过滤和统计
+    result <- unique_items_data() %>%
+      filter(
+        (SKU == search_sku & search_sku != "") |  # SKU 精准匹配
+          (grepl(search_name, ItemName, ignore.case = TRUE) & search_name != "")  # 名称模糊匹配
+      ) %>%
+      group_by(SKU, ItemName, ItemImagePath) %>%
+      summarise(
+        DomesticStock = sum(Status == "国内入库", na.rm = TRUE),  # 国内库存
+        InTransitStock = sum(Status == "国内出库", na.rm = TRUE),  # 在途库存
+        UsStock = sum(Status == "美国入库", na.rm = TRUE),  # 美国库存
+        .groups = "drop"
+      )
+    
+    # 动态更新预览界面
+    if (nrow(result) > 0) {
+      output$item_preview <- renderUI({
+        div(
+          style = "max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;",
+          lapply(1:nrow(result), function(i) {
+            item <- result[i, ]
+            img_path <- ifelse(
+              is.na(item$ItemImagePath),
+              placeholder_150px_path,  # 占位符路径
+              paste0(host_url, "/images/", basename(item$ItemImagePath))  # 构建完整路径
+            )
+            div(
+              style = "margin-bottom: 15px; padding: 10px; border-bottom: 1px solid #ccc;",
+              tags$img(src = img_path, height = "150px", style = "display: block; margin: auto;"),
+              tags$h5(item$ItemName, style = "text-align: center; margin-top: 10px;"),
+              tags$h5(item$SKU, style = "text-align: center; margin-top: 10px;"),
+              div(
+                style = "text-align: center; font-size: 12px;",
+                tags$span(paste("国内库存:", item$DomesticStock), style = "margin-right: 10px;"),
+                tags$span(paste("在途库存:", item$InTransitStock), style = "margin-right: 10px;"),
+                tags$span(paste("美国库存:", item$UsStock))
+              )
+            )
+          })
+        )
+      })
+    } else {
+      output$item_preview <- renderUI({
+        div(tags$p("未找到匹配的物品", style = "color: red; text-align: center;"))
+      })
+    }
+  })
+  
+  # 创建采购请求
+  observeEvent(input$add_request, {
+    req(input$request_quantity > 0)  # 确保输入合法
+    
+    # 获取用户输入
+    search_sku <- trimws(input$search_sku)
+    search_name <- trimws(input$search_name)
+    
+    # 检索数据并插入到数据库
+    filtered_data <- unique_items_data() %>%
+      filter(
+        (SKU == search_sku & search_sku != "") |  # SKU 精准匹配
+          (grepl(search_name, ItemName, ignore.case = TRUE) & search_name != "")  # 名称模糊匹配
+      ) %>%
+      distinct(SKU, ItemName, ItemImagePath)  # 去重
+    
+    if (nrow(filtered_data) == 1) {  # 确保唯一结果
+      item_sku <- filtered_data$SKU[1]
+      item_description <- filtered_data$ItemName[1]
+      item_image_path <- filtered_data$ItemImagePath[1]
+      
+      request_id <- uuid::UUIDgenerate()
+      
+      # 插入新的采购请求
+      dbExecute(con, 
+                "INSERT INTO purchase_requests (RequestID, SKU, ItemImage, ItemDescription, Quantity, RequestStatus) VALUES (?, ?, ?, ?, ?, '待处理')", 
+                params = list(request_id, item_sku, item_image_path, item_description, input$request_quantity))
+      
+      # 刷新 todo_board 的输出
+      refresh_todo_board()
+      
+      # 重新触发动态绑定逻辑
+      bind_buttons(request_id)  # 调用封装的函数
+      
+      showNotification("请求已成功创建", type = "message")
+    } else if (nrow(filtered_data) > 1) {
+      showNotification("搜索结果不唯一，请更精确地搜索 SKU 或物品名称", type = "error")
+    } else {
+      showNotification("未找到匹配的物品，请检查搜索条件", type = "error")
+    }
+  })
+  
+  
+  
+  ################################################################
+  ##                                                            ##
   ## 入库分页                                                   ##
   ##                                                            ##
   ################################################################
