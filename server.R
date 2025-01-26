@@ -725,7 +725,7 @@ server <- function(input, output, session) {
                   )
                 ),
                 tags$div(
-                  style = "width: 58%; height: 176px; border: 1px solid #ddd; padding: 5px; background-color: #fff; overflow-y: auto; border-radius: 5px;",
+                  style = "width: 58%; height: 194px; border: 1px solid #ddd; padding: 5px; background-color: #fff; overflow-y: auto; border-radius: 5px;",
                   uiOutput(paste0("remarks_", item$RequestID))  # 使用 RequestID 动态绑定到具体记录
                 )
               ),
