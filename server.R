@@ -606,13 +606,17 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  registered_buttons <- reactiveVal(c())  # 记录所有已注册的按钮 ID
+  # 记录所有已注册的按钮 ID
+  registered_buttons <- reactiveVal(c())  
+  
+  # 缓存请求数据
+  requests_data <- reactiveVal(data.frame())
   
   # 渲染留言板
   renderRemarks <- function(request_id) {
-    # 从数据库获取当前请求的 Remarks 字段
-    current_remarks <- dbGetQuery(con, paste0("SELECT Remarks FROM purchase_requests WHERE RequestID = '", request_id, "'"))
-    
+    # 提取当前 RequestID 的 Remarks
+    current_remarks <- requests_data() %>% filter(RequestID == request_id) %>% pull(Remarks)
+
     # 如果当前 Remarks 为空或 NULL，则初始化为空列表
     remarks <- if (nrow(current_remarks) > 0 && !is.na(current_remarks$Remarks[1]) && trimws(current_remarks$Remarks[1]) != "") {
       # 使用 ; 分隔记录，并按时间倒序排列
@@ -650,14 +654,9 @@ server <- function(input, output, session) {
     })
   }
   
-  # 渲染任务板与便签
+  # Function: 渲染任务板与便签
   refresh_todo_board <- function() {
-    requests <- dbGetQuery(
-      con, 
-      "SELECT * FROM purchase_requests 
-     WHERE RequestStatus IN ('待处理', '紧急', '已完成')
-     ORDER BY FIELD(RequestStatus, '紧急', '待处理', '已完成'), CreatedAt ASC"
-    )
+    requests <- requests_data()  # 使用缓存数据
     
     if (nrow(requests) == 0) {
       output$todo_board <- renderUI({
@@ -738,8 +737,8 @@ server <- function(input, output, session) {
               tags$div(
                 style = "width: 100%; display: flex; justify-content: space-between; margin-top: 5px;",
                 actionButton(paste0("mark_urgent_", request_id), "加急", class = "btn-danger", style = "width: 30%; height: 45px;"),
-                actionButton(paste0("complete_task_", request_id), "任务完成", class = "btn-primary", style = "width: 30%; height: 45px;"),
-                actionButton(paste0("delete_request_", request_id), "删除便签", class = "btn-warning", style = "width: 30%; height: 45px;")
+                actionButton(paste0("complete_task_", request_id), "完成", class = "btn-primary", style = "width: 30%; height: 45px;"),
+                actionButton(paste0("delete_request_", request_id), "删除", class = "btn-warning", style = "width: 30%; height: 45px;")
               )
             )
           })
@@ -748,7 +747,7 @@ server <- function(input, output, session) {
     }
   }
   
-  # 绑定按钮
+  # Function: 绑定按钮
   bind_buttons <- function(request_id) {
     # 动态绑定“加急”按钮逻辑
     urgent_button_id <- paste0("mark_urgent_", request_id)
@@ -802,8 +801,8 @@ server <- function(input, output, session) {
         # 拼接时间戳、前缀和留言
         new_remark <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ": ", remark_prefix, " ", remark)
         
-        # 获取当前 Remarks 并更新
-        current_remarks <- dbGetQuery(con, paste0("SELECT Remarks FROM purchase_requests WHERE RequestID = '", request_id, "'"))
+        # 提取当前 RequestID 的 Remarks
+        current_remarks <- requests_data() %>% filter(RequestID == request_id) %>% pull(Remarks)
         current_remarks_text <- ifelse(is.na(current_remarks$Remarks[1]), "", current_remarks$Remarks[1])
         updated_remarks <- if (current_remarks_text == "") new_remark else paste(current_remarks_text, new_remark, sep = ";")
         
@@ -823,19 +822,31 @@ server <- function(input, output, session) {
     }
   }
   
-  # 页面加载时调用 refresh_todo_board
-  refresh_todo_board()
+  # 定期检查采购请求数据库的最新数据
+  poll_requests <- reactivePoll(
+    intervalMillis = poll_interval,  # 每2秒检查一次
+    session = session,
+    checkFunc = function() {
+      dbGetQuery(con, "SELECT MAX(UpdatedAt) AS last_updated FROM purchase_requests")$last_updated[1]
+    },
+    valueFunc = function() {
+      # 查询最新的请求数据并存入缓存
+      requests <- dbGetQuery(
+        con,
+        "SELECT * FROM purchase_requests 
+       WHERE RequestStatus IN ('待处理', '紧急', '已完成')
+       ORDER BY FIELD(RequestStatus, '紧急', '待处理', '已完成'), CreatedAt ASC"
+      )
+      requests  # 返回请求数据
+    }
+  )
   
-  # 动态绑定按钮逻辑
+  # 页面加载时渲染UI，绑定按钮
   observe({
-    # 查询所有请求
-    requests <- dbGetQuery(
-      con, 
-      "SELECT * FROM purchase_requests 
-     WHERE RequestStatus IN ('待处理', '紧急', '已完成')
-     ORDER BY FIELD(RequestStatus, '紧急', '待处理', '已完成'), CreatedAt ASC"
-    )
-    
+    requests <- poll_requests()
+    requests_data(requests)  # 更新缓存
+    refresh_todo_board()  # 刷新任务板
+
     if (nrow(requests) > 0) {
       # 为每条记录绑定按钮逻辑
       lapply(requests$RequestID, function(request_id) {
@@ -845,6 +856,7 @@ server <- function(input, output, session) {
   })
   
   
+  # SKU 和物品名输入互斥逻辑
   observeEvent(input$search_sku, {
     # 如果 SKU 搜索框有值，则清空物品名称搜索框
     if (input$search_sku != "") {
@@ -852,6 +864,7 @@ server <- function(input, output, session) {
     }
   })
   
+  # SKU 和物品名输入互斥逻辑
   observeEvent(input$search_name, {
     # 如果物品名称搜索框有值，则清空 SKU 搜索框
     if (input$search_name != "") {
