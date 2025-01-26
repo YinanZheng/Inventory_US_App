@@ -948,7 +948,7 @@ server <- function(input, output, session) {
         (SKU == search_sku & search_sku != "") |  # SKU 精准匹配
           (grepl(search_name, ItemName, ignore.case = TRUE) & search_name != "")  # 名称模糊匹配
       ) %>%
-      distinct(SKU, ItemName, ItemImagePath)  # 去重
+      distinct(SKU)  # 去重
     
     if (nrow(filtered_data) == 1) {  # 确保唯一结果
       item_sku <- filtered_data$SKU[1]
@@ -1009,8 +1009,8 @@ server <- function(input, output, session) {
     
     # 将数据插入到数据库
     dbExecute(con, 
-              "INSERT INTO purchase_requests (RequestID, SKU, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
-             VALUES (?, ?, ?, ?, ?, '待处理')", 
+              "INSERT INTO purchase_requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
+             VALUES (?, ?, '待定', ?, ?, ?, '待处理')", 
               params = list(request_id, "New-Request", custom_image_path, custom_description, custom_quantity))
     
     # 刷新任务板
