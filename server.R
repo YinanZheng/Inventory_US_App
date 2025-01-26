@@ -846,8 +846,18 @@ server <- function(input, output, session) {
   
   # SKU 和物品名称搜索预览
   observeEvent(c(input$search_sku, input$search_name), {
-    if(input$search_sku == "" && input$search_name == "") {
+    
+    # 互斥逻辑：如果输入 SKU，则清空物品名称，反之亦然
+    if (trimws(input$search_sku) != "") {
+      updateTextInput(session, "search_name", value = "")  # 清空物品名称搜索框
+    } else if (trimws(input$search_name) != "") {
+      updateTextInput(session, "search_sku", value = "")  # 清空 SKU 搜索框
+    }
+    
+    # 如果两个输入框都为空，则清空预览
+    if (input$search_sku == "" && input$search_name == "") {
       output$item_preview <- renderUI({ NULL })
+      return()  # 结束逻辑
     }
     
     req(input$search_sku != "" | input$search_name != "")  # 确保至少一个搜索条件不为空
