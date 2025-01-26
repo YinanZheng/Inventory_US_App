@@ -621,7 +621,7 @@ server <- function(input, output, session) {
     if (is.null(current_remarks) || is.na(current_remarks)) {
       remarks <- list()  # 如果为空，则返回空列表
     } else {
-      remarks <- rev(unlist(strsplit(trimws(current_remarks), ";")))  # 使用 ; 分隔记录，并按时间倒序排列
+      remarks <- unlist(strsplit(trimws(current_remarks), ";"))  # 使用 ; 分隔记录
     }
     
     # 生成 HTML 字符串
@@ -803,7 +803,7 @@ server <- function(input, output, session) {
         # 提取当前 RequestID 的 Remarks
         current_remarks <- requests_data() %>% filter(RequestID == request_id) %>% pull(Remarks)
         current_remarks_text <- ifelse(is.na(current_remarks), "", current_remarks)
-        updated_remarks <- if (current_remarks_text == "") new_remark else paste(current_remarks_text, new_remark, sep = ";")
+        updated_remarks <- if (current_remarks_text == "") new_remark else paste(new_remark, current_remarks_text, sep = ";")
         
         # 更新数据库中的 Remarks 字段
         dbExecute(con, "UPDATE purchase_requests SET Remarks = ? WHERE RequestID = ?", params = list(updated_remarks, request_id))
