@@ -667,9 +667,8 @@ server <- function(input, output, session) {
         div(
           style = "display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 10px; padding: 10px;",
           lapply(1:nrow(requests), function(i) {
-            item <- requests[i, ]
+            item <- requests[i, , drop = FALSE]
             request_id <- item$RequestID
-            showNotification(request_id)
             
             # 动态绑定留言记录到 UI
             output[[paste0("remarks_", request_id)]] <- renderRemarks(request_id)
