@@ -846,7 +846,7 @@ server <- function(input, output, session) {
   
   # SKU 和物品名称搜索预览
   observeEvent(c(input$search_sku, input$search_name), {
-    if(input$search_sku != "" & input$search_name != "") {
+    if(input$search_sku == "" && input$search_name == "") {
       output$item_preview <- renderUI({ NULL })
     }
     
