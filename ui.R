@@ -193,7 +193,7 @@ ui <- navbarPage(
             column(6, textInput("search_name", "搜索物品名称", placeholder = "物品名搜索", width = "100%"))
           ),
           div(
-            style = "margin-top: 10px; margin-bottom: 10px;",
+            style = "margin-bottom: 10px;",
             div(
               style = "border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px; background-color: #f9f9f9;",
               tags$h5("物品预览", style = "font-weight: bold; color: #007BFF;"),
@@ -205,7 +205,7 @@ ui <- navbarPage(
           tags$hr(),
           tags$h4("新商品采购请求", style = "font-weight: bold; color: #007BFF;"),
           imageModuleUI("image_purchase_requests", label = "请求物品图片上传"),
-          textAreaInput("custom_description", "物品描述", placeholder = "描述物品信息", width = "100%"),
+          textInput("custom_description", "物品名", placeholder = "输入物品名", width = "100%"),
           numericInput("custom_quantity", "请求采购数量", value = 1, min = 1, width = "100%"),
           actionButton("submit_custom_request", "创建请求", icon = icon("plus"), class = "btn-success", style = "width: 100%; margin-top: 10px;")
         )
