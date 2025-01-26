@@ -189,8 +189,8 @@ ui <- navbarPage(
         div(
           tags$h4("库存品采购请求", style = "font-weight: bold; color: #007BFF;"),
           fluidRow(
-            column(6, textInput("search_sku", "搜索 SKU", placeholder = "SKU 搜索", width = "100%")),
-            column(6, textInput("search_name", "搜索物品名称", placeholder = "物品名搜索", width = "100%"))
+            column(6, textInput("search_sku", "按SKU搜索", placeholder = "输入SKU", width = "100%")),
+            column(6, textInput("search_name", "按物品名搜索", placeholder = "输入物品名", width = "100%"))
           ),
           div(
             style = "margin-bottom: 10px;",

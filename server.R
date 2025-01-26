@@ -846,7 +846,11 @@ server <- function(input, output, session) {
   
   # SKU 和物品名称搜索预览
   observeEvent(c(input$search_sku, input$search_name), {
-    req(trimws(input$search_sku) != "" | trimws(input$search_name) != "")  # 确保至少一个搜索条件不为空
+    if(input$search_sku != "" & input$search_name != "") {
+      output$item_preview <- renderUI({ NULL })
+    }
+    
+    req(input$search_sku != "" | input$search_name != "")  # 确保至少一个搜索条件不为空
     
     # 获取清理后的输入值
     search_sku <- trimws(input$search_sku)
@@ -925,14 +929,17 @@ server <- function(input, output, session) {
       
       # 插入新的采购请求
       dbExecute(con, 
-                "INSERT INTO purchase_requests (RequestID, SKU, ItemImage, ItemDescription, Quantity, RequestStatus) VALUES (?, ?, ?, ?, ?, '待处理')", 
+                "INSERT INTO purchase_requests (RequestID, SKU, ItemImage, ItemDescription, Quantity, RequestStatus) 
+                VALUES (?, ?, ?, ?, ?, '待处理')", 
                 params = list(request_id, item_sku, item_image_path, item_description, input$request_quantity))
       
       # 刷新 todo_board 的输出
       refresh_todo_board()
       
-      # 重新触发动态绑定逻辑
-      bind_buttons(request_id)  # 调用封装的函数
+      # 清空输入字段
+      updateTextInput(session, "search_sku", value = "")
+      updateTextInput(session, "search_name", value = "")
+      updateNumericInput(session, "request_quantity", value = 1)
       
       showNotification("请求已成功创建", type = "message")
     } else if (nrow(filtered_data) > 1) {
@@ -977,7 +984,7 @@ server <- function(input, output, session) {
     refresh_todo_board()
     
     # 清空输入字段
-    updateTextAreaInput(session, "custom_description", value = "")
+    updateTextInput(session, "custom_description", value = "")
     updateNumericInput(session, "custom_quantity", value = 1)
     image_purchase_requests$reset()
     showNotification("自定义请求已成功提交", type = "message")
