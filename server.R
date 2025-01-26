@@ -827,10 +827,17 @@ server <- function(input, output, session) {
     intervalMillis = poll_interval,  # 每2秒检查一次
     session = session,
     checkFunc = function() {
-      dbGetQuery(con, "SELECT MAX(UpdatedAt) AS last_updated FROM purchase_requests")$last_updated[1]
+      # 查询最新更新时间
+      last_updated <- dbGetQuery(con, "SELECT MAX(UpdatedAt) AS last_updated FROM purchase_requests")$last_updated[1]
+      if (is.null(last_updated)) {
+        Sys.time()  # 如果无数据，返回当前时间
+      } else {
+        last_updated
+      }    
     },
     valueFunc = function() {
-      dbGetQuery(con, "SELECT * FROM purchase_requests")
+      result <- dbGetQuery(con, "SELECT * FROM purchase_requests")
+      if (nrow(result) == 0) { data.frame() } else { result }
     }
   )
   
