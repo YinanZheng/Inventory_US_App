@@ -702,13 +702,14 @@ server <- function(input, output, session) {
                 tags$div(
                   style = "width: 38%; display: flex; flex-direction: column; align-items: center;",
                   tags$img(
-                    src = ifelse(is.na(item$ItemImage), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImage))),
+                    src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
                     style = "width: 100%; max-height: 120px; object-fit: contain; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 5px;"
                   ),
                   tags$div(
                     style = "width: 100%; text-align: center; font-size: 12px; color: #333;",
                     tags$p(item$ItemDescription, style = "margin: 0;"),
                     tags$p(item$SKU, style = "margin: 0;"),
+                    tags$p(item$Maker, style = "margin: 0;"),
                     tags$p(
                       tags$b("请求数量:"), 
                       tags$span(item$Quantity, style = "color: red; font-weight: bold;"), 
@@ -951,6 +952,7 @@ server <- function(input, output, session) {
     
     if (nrow(filtered_data) == 1) {  # 确保唯一结果
       item_sku <- filtered_data$SKU[1]
+      item_maker <- filtered_data$Maker[1]
       item_description <- filtered_data$ItemName[1]
       item_image_path <- filtered_data$ItemImagePath[1]
       
@@ -958,9 +960,9 @@ server <- function(input, output, session) {
       
       # 插入新的采购请求
       dbExecute(con, 
-                "INSERT INTO purchase_requests (RequestID, SKU, ItemImage, ItemDescription, Quantity, RequestStatus) 
-                VALUES (?, ?, ?, ?, ?, '待处理')", 
-                params = list(request_id, item_sku, item_image_path, item_description, input$request_quantity))
+                "INSERT INTO purchase_requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
+                VALUES (?, ?, ?, ?, ?, ?, '待处理')", 
+                params = list(request_id, item_sku, item_maker, item_image_path, item_description, input$request_quantity))
       
       # 刷新 todo_board 的输出
       refresh_todo_board()
@@ -1007,7 +1009,7 @@ server <- function(input, output, session) {
     
     # 将数据插入到数据库
     dbExecute(con, 
-              "INSERT INTO purchase_requests (RequestID, SKU, ItemImage, ItemDescription, Quantity, RequestStatus) 
+              "INSERT INTO purchase_requests (RequestID, SKU, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
              VALUES (?, ?, ?, ?, ?, '待处理')", 
               params = list(request_id, "New-Request", custom_image_path, custom_description, custom_quantity))
     
