@@ -802,7 +802,7 @@ server <- function(input, output, session) {
         
         # 提取当前 RequestID 的 Remarks
         current_remarks <- requests_data() %>% filter(RequestID == request_id) %>% pull(Remarks)
-        current_remarks_text <- ifelse(is.na(current_remarks$Remarks[1]), "", current_remarks$Remarks[1])
+        current_remarks_text <- ifelse(is.na(current_remarks), "", current_remarks)
         updated_remarks <- if (current_remarks_text == "") new_remark else paste(current_remarks_text, new_remark, sep = ";")
         
         # 更新数据库中的 Remarks 字段
