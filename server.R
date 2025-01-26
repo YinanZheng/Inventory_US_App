@@ -838,8 +838,7 @@ server <- function(input, output, session) {
   observe({
     requests <- poll_requests()
     requests_data(requests)  # 更新缓存
-    showNotification(nrow(requests))
-    # refresh_todo_board()  # 刷新任务板
+    refresh_todo_board()  # 刷新任务板
 
     # if (nrow(requests) > 0) {
     #   # 为每条记录绑定按钮逻辑
