@@ -667,6 +667,7 @@ server <- function(input, output, session) {
         div(
           style = "display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 10px; padding: 10px;",
           lapply(1:nrow(requests), function(i) {
+            showNotification(i)
             item <- requests[i, ]
             request_id <- item$RequestID
             
