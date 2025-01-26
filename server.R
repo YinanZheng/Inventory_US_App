@@ -716,7 +716,7 @@ server <- function(input, output, session) {
                     style = "width: 100%; text-align: center; font-size: 12px; color: #333;",
                     tags$p(item$ItemDescription, style = "margin: 0;"),
                     tags$p(item$SKU, style = "margin: 0;"),
-                    tags$p(item$Maker, style = "margin: 0;"),
+                    tags$p(paste("供应商:", item$Maker), style = "margin: 0;"),
                     tags$p(
                       tags$b("请求数量:"), 
                       tags$span(item$Quantity, style = "color: red; font-weight: bold;"), 
