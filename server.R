@@ -612,7 +612,7 @@ server <- function(input, output, session) {
   # 缓存请求数据
   requests_data <- reactiveVal(data.frame())
   
-  # 渲染留言板
+  # Function: 渲染留言板
   renderRemarks <- function(request_id) {
     # 提取当前 RequestID 的 Remarks
     current_remarks <- requests_data() %>% filter(RequestID == request_id) %>% pull(Remarks)
@@ -830,14 +830,7 @@ server <- function(input, output, session) {
       dbGetQuery(con, "SELECT MAX(UpdatedAt) AS last_updated FROM purchase_requests")$last_updated[1]
     },
     valueFunc = function() {
-      # 查询最新的请求数据并存入缓存
-      requests <- dbGetQuery(
-        con,
-        "SELECT * FROM purchase_requests 
-       WHERE RequestStatus IN ('待处理', '紧急', '已完成')
-       ORDER BY FIELD(RequestStatus, '紧急', '待处理', '已完成'), CreatedAt ASC"
-      )
-      requests  # 返回请求数据
+      dbGetQuery(con, "SELECT * FROM purchase_requests")
     }
   )
   
@@ -847,12 +840,12 @@ server <- function(input, output, session) {
     requests_data(requests)  # 更新缓存
     refresh_todo_board()  # 刷新任务板
 
-    if (nrow(requests) > 0) {
-      # 为每条记录绑定按钮逻辑
-      lapply(requests$RequestID, function(request_id) {
-        bind_buttons(request_id)  # 调用封装的函数
-      })
-    }
+    # if (nrow(requests) > 0) {
+    #   # 为每条记录绑定按钮逻辑
+    #   lapply(requests$RequestID, function(request_id) {
+    #     bind_buttons(request_id)  # 调用封装的函数
+    #   })
+    # }
   })
   
   
