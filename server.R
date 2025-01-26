@@ -618,11 +618,10 @@ server <- function(input, output, session) {
     current_remarks <- requests_data() %>% filter(RequestID == request_id) %>% pull(Remarks)
 
     # 如果当前 Remarks 为空或 NULL，则初始化为空列表
-    remarks <- if (nrow(current_remarks) > 0 && !is.na(current_remarks$Remarks[1]) && trimws(current_remarks$Remarks[1]) != "") {
-      # 使用 ; 分隔记录，并按时间倒序排列
-      rev(unlist(strsplit(trimws(current_remarks$Remarks[1]), ";")))
+    if (is.null(current_remarks) || trimws(current_remarks) == "") {
+      remarks <- list()  # 如果为空，则返回空列表
     } else {
-      list()  # 如果为空，则返回空列表
+      remarks <- rev(unlist(strsplit(trimws(current_remarks), ";")))  # 使用 ; 分隔记录，并按时间倒序排列
     }
     
     # 生成 HTML 字符串
