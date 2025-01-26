@@ -844,16 +844,23 @@ server <- function(input, output, session) {
     }
   })
   
-  # SKU 和物品名称搜索预览
-  observeEvent(c(input$search_sku, input$search_name), {
-    
-    # 互斥逻辑：如果输入 SKU，则清空物品名称，反之亦然
-    if (trimws(input$search_sku) != "") {
+  
+  observeEvent(input$search_sku, {
+    # 如果 SKU 搜索框有值，则清空物品名称搜索框
+    if (input$search_sku != "") {
       updateTextInput(session, "search_name", value = "")  # 清空物品名称搜索框
-    } else if (trimws(input$search_name) != "") {
+    }
+  })
+  
+  observeEvent(input$search_name, {
+    # 如果物品名称搜索框有值，则清空 SKU 搜索框
+    if (input$search_name != "") {
       updateTextInput(session, "search_sku", value = "")  # 清空 SKU 搜索框
     }
-    
+  })
+  
+  # SKU 和物品名称搜索预览
+  observeEvent(c(input$search_sku, input$search_name), {
     # 如果两个输入框都为空，则清空预览
     if (input$search_sku == "" && input$search_name == "") {
       output$item_preview <- renderUI({ NULL })
