@@ -955,9 +955,10 @@ server <- function(input, output, session) {
       if (nrow(filtered_data) == 1) {
         item_sku <- filtered_data$SKU[1]
         item_maker <- ifelse(is.na(filtered_data$Maker[1]), "", filtered_data$Maker[1])
-        item_description <- ifelse(is.na(filtered_data$ItemName[1]), "未知描述", filtered_data$ItemName[1])
+        item_description <- ifelse(is.na(filtered_data$ItemName[1]), "未知", filtered_data$ItemName[1])
         item_image_path <- ifelse(is.na(filtered_data$ItemImagePath[1]), placeholder_150px_path, filtered_data$ItemImagePath[1])
         
+        showNotification(item_maker)
         request_id <- uuid::UUIDgenerate()
         
         dbExecute(con, 
