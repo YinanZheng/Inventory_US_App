@@ -657,18 +657,18 @@ server <- function(input, output, session) {
   refresh_todo_board <- function() {
     requests <- requests_data()  # 使用缓存数据
     
-    # 按 RequestStatus 和 CreatedAt 排序
-    requests <- requests %>%
-      arrange(
-        factor(RequestStatus, levels = c("紧急", "待处理", "已完成")),  # 自定义状态顺序
-        CreatedAt  # 按创建时间升序排列
-      )
-    
     if (nrow(requests) == 0) {
       output$todo_board <- renderUI({
         div(style = "text-align: center; color: grey; margin-top: 20px;", tags$p("当前没有待处理事项"))
       })
     } else {
+      # 按 RequestStatus 和 CreatedAt 排序
+      requests <- requests %>%
+        arrange(
+          factor(RequestStatus, levels = c("紧急", "待处理", "已完成")),  # 自定义状态顺序
+          CreatedAt  # 按创建时间升序排列
+        )
+      
       output$todo_board <- renderUI({
         div(
           style = "display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 10px; padding: 10px;",
