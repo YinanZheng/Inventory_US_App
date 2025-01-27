@@ -239,7 +239,7 @@ ui <- navbarPage(
     )
   ),
   
-  collaborationModuleUI("collaboration"),
+  collaborationModuleUI("uscollab"),
   
   # tabPanel(
   #   "协作", icon = icon("users"),

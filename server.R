@@ -606,7 +606,7 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  collaborationModuleServer("collaboration", con, unique_items_data)
+  collaborationModuleServer("uscollab", con, unique_items_data)
   
   # # 记录所有已注册的按钮 ID
   # registered_buttons <- reactiveVal(c())  
