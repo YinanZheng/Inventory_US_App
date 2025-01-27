@@ -78,8 +78,6 @@ ui <- navbarPage(
       
       /* --------------------------------------------------------- */
       
-      
-      
       /* Flexbox 容器 */
       .layout-container {
         display: flex; /* Flex 布局 */
@@ -87,21 +85,38 @@ ui <- navbarPage(
         height: 100%; /* 满高布局 */
       }
 
-      /* Sticky Sidebar */
       .sticky-sidebar {
         position: sticky; /* 保持固定 */
-        top: 70px; /* 与导航栏对齐 */
         z-index: 900;
-        width: 380px; /* 固定宽度 */
+        flex: 0 0 auto; /* 固定宽度并防止被压缩 */
+        width: 350px; /* 默认宽度 */
+        min-width: 280px; /* 最小宽度 */
+        max-width: 580px; /* 最大宽度 */
         height: calc(100vh - 70px); /* 自动计算高度 */
         overflow-y: auto; /* 滚动支持 */
-        border: 1px solid #e0e0e0;
+        border-right: 1px solid #e0e0e0;
         border-radius: 8px;
         padding: 20px;
         background-color: #f9f9f9;
-        flex-shrink: 0; /* 防止压缩 */
+        transition: width 0.2s ease; /* 增加平滑过渡效果 */
       }
-    
+      
+      .main-panel {
+        flex-grow: 1;
+        overflow: hidden; /* 禁止滚动条 */
+        padding: 20px;
+        padding-top: 0px;
+        background-color: #ffffff;
+        transition: width 0.2s ease; /* 增加平滑过渡效果 */
+      }
+      
+      .resizable-divider {
+        background-color: #aaa;
+        width: 5px;
+        cursor: ew-resize;
+        flex-shrink: 0;
+      }
+      
       .order-info-container {
         position: relative; /* 相对定位 */
         overflow: hidden;   /* 避免外层滚动 */
@@ -115,22 +130,6 @@ ui <- navbarPage(
         display: inline-flex; /* 子项水平排列 */
         gap: 15px; /* 卡片间距 */
         padding: 15px;
-      }
-      
-      .main-panel {
-        position: relative;
-        flex-grow: 1; /* 允许主面板扩展 */
-        padding: 20px;
-        padding-top: 0px;
-        background-color: #ffffff;
-        overflow: hidden; /* 避免主面板影响滚动条 */
-      }
-      
-      .resizable-divider {
-        background-color: #aaa;
-        width: 5px;
-        cursor: ew-resize;
-        flex-shrink: 0;
       }
       
       table.dataTable thead th {
