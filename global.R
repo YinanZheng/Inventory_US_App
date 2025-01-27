@@ -7,34 +7,21 @@ library(shinyWidgets)
 library(shinythemes)
 library(shiny.fluent)
 
+library(DBI)
+library(RMariaDB)
 library(dplyr)
+library(tidyr)
 library(DT)
 library(stringi)
 library(baRcodeR)
-library(DBI)
-library(RMariaDB)
 library(plotly)
 library(networkD3)
 library(openxlsx)
-library(tidyr)
-library(lubridate)
 
-# Source all modular functions
-source("./modules/typeModuleUI.R", local = TRUE)
-source("./modules/uniqueItemsTableUI.R", local = TRUE)
-source("./modules/imageModuleUI.R", local = TRUE)
-source("./modules/orderTableUI.R", local = TRUE)
-source("./modules/itemFilterUI.R", local = TRUE)
-source("./modules/autocompleteInputUI.R", local = TRUE)
+# Source shared module R file
+lapply(list.files("/srv/shiny-server/inventory_shared_module", pattern = "\\.R$", full.names = TRUE), source)
 
-source("./modules/supplierModuleServer.R", local = TRUE)
-source("./modules/typeModuleServer.R", local = TRUE)
-source("./modules/uniqueItemsTableServer.R", local = TRUE)
-source("./modules/imageModuleServer.R", local = TRUE)
-source("./modules/orderTableServer.R", local = TRUE)
-source("./modules/itemFilterServer.R", local = TRUE)
-source("./modules/autocompleteInputServer.R", local = TRUE)
-
+# Source internal functions
 source("utils.R", local = TRUE)
 
 system_type <<- "us"
