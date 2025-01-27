@@ -126,6 +126,13 @@ ui <- navbarPage(
         overflow: hidden; /* 避免主面板影响滚动条 */
       }
       
+      .resizable-divider {
+        background-color: #aaa;
+        width: 5px;
+        cursor: ew-resize;
+        flex-shrink: 0;
+      }
+      
       table.dataTable thead th {
         white-space: nowrap; /* 表头内容强制不换行 */
       }
@@ -210,6 +217,11 @@ ui <- navbarPage(
           actionButton("submit_custom_request", "创建请求", icon = icon("plus"), class = "btn-success", style = "width: 100%; margin-top: 10px;")
         )
       ),
+      
+      div(
+        class = "resizable-divider",
+      ),
+      
       div(
         class = "main-panel",
         tabsetPanel(
@@ -337,6 +349,10 @@ ui <- navbarPage(
       ),
       
       div(
+        class = "resizable-divider",
+      ),
+      
+      div(
         class = "main-panel",
         
         div(
@@ -406,7 +422,11 @@ ui <- navbarPage(
           )
         )
       ),
-        
+      
+      div(
+        class = "resizable-divider",
+      ),
+      
       # 右侧：主面板内容
       div(
         class = "main-panel",
@@ -477,6 +497,11 @@ ui <- navbarPage(
           actionButton("merge_order_btn", "合并订单", icon = icon("object-group"), class = "btn-primary", style = "font-size: 16px; width: 100%; height: 42px;")
         )
       ),
+      
+      div(
+        class = "resizable-divider",
+      ),
+      
       div(
         class = "main-panel",
         tabsetPanel(
@@ -590,6 +615,10 @@ ui <- navbarPage(
       ),
       
       div(
+        class = "resizable-divider",
+      ),
+      
+      div(
         class = "main-panel",
         div(
           style = "display: flex; flex-direction: column;",
@@ -671,7 +700,10 @@ ui <- navbarPage(
         )
       ),
       
-      # 主面板：物品状态表
+      div(
+        class = "resizable-divider",
+      ),
+      
       div(
         class = "main-panel",
         div(
@@ -765,6 +797,10 @@ ui <- navbarPage(
       div(
         class = "resizable-divider",  # 用于调整宽度的分隔条
         style = "cursor: ew-resize; background-color: #ccc; width: 5px; flex-shrink: 0;"
+      ),
+      
+      div(
+        class = "resizable-divider",
       ),
       
       div(
@@ -891,6 +927,10 @@ ui <- navbarPage(
       ),
       
       div(
+        class = "resizable-divider",
+      ),
+      
+      div(
         class = "main-panel",
         tabsetPanel(
           id = "transaction_tabs",  # 绑定到 input$tabs
@@ -977,6 +1017,11 @@ ui <- navbarPage(
           actionButton("clear_query_sku_btn", "清空", icon = icon("eraser"), class = "btn btn-warning")
         )
       ),
+      
+      div(
+        class = "resizable-divider",
+      ),
+      
       div(
         class = "main-panel",
         # 使用 tabsetPanel 来组织分页
@@ -1083,7 +1128,6 @@ ui <- navbarPage(
               )
             )
           ), # end of 开销汇总tab
-          
           
           tabPanel(
             "库存总览",
@@ -1276,9 +1320,12 @@ ui <- navbarPage(
           class = "btn-primary",
           style = "width: 100%; margin-top: 10px;"
         )
-        
-        
       ),
+      
+      div(
+        class = "resizable-divider",
+      ),
+      
       div(
         class = "main-panel",
         uniqueItemsTableUI("unique_items_table_download")
@@ -1297,6 +1344,11 @@ ui <- navbarPage(
         tags$hr(),
         uiOutput("admin_controls")
       ),
+      
+      div(
+        class = "resizable-divider",
+      ),
+      
       div(
         class = "main-panel",
         uniqueItemsTableUI("admin_items_table")  # 使用你的模组渲染物品明细表
