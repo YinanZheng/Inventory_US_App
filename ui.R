@@ -80,9 +80,11 @@ ui <- navbarPage(
       
       /* Flexbox 容器 */
       .layout-container {
-        display: flex; /* Flex 布局 */
-        flex-wrap: nowrap; /* 禁止换行 */
-        height: 100%; /* 满高布局 */
+        display: flex;
+        flex-direction: row;
+        height: 100%;
+        width: 100%;
+        overflow: hidden; /* 禁止滚动条 */
       }
 
       .sticky-sidebar {
@@ -181,6 +183,57 @@ ui <- navbarPage(
               break;
             }
           }
+        });
+        
+        // JavaScript 实现分隔条拖拽
+        document.addEventListener('DOMContentLoaded', function() {
+          function enableResizing(divider) {
+            const sidebar = divider.previousElementSibling;  // 分隔条左侧的 sidebar
+            let isResizing = false;
+      
+            divider.addEventListener('mousedown', function(e) {
+              isResizing = true;
+              document.body.style.cursor = 'ew-resize';
+              document.body.style.userSelect = 'none';
+            });
+      
+            document.addEventListener('mousemove', function(e) {
+              if (!isResizing) return;
+              const newSidebarWidth = Math.max(200, Math.min(600, e.clientX)); // 限制宽度范围
+              sidebar.style.flex = `0 0 ${newSidebarWidth}px`;
+              
+               // 调整所有表格列宽
+              $('.dataTable').DataTable().columns.adjust();
+            });
+      
+            document.addEventListener('mouseup', function() {
+              if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                
+                // 再次确保表格布局正确
+                $('.dataTable').DataTable().columns.adjust();
+              }
+            });
+          }
+      
+          function bindResizableDividers() {
+            document.querySelectorAll('.resizable-divider').forEach(function(divider) {
+              if (!divider.dataset.bound) { // 避免重复绑定
+                enableResizing(divider);
+                divider.dataset.bound = true; // 标记为已绑定
+              }
+            });
+          }
+      
+          bindResizableDividers();
+      
+          // 分页切换后重新绑定
+          $(document).on('shown.bs.tab', function() {
+            bindResizableDividers();
+            $('.dataTable').DataTable().columns.adjust();
+          });
         });
       "))
     )
