@@ -658,6 +658,13 @@ server <- function(input, output, session) {
     purchase_requests <- requests %>% filter(RequestType == "采购")
     outbound_requests <- requests %>% filter(RequestType == "出库")
     
+    # 按 RequestStatus 和 CreatedAt 排序
+    purchase_requests <- purchase_requests %>%
+      arrange(factor(RequestStatus, levels = c("紧急", "待处理", "已完成")), CreatedAt) 
+    
+    outbound_requests <- outbound_requests %>%
+      arrange(factor(RequestStatus, levels = c("紧急", "待处理", "已完成")), CreatedAt) 
+    
     # 处理采购请求面板
     if (nrow(purchase_requests) == 0) {
       render_request_board(data.frame(), "purchase_request_board")  # 清空采购面板
@@ -944,15 +951,15 @@ server <- function(input, output, session) {
       shinyjs::disable("custom_description")
       shinyjs::disable("custom_quantity")
       shinyjs::disable("submit_custom_request")
-      shinyjs::disable("image_requests-image-upload")  # 禁用图片上传按钮
     } else if (current_tab == "采购请求") {
       # 启用与新商品请求相关的控件
       shinyjs::enable("custom_description")
       shinyjs::enable("custom_quantity")
       shinyjs::enable("submit_custom_request")
-      shinyjs::enable("image_requests-image-upload")  # 启用图片上传按钮
     }
   })
+  
+  
   
   ################################################################
   ##                                                            ##
