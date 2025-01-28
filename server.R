@@ -1903,19 +1903,23 @@ server <- function(input, output, session) {
           # 获取数量
           qty <- input[[paste0("purchase_qty_", sku)]]
           
+          request_id <- uuid::UUIDgenerate()
+          
           tryCatch({
             # 插入数据库
             dbExecute(con,
                       "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt)
                      VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW())",
                       params = list(
-                        uuid::UUIDgenerate(),
+                        request_id,
                         sku,
                         item$Maker,
                         item$ItemImagePath,
                         item$ItemName,  # 假设物品描述对应 ItemName
                         qty
                       ))
+            
+            bind_buttons(request_id)
             
             # 提示成功消息
             showNotification(paste0("已发出采购请求，SKU：", sku, "，数量：", qty), type = "message")
