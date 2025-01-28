@@ -1918,7 +1918,7 @@ update_balance <- function(account_type, con) {
 
 #####
 
-# 通用渲染函数：根据传入的请求数据和输出目标动态生成 UI
+# 协作便签渲染函数：根据传入的请求数据和输出目标动态生成 UI
 render_request_board <- function(requests, output_id) {
   if (nrow(requests) == 0) {
     output[[output_id]] <- renderUI({
@@ -2006,9 +2006,6 @@ render_request_board <- function(requests, output_id) {
     })
   }
 }
-
-
-
 
 #####
 
