@@ -21,9 +21,6 @@ library(openxlsx)
 # Source shared module R file
 lapply(list.files("/srv/shiny-server/inventory_shared_module", pattern = "\\.R$", full.names = TRUE), source)
 
-# Source internal functions
-source("utils.R", local = TRUE)
-
 system_type <<- "us"
 
 # 定义轮询间隔（以毫秒为单位）
@@ -48,16 +45,12 @@ common_columns <<- list(
   ItemName = "商品名",
   ItemImagePath = "商品图",
   Maker = "供应商",
-  # MajorType = "大类",
-  # MinorType = "小类",
   ProductCost = "单价",
-  # DomesticShippingCost = "平摊运费",
   Status = "库存态"
-  # Defect = "瑕疵态"
 )
 
 # 通用账务表列名映射
-transaction_common_columns <- list(
+transaction_common_columns <<- list(
   TransactionTime = "转账时间",
   AmountIn = "转入金额",
   AmountOut = "转出金额",
@@ -108,6 +101,3 @@ defect_statuses <<- c("瑕疵", "修复", "无瑕")
 
 # 定义管理员密码
 admin_password <<- "1029"
-
-client_id <<- "NzfGxVtsAiw6Y0IIYpg8ivmjHiTWuZJqH3ZOdTaLSPJpSm5H"
-client_secret <<- "h1LCAMKRiwa0hqaBpRTRZZeFdLXJGvibmGhM3W7YVaO7vBfWoHV7MRGA4nED0GKD"
