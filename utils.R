@@ -1918,6 +1918,99 @@ update_balance <- function(account_type, con) {
 
 #####
 
+# 通用渲染函数：根据传入的请求数据和输出目标动态生成 UI
+render_request_board <- function(requests, output_id) {
+  if (nrow(requests) == 0) {
+    output[[output_id]] <- renderUI({
+      div(style = "text-align: center; color: grey; margin-top: 20px;", tags$p("当前没有待处理事项"))
+    })
+  } else {
+    output[[output_id]] <- renderUI({
+      div(
+        style = "display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 10px; padding: 10px;",
+        lapply(1:nrow(requests), function(i) {
+          item <- requests[i, , drop = FALSE]
+          request_id <- item$RequestID
+          
+          # 根据状态设置便签背景颜色和边框颜色
+          card_colors <- switch(
+            item$RequestStatus,
+            "紧急" = list(bg = "#ffcdd2", border = "#e57373"),    # 红色背景，深红色边框
+            "待处理" = list(bg = "#fff9c4", border = "#ffd54f"),  # 橙色背景，深橙色边框
+            "已完成" = list(bg = "#c8e6c9", border = "#81c784")   # 绿色背景，深绿色边框
+          )
+          
+          # 渲染便签卡片
+          div(
+            class = "note-card",
+            style = sprintf("
+              position: relative;
+              width: 400px;
+              background-color: %s;
+              border: 2px solid %s;
+              border-radius: 10px;
+              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+              padding: 10px;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-between;
+            ", card_colors$bg, card_colors$border),
+            
+            # 图片和留言记录
+            div(
+              style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;",
+              tags$div(
+                style = "width: 38%; display: flex; flex-direction: column; align-items: center;",
+                tags$img(
+                  src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
+                  style = "width: 100%; max-height: 120px; object-fit: contain; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 5px;"
+                ),
+                tags$div(
+                  style = "width: 100%; text-align: center; font-size: 12px; color: #333;",
+                  tags$p(item$ItemDescription, style = "margin: 0;"),
+                  tags$p(item$SKU, style = "margin: 0;"),
+                  tags$p(paste("供应商:", item$Maker), style = "margin: 0;"),
+                  tags$p(
+                    tags$b("请求数量:"),
+                    tags$span(item$Quantity, style = "color: red; font-weight: bold;"),
+                    style = "margin: 0;"
+                  )
+                )
+              ),
+              tags$div(
+                style = "width: 58%; height: 194px; border: 1px solid #ddd; padding: 5px; background-color: #fff; overflow-y: auto; border-radius: 5px;",
+                uiOutput(paste0("remarks_", item$RequestID))  # 使用 RequestID 动态绑定到具体记录
+              )
+            ),
+            
+            # 留言输入框和提交按钮
+            tags$div(
+              style = "width: 100%; display: flex; flex-direction: column; align-items: flex-start; margin-top: 5px;",
+              tags$div(
+                style = "width: 100%; display: flex; justify-content: space-between;",
+                textInput(paste0("remark_input_", request_id), NULL, placeholder = "输入留言", width = "72%"),
+                actionButton(paste0("submit_remark_", request_id), "提交", class = "btn-success", style = "width: 25%; height: 45px;")
+              )
+            ),
+            
+            # 状态按钮
+            tags$div(
+              style = "width: 100%; display: flex; justify-content: space-between; margin-top: 5px;",
+              actionButton(paste0("mark_urgent_", request_id), "加急", class = "btn-danger", style = "width: 30%; height: 45px;"),
+              actionButton(paste0("complete_task_", request_id), "完成", class = "btn-primary", style = "width: 30%; height: 45px;"),
+              actionButton(paste0("delete_request_", request_id), "删除", class = "btn-warning", style = "width: 30%; height: 45px;")
+            )
+          )
+        })
+      )
+    })
+  }
+}
+
+
+
+
+#####
 
 # 自定义函数
 `%||%` <- function(a, b) {
