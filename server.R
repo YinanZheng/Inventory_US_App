@@ -1858,11 +1858,14 @@ server <- function(input, output, session) {
           )
         })
         
+        # 显示模态框
         showModal(modalDialog(
-          title = "以下物品库存不足，是否需要发出采购请求？",
+          title = "以下物品已售罄，是否需要发出采购请求？",
           div(style = "max-height: 400px; overflow-y: auto;", modal_content),
           easyClose = FALSE,
-          footer = modalButton("完成")
+          footer = tagList(
+            modalButton("完成采购请求", inputId = "purchase_request_complete_btn")
+          )
         ))
       }
       
@@ -1914,6 +1917,12 @@ server <- function(input, output, session) {
     }
   })
 
+  # 监听 "完成采购请求" 按钮事件
+  observeEvent(input$purchase_request_complete_btn, {
+    zero_stock_items(list())
+    removeModal()
+  })
+  
   
   # 订单物品删除逻辑 （美国售出only）
   observeEvent(input$delete_card, {
