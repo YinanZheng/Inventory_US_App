@@ -1833,8 +1833,8 @@ server <- function(input, output, session) {
       
       
       # 弹出模态框提示补货
-      if (length(zero_stock_items()) > 0) {
-        modal_content <- lapply(zero_stock_items(), function(item) {
+      if (length(zero_items) > 0) {
+        modal_content <- lapply(zero_items, function(item) {
           div(
             style = "display: flex; flex-direction: row; align-items: center; margin-bottom: 10px;",
             
