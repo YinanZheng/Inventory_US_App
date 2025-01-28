@@ -1831,16 +1831,30 @@ server <- function(input, output, session) {
       added_order_items <- unique_items_data() %>% filter(OrderID == order$OrderID)
       renderOrderItems(output, "shipping_order_items_cards", added_order_items, con, deletable = FALSE)
       
+      
       # 弹出模态框提示补货
       if (length(zero_items) > 0) {
         modal_content <- lapply(zero_items, function(item) {
           div(
-            style = "display: flex; flex-direction: column; align-items: center; margin-bottom: 10px;",
-            tags$img(src = paste0(host_url, "/images/", item$ItemImagePath), style = "width: 100px; height: 100px; object-fit: cover; margin-bottom: 5px;"),
-            tags$p(tags$b("物品名："), item$ItemName),
-            tags$p(tags$b("SKU："), item$SKU),
-            numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "80%"),
-            actionButton(paste0("create_request_", item$SKU), "发出采购请求", class = "btn-primary")
+            style = "display: flex; flex-direction: row; align-items: center; margin-bottom: 10px;",
+            
+            # 左侧图片和物品信息
+            div(
+              style = "display: flex; flex-direction: column; align-items: center; margin-right: 20px;",
+              tags$img(
+                src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
+                style = "width: 100px; height: 100px; object-fit: cover; margin-bottom: 5px;"
+              ),
+              tags$p(tags$b("物品名："), item$ItemName),
+              tags$p(tags$b("SKU："), item$SKU)
+            ),
+            
+            # 右侧请求数量和按钮
+            div(
+              style = "display: flex; flex-direction: column; align-items: flex-start;",
+              numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "120px"),
+              actionButton(paste0("create_request_", item$SKU), "发出采购请求", class = "btn-primary", style = "margin-top: 10px;")
+            )
           )
         })
         
