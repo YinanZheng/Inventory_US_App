@@ -263,7 +263,7 @@ ui <- navbarPage(
           actionButton("add_request", "创建请求", icon = icon("plus"), class = "btn-success", style = "width: 100%; margin-top: 10px;"),
           tags$hr(),
           tags$h4("新商品采购请求", style = "font-weight: bold; color: #007BFF;"),
-          imageModuleUI("image_purchase_requests", label = "请求物品图片上传"),
+          imageModuleUI("image_requests", label = "请求物品图片上传"),
           textInput("custom_description", "物品名", placeholder = "输入物品名", width = "100%"),
           numericInput("custom_quantity", "请求采购数量", value = 1, min = 1, width = "100%"),
           actionButton("submit_custom_request", "创建请求", icon = icon("plus"), class = "btn-success", style = "width: 100%; margin-top: 10px;")

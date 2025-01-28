@@ -752,19 +752,19 @@ server <- function(input, output, session) {
   bind_buttons <- function(request_id) {
     # 按钮绑定逻辑
     observeEvent(input[[paste0("mark_urgent_", request_id)]], {
-      dbExecute(con, "UPDATE purchase_requests SET RequestStatus = '紧急' WHERE RequestID = ?", params = list(request_id))
+      dbExecute(con, "UPDATE requests SET RequestStatus = '紧急' WHERE RequestID = ?", params = list(request_id))
       refresh_todo_board()
       # showNotification(paste0("Request ", request_id, " 状态已标记为紧急"), type = "warning")
     }, ignoreInit = TRUE)  # 避免初始绑定时触发事件
     
     observeEvent(input[[paste0("complete_task_", request_id)]], {
-      dbExecute(con, "UPDATE purchase_requests SET RequestStatus = '已完成' WHERE RequestID = ?", params = list(request_id))
+      dbExecute(con, "UPDATE requests SET RequestStatus = '已完成' WHERE RequestID = ?", params = list(request_id))
       refresh_todo_board()
       # showNotification(paste0("Request ", request_id, " 已完成"), type = "message")
     }, ignoreInit = TRUE)
     
     observeEvent(input[[paste0("delete_request_", request_id)]], {
-      dbExecute(con, "DELETE FROM purchase_requests WHERE RequestID = ?", params = list(request_id))
+      dbExecute(con, "DELETE FROM requests WHERE RequestID = ?", params = list(request_id))
       refresh_todo_board()
       # showNotification(paste0("Request ", request_id, " 已删除"), type = "message")
     }, ignoreInit = TRUE)
@@ -782,7 +782,7 @@ server <- function(input, output, session) {
       current_remarks_text <- ifelse(is.na(current_remarks), "", current_remarks)
       updated_remarks <- if (current_remarks_text == "") new_remark else paste(new_remark, current_remarks_text, sep = ";")
       
-      dbExecute(con, "UPDATE purchase_requests SET Remarks = ? WHERE RequestID = ?", params = list(updated_remarks, request_id))
+      dbExecute(con, "UPDATE requests SET Remarks = ? WHERE RequestID = ?", params = list(updated_remarks, request_id))
       
       # 动态更新 UI
       output[[paste0("remarks_", request_id)]] <- renderUI({
@@ -801,7 +801,7 @@ server <- function(input, output, session) {
     session = session,
     checkFunc = function() {
       # 查询最新更新时间
-      last_updated <- dbGetQuery(con, "SELECT MAX(UpdatedAt) AS last_updated FROM purchase_requests")$last_updated[1]
+      last_updated <- dbGetQuery(con, "SELECT MAX(UpdatedAt) AS last_updated FROM requests")$last_updated[1]
       if (is.null(last_updated)) {
         Sys.time()  # 如果无数据，返回当前时间
       } else {
@@ -809,7 +809,7 @@ server <- function(input, output, session) {
       }
     },
     valueFunc = function() {
-      result <- dbGetQuery(con, "SELECT * FROM purchase_requests")
+      result <- dbGetQuery(con, "SELECT * FROM requests")
       if (nrow(result) == 0) { data.frame() } else { result }
     }
   )
@@ -935,7 +935,7 @@ server <- function(input, output, session) {
         item_description <- ifelse(is.na(filtered_data$ItemName[1]), "未知", filtered_data$ItemName[1])
         
         dbExecute(con, 
-                  "INSERT INTO purchase_requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
+                  "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
               VALUES (?, ?, ?, ?, ?, ?, '待处理')", 
                   params = list(request_id, filtered_data$SKU, filtered_data$Maker, item_image_path, item_description, input$request_quantity))
         
@@ -960,7 +960,7 @@ server <- function(input, output, session) {
   })
   
   # 初始化图片上传模块
-  image_purchase_requests <- imageModuleServer("image_purchase_requests")
+  image_requests <- imageModuleServer("image_requests")
   
   # 新商品采购请求按钮
   observeEvent(input$submit_custom_request, {
@@ -974,8 +974,8 @@ server <- function(input, output, session) {
     # 使用图片上传模块的返回数据
     custom_image_path <- process_image_upload(
       sku = "New-Request",  # 自定义物品没有 SKU，可以设置为固定值或动态生成
-      file_data = image_purchase_requests$uploaded_file(),
-      pasted_data = image_purchase_requests$pasted_file()
+      file_data = image_requests$uploaded_file(),
+      pasted_data = image_requests$pasted_file()
     )
     
     # 检查图片路径是否有效
@@ -986,7 +986,7 @@ server <- function(input, output, session) {
     
     # 将数据插入到数据库
     dbExecute(con, 
-              "INSERT INTO purchase_requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
+              "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
              VALUES (?, ?, '待定', ?, ?, ?, '待处理')", 
               params = list(request_id, "New-Request", custom_image_path, custom_description, custom_quantity))
     
@@ -998,7 +998,7 @@ server <- function(input, output, session) {
     # 清空输入字段
     updateTextInput(session, "custom_description", value = "")
     updateNumericInput(session, "custom_quantity", value = 1)
-    image_purchase_requests$reset()
+    image_requests$reset()
     showNotification("自定义请求已成功提交", type = "message")
   })
 
