@@ -3207,7 +3207,7 @@ server <- function(input, output, session) {
     )
     
     if (!is.null(account_type)) {
-      refreshTransactionTable(account_type, cache_env, transaction_table_hash(), con)  # 优化后的表格刷新
+      refreshTransactionTable(account_type, cache_env, transaction_table_hash, con)  # 优化后的表格刷新
       resetToCreateMode()
       resetTransactionForm(session)
       resetTransferForm(session)
@@ -3277,7 +3277,7 @@ server <- function(input, output, session) {
         
         # 自动更新账户余额和表格
         updateAccountOverview(output, con)
-        refreshTransactionTable(account_type, cache_env, transaction_table_hash(), con)
+        refreshTransactionTable(account_type, cache_env, transaction_table_hash, con)
       }, error = function(e) {
         showNotification(paste("更新失败：", e$message), type = "error")
       })
@@ -3320,7 +3320,7 @@ server <- function(input, output, session) {
         
         # 自动更新账户余额和表格
         updateAccountOverview(output, con)
-        refreshTransactionTable(account_type, cache_env, transaction_table_hash(), con)
+        refreshTransactionTable(account_type, cache_env, transaction_table_hash, con)
       }, error = function(e) {
         showNotification(paste("登记失败：", e$message), type = "error")
       })
@@ -3390,8 +3390,8 @@ server <- function(input, output, session) {
       updateAccountOverview(output, con)
       
       # 自动刷新表格
-      refreshTransactionTable(input$from_account, cache_env, transaction_table_hash(), con)
-      refreshTransactionTable(input$to_account, cache_env, transaction_table_hash(), con)
+      refreshTransactionTable(input$from_account, cache_env, transaction_table_hash, con)
+      refreshTransactionTable(input$to_account, cache_env, transaction_table_hash, con)
       
       # 清空表单
       resetTransferForm(session)
@@ -3444,7 +3444,7 @@ server <- function(input, output, session) {
           updateAccountOverview(output, con)
           
           # 自动刷新表格
-          refreshTransactionTable(account_type, cache_env, transaction_table_hash(), con)
+          refreshTransactionTable(account_type, cache_env, transaction_table_hash, con)
         }, error = function(e) {
           showNotification(paste("删除失败：", e$message), type = "error")
         })
@@ -3502,7 +3502,7 @@ server <- function(input, output, session) {
           updateAccountOverview(output, con)
           
           # 自动刷新表格
-          refreshTransactionTable(account_type, cache_env, transaction_table_hash(), con)
+          refreshTransactionTable(account_type, cache_env, transaction_table_hash, con)
         }, error = function(e) {
           showNotification(paste("删除失败：", e$message), type = "error")
         })
