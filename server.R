@@ -1804,12 +1804,12 @@ server <- function(input, output, session) {
             bind_buttons(request_id, requests_data(), input, output, session, con)
             
             # 更新按钮名称和样式
-            updateActionButton(
-              session,
-              inputId = button_id,
-              label = HTML("<i class='fa fa-check' style='margin-right: 5px;'></i>请求已发送"),
-              style = "margin-top: 10px; background-color: #28a745; color: white; border-color: #28a745;"
-            )
+            # updateActionButton(
+            #   session,
+            #   inputId = button_id,
+            #   label = HTML("<i class='fa fa-check' style='margin-right: 5px;'></i>请求已发送"),
+            #   style = "margin-top: 10px; background-color: #28a745; color: white; border-color: #28a745;"
+            # )
             
             # 提示成功消息
             showNotification(paste0("已发出采购请求，SKU：", sku, "，数量：", qty), type = "message")
