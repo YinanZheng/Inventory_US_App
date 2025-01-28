@@ -667,16 +667,16 @@ server <- function(input, output, session) {
     
     # 处理采购请求面板
     if (nrow(purchase_requests) == 0) {
-      render_request_board(data.frame(), "purchase_request_board")  # 清空采购面板
+      render_request_board(data.frame(), "purchase_request_board", output)  # 清空采购面板
     } else {
-      render_request_board(purchase_requests, "purchase_request_board")  # 渲染采购面板
+      render_request_board(purchase_requests, "purchase_request_board", output)  # 渲染采购面板
     }
     
     # 处理出库请求面板
     if (nrow(outbound_requests) == 0) {
-      render_request_board(data.frame(), "outbound_request_board")  # 清空出库面板
+      render_request_board(data.frame(), "outbound_request_board", output)  # 清空出库面板
     } else {
-      render_request_board(outbound_requests, "outbound_request_board")  # 渲染出库面板
+      render_request_board(outbound_requests, "outbound_request_board", output)  # 渲染出库面板
     }
   }
   
