@@ -823,8 +823,8 @@ server <- function(input, output, session) {
   observe({
     requests <- requests_data()
     refresh_todo_board()
-    showNotification(nrow(requests))
-    # 为每条记录绑定按钮逻辑
+    
+    # 渲染留言内容并绑定按钮事件
     lapply(requests$RequestID, function(request_id) {
       output[[paste0("remarks_", request_id)]] <- renderRemarks(request_id)
       bind_buttons(request_id)  # 按 RequestID 动态绑定按钮
