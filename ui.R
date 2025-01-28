@@ -239,8 +239,6 @@ ui <- navbarPage(
     )
   ),
   
-  # collaborationModuleUI("uscollab"),
-  
   tabPanel(
     "协作", icon = icon("users"),
     div(

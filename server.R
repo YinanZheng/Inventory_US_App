@@ -754,19 +754,19 @@ server <- function(input, output, session) {
     observeEvent(input[[paste0("mark_urgent_", request_id)]], {
       dbExecute(con, "UPDATE purchase_requests SET RequestStatus = '紧急' WHERE RequestID = ?", params = list(request_id))
       refresh_todo_board()
-      showNotification(paste0("Request ", request_id, " 状态已标记为紧急"), type = "warning")
+      # showNotification(paste0("Request ", request_id, " 状态已标记为紧急"), type = "warning")
     }, ignoreInit = TRUE)  # 避免初始绑定时触发事件
     
     observeEvent(input[[paste0("complete_task_", request_id)]], {
       dbExecute(con, "UPDATE purchase_requests SET RequestStatus = '已完成' WHERE RequestID = ?", params = list(request_id))
       refresh_todo_board()
-      showNotification(paste0("Request ", request_id, " 已完成"), type = "message")
+      # showNotification(paste0("Request ", request_id, " 已完成"), type = "message")
     }, ignoreInit = TRUE)
     
     observeEvent(input[[paste0("delete_request_", request_id)]], {
       dbExecute(con, "DELETE FROM purchase_requests WHERE RequestID = ?", params = list(request_id))
       refresh_todo_board()
-      showNotification(paste0("Request ", request_id, " 已删除"), type = "message")
+      # showNotification(paste0("Request ", request_id, " 已删除"), type = "message")
     }, ignoreInit = TRUE)
     
     observeEvent(input[[paste0("submit_remark_", request_id)]], {
@@ -791,7 +791,7 @@ server <- function(input, output, session) {
       
       # 清空输入框
       updateTextInput(session, paste0("remark_input_", request_id), value = "")
-      showNotification(paste0("留言已成功提交: ", request_id), type = "message")
+      # showNotification(paste0("留言已成功提交: ", request_id), type = "message")
     }, ignoreInit = TRUE)
   }
   
@@ -823,7 +823,7 @@ server <- function(input, output, session) {
   observe({
     requests <- requests_data()
     refresh_todo_board()
-    
+    showNotification(nrow(requests))
     # 为每条记录绑定按钮逻辑
     lapply(requests$RequestID, function(request_id) {
       output[[paste0("remarks_", request_id)]] <- renderRemarks(request_id)
