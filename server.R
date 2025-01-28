@@ -3612,16 +3612,16 @@ server <- function(input, output, session) {
   ####
   
   # 处理工资卡表格的图片点击
-  handleTransactionImageClick("工资卡", "salary_card_table", 4)
+  handleTransactionImageClick("工资卡", "salary_card_table", 4, input)
   
   # 处理美元卡表格的图片点击
-  handleTransactionImageClick("美元卡", "dollar_card_table", 4)
+  handleTransactionImageClick("美元卡", "dollar_card_table", 4, input)
   
   # 处理买货卡表格的图片点击
-  handleTransactionImageClick("买货卡", "purchase_card_table", 4)
+  handleTransactionImageClick("买货卡", "purchase_card_table", 4, input)
   
   # 处理一般户卡表格的图片点击
-  handleTransactionImageClick("一般户卡", "general_card_table", 4)
+  handleTransactionImageClick("一般户卡", "general_card_table", 4, input)
   
   
   
