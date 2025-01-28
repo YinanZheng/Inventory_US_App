@@ -1833,8 +1833,8 @@ server <- function(input, output, session) {
       
       
       # 弹出模态框提示补货
-      if (length(zero_items) > 0) {
-        modal_content <- lapply(zero_items, function(item) {
+      if (length(zero_stock_items()) > 0) {
+        modal_content <- lapply(zero_stock_items(), function(item) {
           div(
             style = "display: flex; flex-direction: row; align-items: center; margin-bottom: 10px;",
             
@@ -1843,7 +1843,7 @@ server <- function(input, output, session) {
               style = "display: flex; flex-direction: column; align-items: center; margin-right: 20px;",
               tags$img(
                 src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
-                style = "width: 100px; height: 100px; object-fit: cover; margin-bottom: 5px;"
+                style = "height: 150px; object-fit: cover; margin-bottom: 5px;"
               ),
               tags$p(tags$b("物品名："), item$ItemName),
               tags$p(tags$b("SKU："), item$SKU)
@@ -1861,7 +1861,7 @@ server <- function(input, output, session) {
         # 显示模态框
         showModal(modalDialog(
           title = "以下物品已售罄，是否需要发出采购请求？",
-          div(style = "max-height: 400px; overflow-y: auto;", modal_content),
+          div(style = "max-height: 500px; overflow-y: auto;", modal_content),
           easyClose = FALSE,
           footer = tagList(
             modalButton("完成采购请求", inputId = "purchase_request_complete_btn")
