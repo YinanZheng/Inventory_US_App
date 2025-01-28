@@ -958,7 +958,19 @@ server <- function(input, output, session) {
     }
   })
   
-  
+  # 点击请求图片看大图
+  observeEvent(input$view_request_image, {
+    showModal(modalDialog(
+      title = "请求物品图片",
+      div(
+        style = "overflow: auto; max-height: 700px; text-align: center;",        
+        tags$img(src = input$view_request_image, style = "max-width: 100%; height: auto; display: inline-block;")
+      ),
+      size = "l",
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
   
   ################################################################
   ##                                                            ##

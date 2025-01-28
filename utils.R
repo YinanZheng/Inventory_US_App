@@ -1963,7 +1963,9 @@ render_request_board <- function(requests, output_id) {
                 style = "width: 38%; display: flex; flex-direction: column; align-items: center;",
                 tags$img(
                   src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
-                  style = "width: 100%; max-height: 120px; object-fit: contain; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 5px;"
+                  style = "width: 100%; max-height: 120px; object-fit: contain; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 5px; cursor: pointer;",
+                  onclick = sprintf("Shiny.setInputValue('view_request_image', '%s')", 
+                                    ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))))
                 ),
                 tags$div(
                   style = "width: 100%; text-align: center; font-size: 12px; color: #333;",
