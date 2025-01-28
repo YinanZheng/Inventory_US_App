@@ -1713,7 +1713,7 @@ server <- function(input, output, session) {
       if (length(zero_items) > 0) {
         modal_content <- lapply(zero_items, function(item) {
           div(
-            style = "display: flex; flex-direction: row; justify-content: center; align-items: center; margin-bottom: 10px;",
+            style = "display: flex; flex-direction: row; justify-content: center; align-items: center; margin-bottom: 20px;",
             
             # 左侧图片和物品信息
             div(
