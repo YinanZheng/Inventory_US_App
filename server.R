@@ -861,6 +861,9 @@ server <- function(input, output, session) {
   ## 入库分页                                                   ##
   ##                                                            ##
   ################################################################
+  observeEvent(input$play_test_sound, {
+    runjs("playInboundSuccessSound()")  # 测试播放成功音效
+  })
   
   # 监听标签页切换事件
   observeEvent(input$inventory_us, {
