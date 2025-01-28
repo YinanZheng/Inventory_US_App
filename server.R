@@ -1769,6 +1769,7 @@ server <- function(input, output, session) {
   observe({
     # 获取当前所有动态生成的按钮 ID
     request_buttons <- grep("^create_request_", names(input), value = TRUE)
+    showNotification(request_buttons)
     
     # 确保对每个按钮只绑定一次事件
     lapply(request_buttons, function(button_id) {
