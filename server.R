@@ -588,7 +588,9 @@ server <- function(input, output, session) {
   # 下载分页物品表
   unique_items_table_download_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_download",
                                                          column_mapping <- c(common_columns, list(
-                                                           UsEntryTime = "美入库日",                                                           UsEntryTime = "美入库日",
+                                                           Defect = "瑕疵态",
+                                                           PurchaseTime = "采购日",
+                                                           UsEntryTime = "美入库日",                                                           
                                                            UsRelocationTime = "美调货日",
                                                            UsShippingTime = "美发货日")
                                                          ), data = filtered_unique_items_data_download)
@@ -685,20 +687,14 @@ server <- function(input, output, session) {
     # 按钮绑定逻辑
     observeEvent(input[[paste0("mark_urgent_", request_id)]], {
       dbExecute(con, "UPDATE requests SET RequestStatus = '紧急' WHERE RequestID = ?", params = list(request_id))
-      # refresh_board()
-      # showNotification(paste0("Request ", request_id, " 状态已标记为紧急"), type = "warning")
     }, ignoreInit = TRUE)  # 避免初始绑定时触发事件
     
     observeEvent(input[[paste0("complete_task_", request_id)]], {
       dbExecute(con, "UPDATE requests SET RequestStatus = '已完成' WHERE RequestID = ?", params = list(request_id))
-      # refresh_board()
-      # showNotification(paste0("Request ", request_id, " 已完成"), type = "message")
     }, ignoreInit = TRUE)
     
     observeEvent(input[[paste0("delete_request_", request_id)]], {
       dbExecute(con, "DELETE FROM requests WHERE RequestID = ?", params = list(request_id))
-      # refresh_board()
-      # showNotification(paste0("Request ", request_id, " 已删除"), type = "message")
     }, ignoreInit = TRUE)
     
     observeEvent(input[[paste0("submit_remark_", request_id)]], {
@@ -879,7 +875,6 @@ server <- function(input, output, session) {
          VALUES (?, ?, ?, ?, ?, ?, '待处理', ?)", 
                   params = list(request_id, filtered_data$SKU, filtered_data$Maker, item_image_path, item_description, input$request_quantity, request_type))
         
-        # refresh_board()
         bind_buttons(request_id)
         
         updateTextInput(session, "search_sku", value = "")
@@ -928,9 +923,6 @@ server <- function(input, output, session) {
               "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
              VALUES (?, ?, '待定', ?, ?, ?, '待处理')", 
               params = list(request_id, "New-Request", custom_image_path, custom_description, custom_quantity))
-    
-    # 刷新任务板
-    # refresh_board()
     
     bind_buttons(request_id) #绑定按钮逻辑
     
