@@ -3195,7 +3195,7 @@ server <- function(input, output, session) {
   # 分页切换更新
   observe({
     if (input$transaction_tabs == "账户余额总览") {
-      updateAccountOverview()
+      updateAccountOverview(output)
     }
     
     account_type <- switch(
@@ -3276,7 +3276,7 @@ server <- function(input, output, session) {
         resetTransactionForm(session) # 重置输入框
         
         # 自动更新账户余额和表格
-        updateAccountOverview()
+        updateAccountOverview(output)
         refreshTransactionTable(account_type)
       }, error = function(e) {
         showNotification(paste("更新失败：", e$message), type = "error")
@@ -3319,7 +3319,7 @@ server <- function(input, output, session) {
         resetTransactionForm(session) # 重置输入框
         
         # 自动更新账户余额和表格
-        updateAccountOverview()
+        updateAccountOverview(output)
         refreshTransactionTable(account_type)
       }, error = function(e) {
         showNotification(paste("登记失败：", e$message), type = "error")
@@ -3387,7 +3387,7 @@ server <- function(input, output, session) {
       showNotification("资金转移记录成功！", type = "message")
       
       # 自动更新账户余额
-      updateAccountOverview()
+      updateAccountOverview(output)
       
       # 自动刷新表格
       refreshTransactionTable(input$from_account)
@@ -3441,7 +3441,7 @@ server <- function(input, output, session) {
           update_balance(account_type, con)
           
           # 自动刷新账户余额总览统计
-          updateAccountOverview()
+          updateAccountOverview(output)
           
           # 自动刷新表格
           refreshTransactionTable(account_type)
@@ -3499,7 +3499,7 @@ server <- function(input, output, session) {
           update_balance(account_type, con)
           
           # 自动刷新账户余额总览统计
-          updateAccountOverview()
+          updateAccountOverview(output)
           
           # 自动刷新表格
           refreshTransactionTable(account_type)
