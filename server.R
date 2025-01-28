@@ -1723,7 +1723,7 @@ server <- function(input, output, session) {
             modal_content,
             tags$div(
               style = "padding: 10px; background-color: #ffe6e6; border-radius: 8px; margin-bottom: 20px;",
-              tags$h4("以下物品需要补货：", style = "color: red; margin-bottom: 15px;"),
+              tags$h4("需要补货：", style = "color: red; margin-bottom: 15px;"),
               tags$div(
                 style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
                 lapply(zero_items, function(item) {
@@ -1760,7 +1760,7 @@ server <- function(input, output, session) {
             modal_content,
             tags$div(
               style = "padding: 10px; background-color: #e6f7ff; border-radius: 8px; margin-bottom: 20px;",
-              tags$h4("以下物品需要出库：", style = "color: blue; margin-bottom: 15px;"),
+              tags$h4("可从国内调货：", style = "color: blue; margin-bottom: 15px;"),
               tags$div(
                 style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
                 lapply(outbound_items, function(item) {
@@ -1781,7 +1781,7 @@ server <- function(input, output, session) {
                     ),
                     actionButton(
                       paste0("create_request_outbound_", item$SKU),
-                      "发出出库请求",
+                      "发出调货请求",
                       class = "btn-primary",
                       style = "margin-top: 10px; width: 100%;"
                     )
