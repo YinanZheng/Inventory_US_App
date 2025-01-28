@@ -1734,7 +1734,7 @@ server <- function(input, output, session) {
     }
     
     tryCatch({
-      dbBegin(con)
+      # dbBegin(con)
       
       # 生成拼图路径
       combined_image_paths <- items$ItemImagePath[!is.na(items$ItemImagePath) & items$ItemImagePath != ""]
@@ -1782,7 +1782,7 @@ server <- function(input, output, session) {
         )
       }
       
-      dbCommit(con)
+      # dbCommit(con)
       
       # 更新数据并触发 UI 刷新
       orders_refresh_trigger(!orders_refresh_trigger())
@@ -1874,7 +1874,7 @@ server <- function(input, output, session) {
         type = "message"
       )
     }, error = function(e) {
-      dbRollback(con)
+      # dbRollback(con)
       showNotification(paste("发货失败：", e$message), type = "error")
     })
     
