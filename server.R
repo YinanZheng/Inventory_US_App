@@ -1734,8 +1734,6 @@ server <- function(input, output, session) {
     }
     
     tryCatch({
-      # dbBegin(con)
-      
       # 生成拼图路径
       combined_image_paths <- items$ItemImagePath[!is.na(items$ItemImagePath) & items$ItemImagePath != ""]
       if (length(combined_image_paths) == 0) {
@@ -1781,8 +1779,6 @@ server <- function(input, output, session) {
           order_id = order$OrderID
         )
       }
-      
-      # dbCommit(con)
       
       # 更新数据并触发 UI 刷新
       orders_refresh_trigger(!orders_refresh_trigger())
@@ -1874,7 +1870,6 @@ server <- function(input, output, session) {
         type = "message"
       )
     }, error = function(e) {
-      # dbRollback(con)
       showNotification(paste("发货失败：", e$message), type = "error")
     })
     
@@ -1890,14 +1885,23 @@ server <- function(input, output, session) {
   })
   
   # 监听添加采购请求按钮
-  observeEvent(grep("^create_request_", names(input), value = TRUE), {
-    items <- zero_stock_items()  # 从 reactiveVal 获取库存为零的物品
-    for (item in items) {
-      sku <- item$SKU
-      if (input[[paste0("create_request_", sku)]]) {
+  observe({
+    # 获取当前所有动态生成的按钮 ID
+    request_buttons <- grep("^create_request_", names(input), value = TRUE)
+    
+    # 为每个按钮 ID 动态创建监听
+    lapply(request_buttons, function(button_id) {
+      observeEvent(input[[button_id]], {
+        # 获取 SKU 对应的编号
+        sku <- sub("create_request_", "", button_id)  # 提取 SKU
+        items <- zero_stock_items()  # 从 reactiveVal 获取库存为零的物品
+        item <- items[[which(sapply(items, function(x) x$SKU == sku))]]  # 找到匹配的物品
+        
+        # 获取数量
         qty <- input[[paste0("purchase_qty_", sku)]]
         
         tryCatch({
+          # 插入数据库
           dbExecute(con,
                     "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt)
                    VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW())",
@@ -1909,14 +1913,17 @@ server <- function(input, output, session) {
                       item$ItemName,  # 假设物品描述对应 ItemName
                       qty
                     ))
+          
+          # 提示成功消息
           showNotification(paste0("已发出采购请求，SKU：", sku, "，数量：", qty), type = "message")
         }, error = function(e) {
+          # 提示错误消息
           showNotification(paste("发出采购请求失败：", e$message), type = "error")
         })
-      }
-    }
+      }, ignoreInit = TRUE)  # 忽略初始绑定时的触发
+    })
   })
-
+  
   # 监听 "完成采购请求" 按钮事件
   observeEvent(input$purchase_request_complete_btn, {
     zero_stock_items(list())
