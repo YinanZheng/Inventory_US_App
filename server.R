@@ -1719,51 +1719,79 @@ server <- function(input, output, session) {
         modal_content <- tagList()
         
         if (length(zero_items) > 0) {
-          modal_content <- tagAppendChildren(modal_content, h4("以下物品需要补货：", style = "color: red;"))
-          modal_content <- tagAppendChildren(modal_content, lapply(zero_items, function(item) {
-            div(
-              style = "display: flex; flex-direction: row; justify-content: center; align-items: center; margin-bottom: 25px;",
-              div(
-                style = "display: flex; flex-direction: column; align-items: center; margin-right: 20px;",
-                tags$img(
-                  src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
-                  style = "height: 150px; object-fit: cover; margin-bottom: 5px;"
-                ),
-                tags$p(tags$b("物品名："), item$ItemName),
-                tags$p(tags$b("SKU："), item$SKU)
-              ),
-              div(
-                style = "display: flex; flex-direction: column; align-items: flex-start;",
-                numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "120px"),
-                actionButton(paste0("create_request_purchase_", item$SKU), "发出采购请求", class = "btn-primary", style = "margin-top: 10px;")
+          modal_content <- tagAppendChildren(
+            modal_content,
+            tags$div(
+              style = "padding: 10px; background-color: #ffe6e6; border-radius: 8px; margin-bottom: 20px;",
+              tags$h4("以下物品需要补货：", style = "color: red; margin-bottom: 15px;"),
+              tags$div(
+                style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
+                lapply(zero_items, function(item) {
+                  div(
+                    style = "background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center;",
+                    tags$img(
+                      src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
+                      style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"
+                    ),
+                    tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
+                    tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
+                    numericInput(
+                      paste0("purchase_qty_", item$SKU),
+                      "请求数量",
+                      value = 1,
+                      min = 1,
+                      width = "80%"
+                    ),
+                    actionButton(
+                      paste0("create_request_purchase_", item$SKU),
+                      "发出采购请求",
+                      class = "btn-primary",
+                      style = "margin-top: 10px; width: 100%;"
+                    )
+                  )
+                })
               )
             )
-          }))
+          )
         }
         
         if (length(outbound_items) > 0) {
-          modal_content <- tagAppendChildren(modal_content, h4("以下物品需要出库：", style = "color: blue;"))
-          modal_content <- tagAppendChildren(modal_content, lapply(outbound_items, function(item) {
-            div(
-              style = "display: flex; flex-direction: row; justify-content: center; align-items: center; margin-bottom: 25px;",
-              div(
-                style = "display: flex; flex-direction: column; align-items: center; margin-right: 20px;",
-                tags$img(
-                  src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
-                  style = "height: 150px; object-fit: cover; margin-bottom: 5px;"
-                ),
-                tags$p(tags$b("物品名："), item$ItemName),
-                tags$p(tags$b("SKU："), item$SKU)
-              ),
-              div(
-                style = "display: flex; flex-direction: column; align-items: flex-start;",
-                numericInput(paste0("outbound_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "120px"),
-                actionButton(paste0("create_request_outbound_", item$SKU), "发出出库请求", class = "btn-primary", style = "margin-top: 10px;")
+          modal_content <- tagAppendChildren(
+            modal_content,
+            tags$div(
+              style = "padding: 10px; background-color: #e6f7ff; border-radius: 8px; margin-bottom: 20px;",
+              tags$h4("以下物品需要出库：", style = "color: blue; margin-bottom: 15px;"),
+              tags$div(
+                style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
+                lapply(outbound_items, function(item) {
+                  div(
+                    style = "background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center;",
+                    tags$img(
+                      src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
+                      style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"
+                    ),
+                    tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
+                    tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
+                    numericInput(
+                      paste0("outbound_qty_", item$SKU),
+                      "请求数量",
+                      value = 1,
+                      min = 1,
+                      width = "80%"
+                    ),
+                    actionButton(
+                      paste0("create_request_outbound_", item$SKU),
+                      "发出出库请求",
+                      class = "btn-primary",
+                      style = "margin-top: 10px; width: 100%;"
+                    )
+                  )
+                })
               )
             )
-          }))
+          )
         }
-        
+
         showModal(modalDialog(
           title = "处理库存请求",
           div(style = "max-height: 500px; overflow-y: auto;", modal_content),
