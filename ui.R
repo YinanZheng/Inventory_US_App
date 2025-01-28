@@ -379,8 +379,6 @@ ui <- navbarPage(
                 )
               ),
               
-              actionButton("play_test_sound", "测试播放成功音效"),
-              
               # 确认入库按钮
               actionButton(
                 "confirm_inbound_btn", 

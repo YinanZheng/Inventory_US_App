@@ -861,10 +861,7 @@ server <- function(input, output, session) {
   ## 入库分页                                                   ##
   ##                                                            ##
   ################################################################
-  observeEvent(input$play_test_sound, {
-    runjs("playInboundSuccessSound()")  # 测试播放成功音效
-  })
-  
+
   # 监听标签页切换事件
   observeEvent(input$inventory_us, {
     if (input$inventory_us == "入库") {
@@ -880,6 +877,8 @@ server <- function(input, output, session) {
   
   # 监听 SKU 输入
   observeEvent(input$inbound_sku, {
+    req(input$inbound_sku != "")  # 确保 SKU 不为空
+    
     # 调用 handleSkuInput 并获取待入库数量
     pending_quantity <- handleSkuInput(
       sku_input = input$inbound_sku,
