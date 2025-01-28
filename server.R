@@ -763,7 +763,6 @@ server <- function(input, output, session) {
     })
   })
   
-  
   # SKU 和物品名输入互斥逻辑
   observeEvent(input$search_sku, {
     # 如果 SKU 搜索框有值，则清空物品名称搜索框
