@@ -1864,7 +1864,7 @@ server <- function(input, output, session) {
           div(style = "max-height: 500px; overflow-y: auto;", modal_content),
           easyClose = FALSE,
           footer = tagList(
-            modalButton("完成采购请求", inputId = "purchase_request_complete_btn")
+            actionButton("purchase_request_complete_btn", "完成采购请求", class = "btn-success")
           )
         ))
       }
