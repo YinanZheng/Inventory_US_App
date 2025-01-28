@@ -1889,38 +1889,42 @@ server <- function(input, output, session) {
     # 获取当前所有动态生成的按钮 ID
     request_buttons <- grep("^create_request_", names(input), value = TRUE)
     
-    # 为每个按钮 ID 动态创建监听
+    # 确保对每个按钮只绑定一次事件
     lapply(request_buttons, function(button_id) {
-      observeEvent(input[[button_id]], {
-        # 获取 SKU 对应的编号
-        sku <- sub("create_request_", "", button_id)  # 提取 SKU
-        items <- zero_stock_items()  # 从 reactiveVal 获取库存为零的物品
-        item <- items[[which(sapply(items, function(x) x$SKU == sku))]]  # 找到匹配的物品
+      if (!exists(paste0("observe_", button_id), envir = .GlobalEnv)) {
+        assign(paste0("observe_", button_id), TRUE, envir = .GlobalEnv)
         
-        # 获取数量
-        qty <- input[[paste0("purchase_qty_", sku)]]
-        
-        tryCatch({
-          # 插入数据库
-          dbExecute(con,
-                    "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt)
-                   VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW())",
-                    params = list(
-                      uuid::UUIDgenerate(),
-                      sku,
-                      item$Maker,
-                      item$ItemImagePath,
-                      item$ItemName,  # 假设物品描述对应 ItemName
-                      qty
-                    ))
+        observeEvent(input[[button_id]], {
+          # 获取 SKU 对应的编号
+          sku <- sub("create_request_", "", button_id)  # 提取 SKU
+          items <- zero_stock_items()  # 从 reactiveVal 获取库存为零的物品
+          item <- items[[which(sapply(items, function(x) x$SKU == sku))]]  # 找到匹配的物品
           
-          # 提示成功消息
-          showNotification(paste0("已发出采购请求，SKU：", sku, "，数量：", qty), type = "message")
-        }, error = function(e) {
-          # 提示错误消息
-          showNotification(paste("发出采购请求失败：", e$message), type = "error")
-        })
-      }, ignoreInit = TRUE)  # 忽略初始绑定时的触发
+          # 获取数量
+          qty <- input[[paste0("purchase_qty_", sku)]]
+          
+          tryCatch({
+            # 插入数据库
+            dbExecute(con,
+                      "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt)
+                     VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW())",
+                      params = list(
+                        uuid::UUIDgenerate(),
+                        sku,
+                        item$Maker,
+                        item$ItemImagePath,
+                        item$ItemName,  # 假设物品描述对应 ItemName
+                        qty
+                      ))
+            
+            # 提示成功消息
+            showNotification(paste0("已发出采购请求，SKU：", sku, "，数量：", qty), type = "message")
+          }, error = function(e) {
+            # 提示错误消息
+            showNotification(paste("发出采购请求失败：", e$message), type = "error")
+          })
+        }, ignoreInit = TRUE)  # 忽略初始绑定时的触发
+      }
     })
   })
   
