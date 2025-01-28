@@ -1719,7 +1719,9 @@ server <- function(input, output, session) {
     }
   })
   
-  # 发货按钮
+  zero_stock_items <- reactiveVal(list())  # 用于存储库存为零的物品
+  
+  # 美国售出发货按钮
   observeEvent(input$us_ship_order_btn, {
     req(new_order(), new_order_items())
     
@@ -1780,23 +1782,42 @@ server <- function(input, output, session) {
         )
       }
       
-      # 调整库存
-      for (sku in unique(items$SKU)) {
-        adjust_inventory_quantity(
-          con = con,
-          sku = sku,
-          adjustment = -nrow(items %>% filter(SKU == sku))
-        )
-      }
-      
       dbCommit(con)
       
       # 更新数据并触发 UI 刷新
       orders_refresh_trigger(!orders_refresh_trigger())
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
-      # 结果展示
+      # 检查库存并记录库存为零的物品
+      zero_items <- list()  # 临时列表存储库存为零的物品
+      for (sku in unique(items$SKU)) {
+        adjust_inventory_quantity(
+          con = con,
+          sku = sku,
+          adjustment = -nrow(items %>% filter(SKU == sku))
+        )
+        
+        # 检查库存
+        result <- unique_items_data() %>%
+          filter(SKU == sku) %>%
+          group_by(SKU, ItemName, ItemImagePath, Maker) %>%
+          summarise(
+            DomesticStock = sum(Status == "国内入库", na.rm = TRUE),
+            InTransitStock = sum(Status == "国内出库", na.rm = TRUE),
+            UsStock = sum(Status == "美国入库", na.rm = TRUE),
+            .groups = "drop"
+          )
+        
+        total_stock <- sum(result$DomesticStock, result$InTransitStock, result$UsStock)
+        if (total_stock == 0) {
+          zero_items <- append(zero_items, list(result))
+        }
+      }
       
+      # 更新 zero_stock_items
+      zero_stock_items(zero_items)
+      
+      # 结果展示
       added_order <- orders() %>% filter(OrderID == order$OrderID)
       renderOrderInfo(output, "order_info_card", added_order, clickable = FALSE)
       
@@ -1809,6 +1830,27 @@ server <- function(input, output, session) {
       
       added_order_items <- unique_items_data() %>% filter(OrderID == order$OrderID)
       renderOrderItems(output, "shipping_order_items_cards", added_order_items, con, deletable = FALSE)
+      
+      # 弹出模态框提示补货
+      if (length(zero_items) > 0) {
+        modal_content <- lapply(zero_items, function(item) {
+          div(
+            style = "display: flex; flex-direction: column; align-items: center; margin-bottom: 10px;",
+            tags$img(src = paste0(host_url, "/images/", item$ItemImagePath), style = "width: 100px; height: 100px; object-fit: cover; margin-bottom: 5px;"),
+            tags$p(tags$b("物品名："), item$ItemName),
+            tags$p(tags$b("SKU："), item$SKU),
+            numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "80%"),
+            actionButton(paste0("create_request_", item$SKU), "发出采购请求", class = "btn-primary")
+          )
+        })
+        
+        showModal(modalDialog(
+          title = "以下物品库存不足，是否需要发出采购请求？",
+          div(style = "max-height: 400px; overflow-y: auto;", modal_content),
+          easyClose = FALSE,
+          footer = modalButton("完成")
+        ))
+      }
       
       showNotification(
         paste0("订单已成功发货！订单号：", order$OrderID, "，共发货 ", nrow(items), " 件。"),
@@ -1829,6 +1871,35 @@ server <- function(input, output, session) {
     runjs("document.getElementById('us_shipping_bill_number').focus();") # 聚焦 SKU 输入框
     new_order_items(NULL)  # 清空物品列表
   })
+  
+  # 监听添加采购请求按钮
+  observeEvent(grep("^create_request_", names(input), value = TRUE), {
+    items <- zero_stock_items()  # 从 reactiveVal 获取库存为零的物品
+    for (item in items) {
+      sku <- item$SKU
+      if (input[[paste0("create_request_", sku)]]) {
+        qty <- input[[paste0("purchase_qty_", sku)]]
+        
+        tryCatch({
+          dbExecute(con,
+                    "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt)
+                   VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW())",
+                    params = list(
+                      uuid::UUIDgenerate(),
+                      sku,
+                      item$Maker,
+                      item$ItemImagePath,
+                      item$ItemName,  # 假设物品描述对应 ItemName
+                      qty
+                    ))
+          showNotification(paste0("已发出采购请求，SKU：", sku, "，数量：", qty), type = "message")
+        }, error = function(e) {
+          showNotification(paste("发出采购请求失败：", e$message), type = "error")
+        })
+      }
+    }
+  })
+
   
   # 订单物品删除逻辑 （美国售出only）
   observeEvent(input$delete_card, {
