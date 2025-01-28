@@ -918,7 +918,7 @@ ui <- navbarPage(
             fluidRow(
               column(
                 width = 6,
-                actionButton("delete_transaction", "删除选中记录", icon = icon("trash"), 
+                actionButton("delete_transaction", "删除选中行", icon = icon("trash"), 
                              class = "btn-danger", style = "width: 100%;")
               ),
               column(
@@ -969,7 +969,7 @@ ui <- navbarPage(
             fluidRow(
               column(
                 width = 6,
-                actionButton("delete_transfer", "删除选中记录", icon = icon("trash"), 
+                actionButton("delete_transfer", "删除选中行", icon = icon("trash"), 
                              class = "btn-danger", style = "width: 100%;")
               ),
               column(
