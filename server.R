@@ -909,10 +909,8 @@ server <- function(input, output, session) {
       
       # 检查是否成功处理
       if (!is.null(unique_ID) && unique_ID != "") {
-        showNotification(paste0("SKU ", input$inbound_sku, " 的一个物品已自动入库！"), type = "message")
         runjs("playInboundSuccessSound()")  # 播放成功音效
       } else {
-        showNotification("自动入库失败，可能物品已全部入库或存在调货物品！", type = "error")
         runjs("playInboundErrorSound()")  # 播放失败音效
         return()
       }
