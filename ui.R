@@ -235,6 +235,18 @@ ui <- navbarPage(
             $('.dataTable').DataTable().columns.adjust();
           });
         });
+        
+         // 入库成功音效
+        function playInboundSuccessSound() {
+          var audio = new Audio('/sounds/inbound_success.mp3');
+          audio.play();
+        }
+        
+        // 入库错误音效
+        function playInboundErrorSound() {
+          var audio = new Audio('/sounds/inbound_error.mp3');
+          audio.play();
+        }
       "))
     )
   ),
