@@ -835,13 +835,22 @@ server <- function(input, output, session) {
     }
   })
   
-  # 库存品采购请求按钮
+  # 库存品请求按钮
   observeEvent(input$add_request, {
     req(input$request_quantity > 0)  # 确保输入合法
     
     # 获取用户输入
     search_sku <- trimws(input$search_sku)
     search_name <- trimws(input$search_name)
+    
+    # 根据当前页面的类型确定 RequestType
+    current_tab <- input$collaboration_tabs
+    request_type <- switch(
+      current_tab,
+      "采购请求" = "采购",
+      "出库请求" = "出库",
+      stop("未知的请求类型")  # 如果页面 ID 不匹配，抛出错误
+    )
     
     # 检索数据并插入到数据库
     filtered_data <- unique_items_data() %>%
@@ -860,9 +869,9 @@ server <- function(input, output, session) {
         item_description <- ifelse(is.na(filtered_data$ItemName[1]), "未知", filtered_data$ItemName[1])
         
         dbExecute(con, 
-                  "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus) 
-              VALUES (?, ?, ?, ?, ?, ?, '待处理')", 
-                  params = list(request_id, filtered_data$SKU, filtered_data$Maker, item_image_path, item_description, input$request_quantity))
+                  "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType) 
+         VALUES (?, ?, ?, ?, ?, ?, '待处理', ?)", 
+                  params = list(request_id, filtered_data$SKU, filtered_data$Maker, item_image_path, item_description, input$request_quantity, request_type))
         
         refresh_board()
         bind_buttons(request_id)
@@ -881,7 +890,6 @@ server <- function(input, output, session) {
       # 捕获错误并打印详细信息
       showNotification(e, type = "error")
     })
-    
   })
   
   # 初始化图片上传模块
@@ -927,7 +935,24 @@ server <- function(input, output, session) {
     showNotification("自定义请求已成功提交", type = "message")
   })
 
-  
+  # 出库标签页要禁用新物品请求
+  observeEvent(input$collaboration_tabs, {
+    current_tab <- input$collaboration_tabs
+    
+    if (current_tab == "出库请求") {
+      # 禁用与新商品请求相关的控件
+      shinyjs::disable("custom_description")
+      shinyjs::disable("custom_quantity")
+      shinyjs::disable("submit_custom_request")
+      shinyjs::disable("image_requests-image-upload")  # 禁用图片上传按钮
+    } else if (current_tab == "采购请求") {
+      # 启用与新商品请求相关的控件
+      shinyjs::enable("custom_description")
+      shinyjs::enable("custom_quantity")
+      shinyjs::enable("submit_custom_request")
+      shinyjs::enable("image_requests-image-upload")  # 启用图片上传按钮
+    }
+  })
   
   ################################################################
   ##                                                            ##
