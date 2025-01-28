@@ -1769,12 +1769,15 @@ server <- function(input, output, session) {
   observe({
     # 获取当前所有动态生成的按钮 ID
     request_buttons <- grep("^create_request_", names(input), value = TRUE)
-    showNotification(request_buttons)
     
     # 确保对每个按钮只绑定一次事件
     lapply(request_buttons, function(button_id) {
+      
+      
       if (!exists(paste0("observe_", button_id), envir = .GlobalEnv)) {
         assign(paste0("observe_", button_id), TRUE, envir = .GlobalEnv)
+        
+        showNotification(button_id)
         
         observeEvent(input[[button_id]], {
           # 获取 SKU 对应的编号
@@ -1804,12 +1807,12 @@ server <- function(input, output, session) {
             bind_buttons(request_id, requests_data(), input, output, session, con)
             
             # 更新按钮名称和样式
-            # updateActionButton(
-            #   session,
-            #   inputId = button_id,
-            #   label = HTML("<i class='fa fa-check' style='margin-right: 5px;'></i>请求已发送"),
-            #   style = "margin-top: 10px; background-color: #28a745; color: white; border-color: #28a745;"
-            # )
+            updateActionButton(
+              session,
+              inputId = button_id,
+              label = HTML("<i class='fa fa-check' style='margin-right: 5px;'></i>请求已发送"),
+              style = "margin-top: 10px; background-color: #28a745; color: white; border-color: #28a745;"
+            )
             
             # 提示成功消息
             showNotification(paste0("已发出采购请求，SKU：", sku, "，数量：", qty), type = "message")
