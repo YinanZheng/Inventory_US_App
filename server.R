@@ -3209,8 +3209,8 @@ server <- function(input, output, session) {
     if (!is.null(account_type)) {
       refreshTransactionTable(account_type, cache_env, transaction_table_hash, output, con)  # 优化后的表格刷新
       resetToCreateMode(is_update_mode, selected_TransactionID, selected_TransactionImagePath, session)
-      resetTransactionForm(session)
-      resetTransferForm(session)
+      resetTransactionForm(session, image_transactions)
+      resetTransferForm(session, image_transfer)
     }
   })
   
@@ -3273,7 +3273,7 @@ server <- function(input, output, session) {
         update_balance(account_type, con)
         
         resetToCreateMode(is_update_mode, selected_TransactionID, selected_TransactionImagePath, session)
-        resetTransactionForm(session) # 重置输入框
+        resetTransactionForm(session, image_transactions) # 重置输入框
         
         # 自动更新账户余额和表格
         updateAccountOverview(output, con)
@@ -3316,7 +3316,7 @@ server <- function(input, output, session) {
           update_balance(account_type, con)
         }
         
-        resetTransactionForm(session) # 重置输入框
+        resetTransactionForm(session, image_transactions) # 重置输入框
         
         # 自动更新账户余额和表格
         updateAccountOverview(output, con)
@@ -3394,7 +3394,7 @@ server <- function(input, output, session) {
       refreshTransactionTable(input$to_account, cache_env, transaction_table_hash, output, con)
       
       # 清空表单
-      resetTransferForm(session)
+      resetTransferForm(session, image_transfer)
       
     }, error = function(e) {
       showNotification(paste("资金转移失败：", e$message), type = "error")
@@ -3456,7 +3456,7 @@ server <- function(input, output, session) {
     }
     
     resetToCreateMode(is_update_mode, selected_TransactionID, selected_TransactionImagePath, session)
-    resetTransactionForm(session) # 重置输入框
+    resetTransactionForm(session, image_transactions) # 重置输入框
   })
   
   # 删除转账记录 (转移)
@@ -3513,7 +3513,7 @@ server <- function(input, output, session) {
       showNotification("请选择要删除的记录", type = "error")
     }
     
-    resetTransferForm(session) # 重置输入框
+    resetTransferForm(session, image_transfer) # 重置输入框
   })
   
   # 转账证据图片处理模块 (登记)
@@ -3525,13 +3525,13 @@ server <- function(input, output, session) {
   # 重置 (登记)
   observeEvent(input$reset_form, {
     resetToCreateMode(is_update_mode, selected_TransactionID, selected_TransactionImagePath, session)
-    resetTransactionForm(session) # 重置输入框
+    resetTransactionForm(session, image_transactions) # 重置输入框
     showNotification("表单已重置！", type = "message")
   })
   
   # 重置 (转移)
   observeEvent(input$reset_form_transfer, {
-    resetTransferForm(session) # 重置输入框
+    resetTransferForm(session, image_transfer) # 重置输入框
     showNotification("表单已重置！", type = "message")
   })
   
