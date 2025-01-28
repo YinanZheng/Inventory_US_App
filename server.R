@@ -3207,8 +3207,8 @@ server <- function(input, output, session) {
     )
     
     if (!is.null(account_type)) {
-      refreshTransactionTable(account_type, cache_env, transaction_table_hash, con)  # 优化后的表格刷新
-      resetToCreateMode()
+      refreshTransactionTable(account_type, cache_env, transaction_table_hash, output, con)  # 优化后的表格刷新
+      resetToCreateMode(is_update_mode, selected_TransactionID, selected_TransactionImagePath, session)
       resetTransactionForm(session)
       resetTransferForm(session)
     }
@@ -3272,12 +3272,12 @@ server <- function(input, output, session) {
         
         update_balance(account_type, con)
         
-        resetToCreateMode() # 重置为“登记”模式
+        resetToCreateMode(is_update_mode, selected_TransactionID, selected_TransactionImagePath, session)
         resetTransactionForm(session) # 重置输入框
         
         # 自动更新账户余额和表格
         updateAccountOverview(output, con)
-        refreshTransactionTable(account_type, cache_env, transaction_table_hash, con)
+        refreshTransactionTable(account_type, cache_env, transaction_table_hash, output, con)
       }, error = function(e) {
         showNotification(paste("更新失败：", e$message), type = "error")
       })
@@ -3320,7 +3320,7 @@ server <- function(input, output, session) {
         
         # 自动更新账户余额和表格
         updateAccountOverview(output, con)
-        refreshTransactionTable(account_type, cache_env, transaction_table_hash, con)
+        refreshTransactionTable(account_type, cache_env, transaction_table_hash, output, con)
       }, error = function(e) {
         showNotification(paste("登记失败：", e$message), type = "error")
       })
@@ -3390,8 +3390,8 @@ server <- function(input, output, session) {
       updateAccountOverview(output, con)
       
       # 自动刷新表格
-      refreshTransactionTable(input$from_account, cache_env, transaction_table_hash, con)
-      refreshTransactionTable(input$to_account, cache_env, transaction_table_hash, con)
+      refreshTransactionTable(input$from_account, cache_env, transaction_table_hash, output, con)
+      refreshTransactionTable(input$to_account, cache_env, transaction_table_hash, output, con)
       
       # 清空表单
       resetTransferForm(session)
@@ -3444,7 +3444,7 @@ server <- function(input, output, session) {
           updateAccountOverview(output, con)
           
           # 自动刷新表格
-          refreshTransactionTable(account_type, cache_env, transaction_table_hash, con)
+          refreshTransactionTable(account_type, cache_env, transaction_table_hash, output, con)
         }, error = function(e) {
           showNotification(paste("删除失败：", e$message), type = "error")
         })
@@ -3455,7 +3455,7 @@ server <- function(input, output, session) {
       showNotification("请选择要删除的记录", type = "error")
     }
     
-    resetToCreateMode() # 重置为“登记”模式
+    resetToCreateMode(is_update_mode, selected_TransactionID, selected_TransactionImagePath, session)
     resetTransactionForm(session) # 重置输入框
   })
   
@@ -3502,7 +3502,7 @@ server <- function(input, output, session) {
           updateAccountOverview(output, con)
           
           # 自动刷新表格
-          refreshTransactionTable(account_type, cache_env, transaction_table_hash, con)
+          refreshTransactionTable(account_type, cache_env, transaction_table_hash, output, con)
         }, error = function(e) {
           showNotification(paste("删除失败：", e$message), type = "error")
         })
@@ -3524,7 +3524,7 @@ server <- function(input, output, session) {
   
   # 重置 (登记)
   observeEvent(input$reset_form, {
-    resetToCreateMode() # 重置为“登记”模式
+    resetToCreateMode(is_update_mode, selected_TransactionID, selected_TransactionImagePath, session)
     resetTransactionForm(session) # 重置输入框
     showNotification("表单已重置！", type = "message")
   })
