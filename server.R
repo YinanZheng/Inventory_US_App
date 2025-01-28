@@ -643,8 +643,8 @@ server <- function(input, output, session) {
     
     # 渲染留言内容并绑定按钮事件
     lapply(requests$RequestID, function(request_id) {
-      output[[paste0("remarks_", request_id)]] <- renderRemarks(request_id, requests_data)
-      bind_buttons(request_id, input, output, session, con)  # 按 RequestID 动态绑定按钮
+      output[[paste0("remarks_", request_id)]] <- renderRemarks(request_id, requests)
+      bind_buttons(request_id, requests, input, output, session, con)  # 按 RequestID 动态绑定按钮
     })
   })
   
@@ -764,7 +764,7 @@ server <- function(input, output, session) {
          VALUES (?, ?, ?, ?, ?, ?, '待处理', ?)", 
                   params = list(request_id, filtered_data$SKU, filtered_data$Maker, item_image_path, item_description, input$request_quantity, request_type))
         
-        bind_buttons(request_id, input, output, session, con)
+        bind_buttons(request_id, requests_data(), input, output, session, con)
         
         updateTextInput(session, "search_sku", value = "")
         updateTextInput(session, "search_name", value = "")
@@ -813,7 +813,7 @@ server <- function(input, output, session) {
              VALUES (?, ?, '待定', ?, ?, ?, '待处理')", 
               params = list(request_id, "New-Request", custom_image_path, custom_description, custom_quantity))
     
-    bind_buttons(request_id, input, output, session, con) #绑定按钮逻辑
+    bind_buttons(request_id, requests_data(), input, output, session, con) #绑定按钮逻辑
     
     # 清空输入字段
     updateTextInput(session, "custom_description", value = "")
@@ -1800,7 +1800,7 @@ server <- function(input, output, session) {
                         qty
                       ))
             
-            bind_buttons(request_id, input, output, session, con)
+            bind_buttons(request_id, requests_data(), input, output, session, con)
             
             # 提示成功消息
             showNotification(paste0("已发出采购请求，SKU：", sku, "，数量：", qty), type = "message")
