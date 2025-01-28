@@ -1832,6 +1832,9 @@ server <- function(input, output, session) {
                         qty
                       ))
             
+            # 绑定按钮
+            bind_buttons(request_id, requests_data(), input, output, session, con)
+            
             # 动态更新按钮文本和样式
             updateActionButton(session, inputId = button_id, label = HTML("<i class='fa fa-check'></i> 出库请求已发送"))
             runjs(sprintf("$('#%s').removeClass('btn-primary').addClass('btn-success');", button_id))
@@ -1866,6 +1869,9 @@ server <- function(input, output, session) {
                         item$ItemName,  # 假设物品描述对应 ItemName
                         qty
                       ))
+            
+            # 绑定按钮
+            bind_buttons(request_id, requests_data(), input, output, session, con)
             
             # 动态更新按钮文本和样式
             updateActionButton(session, inputId = button_id, label = HTML("<i class='fa fa-check'></i> 采购请求已发送"))
