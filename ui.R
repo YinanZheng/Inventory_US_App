@@ -282,12 +282,9 @@ ui <- navbarPage(
           tabPanel(
             title = "采购请求",
             uiOutput("todo_board")
-          )
-        ),
-        tabPanel(
-          title = "出库请求",
-          div(
-            style = "padding: 10px;",
+          ),
+          tabPanel(
+            title = "出库请求",
             uiOutput("outbound_request_board")
           )
         )
