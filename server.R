@@ -946,7 +946,7 @@ server <- function(input, output, session) {
     
     # 批量处理入库逻辑
     for (i in seq_len(inbound_quantity)) {
-      sku_item <- handleOperation(
+      unique_id <- handleOperation(
         unique_items_data(),
         operation_name = "入库", 
         sku_field = "inbound_sku",
@@ -961,7 +961,7 @@ server <- function(input, output, session) {
       )
       
       # 如果未找到对应的 UniqueID，停止后续操作
-      if (is.null(sku_item) || sku_item == "") {
+      if (is.null(unique_id) || unique_id == "") {
         showNotification(paste0("此SKU第 ", i, " 件物品不存在，已中止入库！"), type = "error")
         break
       }
