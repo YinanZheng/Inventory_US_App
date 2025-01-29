@@ -892,11 +892,12 @@ server <- function(input, output, session) {
       con = con,
       output = output,
       placeholder_path = placeholder_300px_path,
-      host_url = host_url
+      host_url = host_url,
+      image_mode = TRUE
     )
     
     # 如果启用自动入库功能，直接执行入库逻辑
-    if (input$auto_inbound && !is.null(pending_quantity) && pending_quantity > 0) {
+    if (input$auto_inbound) {
       req(input@inbound_sku)
       
       sku_item <- handleOperation(
@@ -911,14 +912,6 @@ server <- function(input, output, session) {
         refresh_trigger = unique_items_data_refresh_trigger,      
         con,                  
         input, output, session
-      )
-      
-      renderItemInfo(
-        output = output,
-        output_name = "inbound_image_large",
-        img_path = ifelse(is.na(sku_item$ItemImagePath), placeholder_300px_path, paste0(host_url, "/images/", basename(sku_item$ItemImagePath))),
-        img_height = "600px",
-        image_only = TRUE
       )
       
       # 检查是否成功处理
@@ -958,7 +951,7 @@ server <- function(input, output, session) {
     
     # 批量处理入库逻辑
     for (i in seq_len(inbound_quantity)) {
-      unique_ID <- handleOperation(
+      sku_item <- handleOperation(
         unique_items_data(),
         operation_name = "入库", 
         sku_field = "inbound_sku",
@@ -973,7 +966,7 @@ server <- function(input, output, session) {
       )
       
       # 如果未找到对应的 UniqueID，停止后续操作
-      if (is.null(unique_ID) || unique_ID == "") {
+      if (is.null(sku_item) || sku_item == "") {
         showNotification(paste0("此SKU第 ", i, " 件物品不存在，已中止入库！"), type = "error")
         break
       }
