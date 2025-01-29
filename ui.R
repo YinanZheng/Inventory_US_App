@@ -328,7 +328,9 @@ ui <- navbarPage(
                 ),
                 
                 actionButton("confirm_inbound_btn", "确认入库", icon = icon("check"), class = "btn-primary", 
-                             style = "font-size: 16px; width: 100%; height: 42px;")
+                             style = "font-size: 16px; width: 100%; height: 42px;"),
+                
+                actionButton("toggle_view", label = "切换视图", icon = icon("exchange-alt"), class = "btn btn-info")
             ),
             
             tags$hr(style = "margin: 5px 0; border: none;"),
@@ -345,10 +347,6 @@ ui <- navbarPage(
         div(class = "resizable-divider"),
         
         div(class = "main-panel", style = "display: flex; flex-direction: column;",
-            div(style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;",
-                actionButton("toggle_view", label = "切换视图", icon = icon("exchange-alt"), class = "btn btn-secondary")
-            ),
-            
             div(id = "table_mode",
                 div(style = "height: 300px; margin-bottom: 10px;", 
                     column(12, uiOutput("inbound_item_info"))
