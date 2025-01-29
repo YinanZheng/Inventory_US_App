@@ -238,7 +238,7 @@ ui <- navbarPage(
         
          // 入库成功音效
         function playInboundSuccessSound() {
-          var audio = new Audio('http://54.254.120.88/sounds/inbound_success.mp3');
+          var audio = new Audio('http://54.254.120.88/sounds/success-josie.mp3');
           audio.play();
         }
         
