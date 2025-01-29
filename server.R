@@ -913,7 +913,7 @@ server <- function(input, output, session) {
     if (input$auto_inbound) {
       req(input$inbound_sku)
       
-      sku_item <- handleOperation(
+      item_name <- handleOperation(
         unique_items_data(),
         operation_name = "入库", 
         sku_field = "inbound_sku",
@@ -928,7 +928,7 @@ server <- function(input, output, session) {
       )
       
       # 检查是否成功处理
-      if (!is.null(sku_item) && sku_item != "") {
+      if (!is.null(item_name) && item_name != "") {
         js_code <- sprintf('
           var msg = new SpeechSynthesisUtterance("%s");
           msg.lang = "zh-CN";
@@ -936,7 +936,7 @@ server <- function(input, output, session) {
             playInboundSuccessSound();
           };
           window.speechSynthesis.speak(msg);
-        ', sku_item$ItemName)
+        ', item_name)
         
         shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
       } else {
@@ -947,7 +947,7 @@ server <- function(input, output, session) {
             playInboundErrorSound();
           };
           window.speechSynthesis.speak(msg);
-        ', sku_item$ItemName)
+        ', item_name)
         
         shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
         return()
