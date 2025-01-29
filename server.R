@@ -932,7 +932,7 @@ server <- function(input, output, session) {
         js_code <- sprintf('
           var msg = new SpeechSynthesisUtterance("%s");
           msg.lang = "zh-CN";
-          msg.rate = 1.3;  // 提高语速
+          msg.rate = 1.2;  // 提高语速
         
           var estimatedTime = Math.max(1000, %d * 250);  // 自动计算朗读时间
         
