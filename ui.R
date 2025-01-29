@@ -346,7 +346,6 @@ ui <- navbarPage(
         
         div(class = "main-panel", style = "display: flex; flex-direction: column;",
             div(style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;",
-                tags$h4("物品展示", style = "font-weight: bold; color: #007BFF;"),
                 actionButton("toggle_view", label = "切换视图", icon = icon("exchange-alt"), class = "btn btn-secondary")
             ),
             
