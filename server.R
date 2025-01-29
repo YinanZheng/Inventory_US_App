@@ -932,6 +932,7 @@ server <- function(input, output, session) {
         js_code <- sprintf('
           var msg = new SpeechSynthesisUtterance("%s");
           msg.lang = "zh-CN";
+          msg.rate = 1.4;
           msg.onend = function() {  // 朗读完成后执行成功音效
             playInboundSuccessSound();
           };
