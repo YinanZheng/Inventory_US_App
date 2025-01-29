@@ -874,10 +874,10 @@ server <- function(input, output, session) {
     # 根据当前模式更新 view_mode 变量
     if (view_mode() == "table_mode") {
       view_mode("image_mode")
-      updateActionButton(session, "toggle_view", label = "切换到图表模式")
+      updateActionButton(session, "toggle_view", label = "切换至：图表模式")
     } else {
       view_mode("table_mode")
-      updateActionButton(session, "toggle_view", label = "切换到大图模式")
+      updateActionButton(session, "toggle_view", label = "切换至：大图模式")
     }
   })
   
