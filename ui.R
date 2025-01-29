@@ -306,139 +306,65 @@ ui <- navbarPage(
   
   tabPanel(
     "入库", icon = icon("arrow-circle-down"),
-    div(
-      class = "layout-container",  # Flexbox 容器
-      div(
-        class = "sticky-sidebar",  # sticky 侧边栏
-
-        itemFilterUI(id = "inbound_filter", border_color = "#28A745", text_color = "#28A745", 
-                     status_choices = c("所有状态" = "", "国内出库", "美国入库"), use_purchase_date = FALSE),
-        
-        tags$hr(style = "margin: 5px 0; border: none;"),
-        
-        fluidRow(
-          column(
-            12,
-            div(
-              class = "card shadow-sm", # 添加卡片样式
-              style = "border: 1px solid #007BFF; border-radius: 8px; padding: 20px; background-color: #f9f9f9;",
-              
-              # 卡片标题
-              div(
-                style = "margin-bottom: 10px; padding-bottom: 8px;",
-                tags$h4("入库操作", style = "color: #007BFF; font-weight: bold; margin-bottom: 5px;"),
-              ),
-              
-              # SKU 输入框
-              div(
-                style = "margin-bottom: 15px;",
-                textInput(
-                  "inbound_sku", 
-                  label = NULL, 
-                  placeholder = "请扫描或输入SKU",
-                  width = "100%"
+    div(class = "layout-container",
+        div(class = "sticky-sidebar",
+            itemFilterUI(id = "inbound_filter", border_color = "#28A745", text_color = "#28A745", 
+                         status_choices = c("所有状态" = "", "国内出库", "美国入库"), use_purchase_date = FALSE),
+            tags$hr(style = "margin: 5px 0; border: none;"),
+            
+            div(class = "card shadow-sm", style = "border: 1px solid #007BFF; border-radius: 8px; padding: 20px; background-color: #f9f9f9;",
+                tags$h4("入库操作", style = "color: #007BFF; font-weight: bold; margin-bottom: 10px;"),
+                textInput("inbound_sku", label = NULL, placeholder = "请扫描或输入SKU", width = "100%"),
+                checkboxInput("auto_inbound", "自动入库（瑕疵信息不会采用）", value = FALSE),
+                numericInput("inbound_quantity", "入库数量", value = 1, min = 1, max = 1, step = 1),
+                
+                div(style = "margin-bottom: 20px; display: flex; align-items: center;",
+                    tags$input(type = "checkbox", id = "defective_item", style = "width: 20px; height: 20px; margin-right: 10px;"),
+                    tags$label("瑕疵品", `for` = "defective_item", style = "font-size: 18px; font-weight: bold; color: #444;")
                 ),
-                checkboxInput(
-                  "auto_inbound",  # 勾选框的 inputId
-                  label = "自动入库（瑕疵信息不会采用）", 
-                  value = FALSE  # 默认不勾选
+                
+                div(id = "defective_notes_container", style = "display: none; margin-top: 10px;", 
+                    textAreaInput("defective_notes", "瑕疵品备注：", placeholder = "请输入备注内容...", width = "100%")
                 ),
-              ),
-              
-              div(
-                style = "width: 100%;",
-                numericInput(
-                  inputId = "inbound_quantity",
-                  label = "入库数量",
-                  value = 1,        # 默认值
-                  min = 1,          # 最小值
-                  max = 1,
-                  step = 1          # 步长
+                
+                actionButton("confirm_inbound_btn", "确认入库", icon = icon("check"), class = "btn-primary", 
+                             style = "font-size: 16px; width: 100%; height: 42px;")
+            ),
+            
+            tags$hr(style = "margin: 5px 0; border: none;"),
+            
+            div(class = "card", style = "padding: 15px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 5px;",
+                tags$h4("条形码下载", style = "color: #007BFF; font-weight: bold;"),
+                div(style = "display: flex; justify-content: space-between; align-items: center;",
+                    actionButton("export_select_btn", "生成条形码", icon = icon("barcode"), class = "btn-info"),
+                    downloadButton("download_select_pdf", "下载条形码", class = "btn-primary")
                 )
-              ),
-              
-              # 瑕疵品复选框
-              div(
-                style = "margin-bottom: 20px; display: flex; align-items: center;",
-                tags$input(
-                  type = "checkbox", 
-                  id = "defective_item", 
-                  style = "width: 20px; height: 20px; margin-right: 10px;"
-                ),
-                tags$label("瑕疵品", `for` = "defective_item", style = "font-size: 18px; font-weight: bold; color: #444;")
-              ),
-              
-              div(
-                id = "defective_notes_container",
-                style = "display: none; margin-top: 10px;",
-                textAreaInput(
-                  inputId = "defective_notes",
-                  label = "瑕疵品备注：",
-                  placeholder = "请输入备注内容...",
-                  width = "100%"
-                )
-              ),
-              
-              # 确认入库按钮
-              actionButton(
-                "confirm_inbound_btn", 
-                "确认入库", 
-                icon = icon("check"), 
-                class = "btn-primary", 
-                style = "font-size: 16px; width: 100%; height: 42px;"
-              )
             )
-          )
         ),
         
-        tags$hr(style = "margin: 5px 0; border: none;"),
+        div(class = "resizable-divider"),
         
-        fluidRow( 
-          # 条形码生成下载按钮
-          column(12,              
-                 tags$div(
-                   class = "card",
-                   style = "padding: 15px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 5px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);",
-                   
-                   # 卡片标题
-                   div(
-                     style = "margin-bottom: 10px; padding-bottom: 8px;",
-                     tags$h4("条形码下载", style = "color: #007BFF; font-weight: bold; margin-bottom: 5px;"),
-                   ),
-                   
-                   tags$div(
-                     style = "display: flex; justify-content: space-between; align-items: center;",
-                     actionButton("export_select_btn", "生成条形码", icon = icon("barcode"), class = "btn-info"),
-                     downloadButton("download_select_pdf", "下载条形码", class = "btn-primary")
-                   )
-                 )
-          )
-        )
-      ),
-      
-      div(
-        class = "resizable-divider",
-      ),
-      
-      div(
-        class = "main-panel",
-        
-        div(
-          style = "height: 300px; margin-bottom: 10px;",
-          column(12, uiOutput("inbound_item_info"), style = "margin-bottom: 10px;") # 动态渲染物品信息
-        ), 
-        
-        div(
-          style = "display: flex; flex-direction: column;",
-          div(
-            style = "flex-grow: 1; overflow-y: auto; padding-top: 10px;",  # 表格自适应高度
-            div(
-              id = "item_table_container_inbound",
-              uniqueItemsTableUI("unique_items_table_inbound")
+        div(class = "main-panel", style = "display: flex; flex-direction: column;",
+            div(style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;",
+                tags$h4("物品展示", style = "font-weight: bold; color: #007BFF;"),
+                actionButton("toggle_view", label = "切换视图", icon = icon("exchange-alt"), class = "btn btn-secondary")
+            ),
+            
+            conditionalPanel(condition = "input.toggle_view %% 2 == 0",
+                             div(style = "height: 300px; margin-bottom: 10px;", 
+                                 column(12, uiOutput("inbound_item_info"))
+                             ),
+                             div(style = "flex-grow: 1; overflow-y: auto; padding-top: 10px;", 
+                                 div(id = "item_table_container_inbound", uniqueItemsTableUI("unique_items_table_inbound"))
+                             )
+            ),
+            
+            conditionalPanel(condition = "input.toggle_view %% 2 == 1",
+                             div(style = "flex-grow: 1; display: flex; align-items: center; justify-content: center; height: calc(100vh - 120px);",
+                                 uiOutput("inbound_item_info")
+                             )
             )
-          )
         )
-      )
     )
   ), # end of 入库 tab
   
