@@ -927,23 +927,26 @@ server <- function(input, output, session) {
         input, output, session
       )
       
-      # 检查是否成功处理
       if (!is.null(item_name) && item_name != "") {
-        js_code <- sprintf('
-          var msg = new SpeechSynthesisUtterance("%s");
-          msg.lang = "zh-CN";
-          msg.rate = 1.2;  // 提高语速
-        
-          var estimatedTime = Math.max(1000, %d * 250);  // 自动计算朗读时间
-        
-          window.speechSynthesis.speak(msg);
-        
-          setTimeout(function() {
-            playInboundSuccessSound();
-          }, estimatedTime);
-        ', item_name, nchar(item_name))
-        
-        shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
+        if (input$speak_item_name) {  # 只有勾选“念出商品名”才朗读
+          js_code <- sprintf('
+            var msg = new SpeechSynthesisUtterance("%s");
+            msg.lang = "zh-CN";
+            msg.rate = 1.2;  // 提高语速
+          
+            var estimatedTime = Math.max(1000, %d * 250);  // 自动计算朗读时间
+          
+            window.speechSynthesis.speak(msg);
+          
+            setTimeout(function() {
+              playInboundSuccessSound();
+            }, estimatedTime);
+          ', item_name, nchar(item_name))
+          
+          shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
+        } else {
+          runjs("playInboundSuccessSound()")  # 直接播放成功音效
+        }
       } else {
         runjs("playInboundErrorSound()")  # 播放失败音效
         return()

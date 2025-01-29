@@ -316,6 +316,10 @@ ui <- navbarPage(
                 tags$h4("入库操作", style = "color: #007BFF; font-weight: bold; margin-bottom: 10px;"),
                 textInput("inbound_sku", label = NULL, placeholder = "请扫描或输入SKU", width = "100%"),
                 checkboxInput("auto_inbound", "自动入库（瑕疵信息不会采用）", value = FALSE),
+                conditionalPanel(
+                  condition = "input.auto_inbound == true",  # 只有 auto_inbound 被选中时才显示
+                  checkboxInput("speak_item_name", "念出商品名", value = FALSE)
+                ),
                 numericInput("inbound_quantity", "入库数量", value = 1, min = 1, max = 1, step = 1),
                 
                 div(style = "margin-bottom: 20px; display: flex; align-items: center;",
