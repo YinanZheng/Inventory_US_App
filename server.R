@@ -899,7 +899,7 @@ server <- function(input, output, session) {
     if (input$auto_inbound && !is.null(pending_quantity) && pending_quantity > 0) {
       req(input@inbound_sku)
       
-      unique_ID <- handleOperation(
+      sku_item <- handleOperation(
         unique_items_data(),
         operation_name = "入库", 
         sku_field = "inbound_sku",
@@ -913,8 +913,16 @@ server <- function(input, output, session) {
         input, output, session
       )
       
+      renderItemInfo(
+        output = output,
+        output_name = "inbound_image_large",
+        img_path = ifelse(is.na(sku_item$ItemImagePath), placeholder_300px_path, paste0(host_url, "/images/", basename(sku_item$ItemImagePath))),
+        img_height = "600px",
+        image_only = TRUE
+      )
+      
       # 检查是否成功处理
-      if (!is.null(unique_ID) && unique_ID != "") {
+      if (!is.null(sku_item) && sku_item != "") {
         runjs("playInboundSuccessSound()")  # 播放成功音效
       } else {
         runjs("playInboundErrorSound()")  # 播放失败音效

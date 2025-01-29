@@ -360,7 +360,7 @@ ui <- navbarPage(
             
             div(id = "image_mode", style = "display: none;",
                 div(style = "flex-grow: 1; display: flex; align-items: center; justify-content: center; height: calc(100vh - 120px);",
-                    uiOutput("inbound_item_info_large")
+                    uiOutput("inbound_image_large")
                 )
             )
         )
