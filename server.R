@@ -877,16 +877,6 @@ server <- function(input, output, session) {
   
   # 监听 SKU 输入
   observeEvent(input$inbound_sku, {
-    if (input$inbound_sku == "") {
-      output$inbound_item_info <- renderUI({
-        div(
-          img(src = placeholder_300px_path, style = "width: 100%; max-width: 300px;"),
-          tags$p("请扫描或输入 SKU 以查看物品信息", style = "text-align: center; font-size: 16px; color: #666;")
-        )
-      })
-      return()
-    }
-    
     # 调用 handleSkuInput 并获取待入库数量
     pending_quantity <- handleSkuInput(
       sku_input = input$inbound_sku,
@@ -901,6 +891,8 @@ server <- function(input, output, session) {
     
     # 如果启用自动入库功能，直接执行入库逻辑
     if (input$auto_inbound) {
+      req(input@inbound_sku)
+      
       unique_ID <- handleOperation(
         unique_items_data(),
         operation_name = "入库", 
