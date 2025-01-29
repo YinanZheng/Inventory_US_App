@@ -948,11 +948,16 @@ server <- function(input, output, session) {
         js_code <- sprintf('
           var msg = new SpeechSynthesisUtterance("%s");
           msg.lang = "zh-CN";
-          msg.onend = function() {  // 朗读完成后执行成功音效
-            playInboundErrorSound();
-          };
+          msg.rate = 1.4;  // 提高语速
+        
+          var estimatedTime = Math.max(1000, %d * 250);  // 自动计算朗读时间
+        
           window.speechSynthesis.speak(msg);
-        ', item_name)
+        
+          setTimeout(function() {
+            playInboundErrorSound();
+          }, estimatedTime);
+        ', item_name, nchar(item_name))
         
         shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
         return()
