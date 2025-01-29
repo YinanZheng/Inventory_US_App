@@ -1333,10 +1333,7 @@ ui <- navbarPage(
         passwordInput("admin_password", "请输入管理员密码：", width = "100%"),
         actionButton("admin_login_btn", "登录", icon = icon("unlock"), class = "btn-primary", style = "width: 100%; margin-top: 10px;"),
         tags$hr(),
-        uiOutput("admin_controls"),
-        
-        textInput("item_name", "输入商品名", value = "测试语音"),
-        actionButton("speak_btn", "朗读商品名")
+        uiOutput("admin_controls")
       ),
       
       div(

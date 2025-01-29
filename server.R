@@ -913,7 +913,7 @@ server <- function(input, output, session) {
     if (input$auto_inbound) {
       req(input$inbound_sku)
       
-      unique_id <- handleOperation(
+      sku_item <- handleOperation(
         unique_items_data(),
         operation_name = "入库", 
         sku_field = "inbound_sku",
@@ -928,10 +928,28 @@ server <- function(input, output, session) {
       )
       
       # 检查是否成功处理
-      if (!is.null(unique_id) && unique_id != "") {
-        runjs("playInboundSuccessSound()")  # 播放成功音效
+      if (!is.null(sku_item) && sku_item != "") {
+        js_code <- sprintf('
+          var msg = new SpeechSynthesisUtterance("%s");
+          msg.lang = "zh-CN";
+          msg.onend = function() {  // 朗读完成后执行成功音效
+            playInboundSuccessSound();
+          };
+          window.speechSynthesis.speak(msg);
+        ', sku_item$ItemName)
+        
+        shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
       } else {
-        runjs("playInboundErrorSound()")  # 播放失败音效
+        js_code <- sprintf('
+          var msg = new SpeechSynthesisUtterance("%s");
+          msg.lang = "zh-CN";
+          msg.onend = function() {  // 朗读完成后执行成功音效
+            playInboundErrorSound();
+          };
+          window.speechSynthesis.speak(msg);
+        ', sku_item$ItemName)
+        
+        shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
         return()
       }
       
@@ -4855,20 +4873,6 @@ server <- function(input, output, session) {
     })
   })
 
-  observeEvent(input$speak_btn, {
-    req(input$item_name)  # 确保输入不为空
-    
-    js_code <- sprintf('
-      var msg = new SpeechSynthesisUtterance("%s");
-      msg.lang = "zh-CN";
-      window.speechSynthesis.speak(msg);
-    ', input$item_name)
-    
-    shinyjs::runjs(js_code)  # 在浏览器执行 JavaScript
-  })
-  
-  
-  
   # Disconnect from the database on app stop
   onStop(function() {
     dbDisconnect(con)
