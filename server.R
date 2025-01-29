@@ -898,7 +898,7 @@ server <- function(input, output, session) {
     
     # 如果启用自动入库功能，直接执行入库逻辑
     if (input$auto_inbound) {
-      req(input@inbound_sku)
+      req(input$inbound_sku)
       
       sku_item <- handleOperation(
         unique_items_data(),
