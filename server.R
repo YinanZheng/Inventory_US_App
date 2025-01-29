@@ -862,10 +862,17 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
 
-  # 监听试图切换
+  # 视图模式状态
+  view_mode <- reactiveVal("table_mode")
+  
   observeEvent(input$toggle_view, {
-    shinyjs::toggle(id = "table_mode")
-    shinyjs::toggle(id = "image_mode")
+    if (view_mode() == "table_mode") {
+      view_mode("image_mode")
+      updateActionButton(session, "toggle_view", label = "切换到图表模式")
+    } else {
+      view_mode("table_mode")
+      updateActionButton(session, "toggle_view", label = "切换到大图模式")
+    }
   })
   
   # 监听标签页切换事件
