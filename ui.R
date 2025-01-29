@@ -330,7 +330,7 @@ ui <- navbarPage(
                 actionButton("confirm_inbound_btn", "确认入库", icon = icon("check"), class = "btn-primary", 
                              style = "font-size: 16px; width: 100%; height: 42px;"),
                 
-                actionButton("toggle_view", label = "切换视图", icon = icon("exchange-alt"), class = "btn btn-info")
+                actionButton("toggle_view", label = "切换视图", icon = icon("exchange-alt"), class = "btn btn-info", style = "margin-top: 10px")
             ),
             
             tags$hr(style = "margin: 5px 0; border: none;"),
