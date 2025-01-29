@@ -862,15 +862,21 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
 
+  # 记录当前视图模式，初始为表格模式
+  view_mode <- reactiveVal("table_mode")
+  
   # 视图模式状态
   observeEvent(input$toggle_view, {
+    # 切换视图
     shinyjs::toggle(id = "table_mode")
     shinyjs::toggle(id = "image_mode")
     
-    # 检查当前状态并更新按钮文本
-    if (shinyjs::isHidden("table_mode")) {
+    # 根据当前模式更新 view_mode 变量
+    if (view_mode() == "table_mode") {
+      view_mode("image_mode")
       updateActionButton(session, "toggle_view", label = "切换到图表模式")
     } else {
+      view_mode("table_mode")
       updateActionButton(session, "toggle_view", label = "切换到大图模式")
     }
   })
