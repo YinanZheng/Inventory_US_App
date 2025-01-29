@@ -934,7 +934,7 @@ server <- function(input, output, session) {
           msg.lang = "zh-CN";
           msg.rate = 1.4;  // 提高语速
         
-          var estimatedTime = Math.max(1000, %d * 200);  // 自动计算朗读时间
+          var estimatedTime = Math.max(1000, %d * 250);  // 自动计算朗读时间
         
           window.speechSynthesis.speak(msg);
         
