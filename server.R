@@ -900,7 +900,7 @@ server <- function(input, output, session) {
     if (input$auto_inbound) {
       req(input$inbound_sku)
       
-      sku_item <- handleOperation(
+      unique_id <- handleOperation(
         unique_items_data(),
         operation_name = "入库", 
         sku_field = "inbound_sku",
@@ -915,7 +915,7 @@ server <- function(input, output, session) {
       )
       
       # 检查是否成功处理
-      if (!is.null(sku_item) && sku_item != "") {
+      if (!is.null(unique_id) && unique_id != "") {
         runjs("playInboundSuccessSound()")  # 播放成功音效
       } else {
         runjs("playInboundErrorSound()")  # 播放失败音效
@@ -933,11 +933,6 @@ server <- function(input, output, session) {
         updateNumericInput(session, "inbound_quantity", max = 0, value = 0)
       }
     }
-  })
-  
-  observe({
-    # 动态生成按钮后，通知前端激活 clipboard.js
-    session$sendCustomMessage(type = 'activateClipboard', message = NULL)
   })
   
   # 确认入库逻辑
