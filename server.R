@@ -945,21 +945,7 @@ server <- function(input, output, session) {
         
         shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
       } else {
-        js_code <- sprintf('
-          var msg = new SpeechSynthesisUtterance("%s");
-          msg.lang = "zh-CN";
-          msg.rate = 1.4;  // 提高语速
-        
-          var estimatedTime = Math.max(1000, %d * 250);  // 自动计算朗读时间
-        
-          window.speechSynthesis.speak(msg);
-        
-          setTimeout(function() {
-            playInboundErrorSound();
-          }, estimatedTime);
-        ', item_name, nchar(item_name))
-        
-        shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
+        runjs("playInboundErrorSound()")  # 播放失败音效
         return()
       }
       
