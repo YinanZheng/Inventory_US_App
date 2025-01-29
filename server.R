@@ -862,6 +862,12 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
 
+  # 监听试图切换
+  observeEvent(input$toggle_view, {
+    shinyjs::toggle(id = "table_mode")
+    shinyjs::toggle(id = "image_mode")
+  })
+  
   # 监听标签页切换事件
   observeEvent(input$inventory_us, {
     if (input$inventory_us == "入库") {

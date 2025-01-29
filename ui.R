@@ -346,22 +346,23 @@ ui <- navbarPage(
         
         div(class = "main-panel", style = "display: flex; flex-direction: column;",
             div(style = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;",
+                tags$h4("物品展示", style = "font-weight: bold; color: #007BFF;"),
                 actionButton("toggle_view", label = "切换视图", icon = icon("exchange-alt"), class = "btn btn-secondary")
             ),
             
-            conditionalPanel(condition = "input.toggle_view %% 2 == 0",
-                             div(style = "height: 300px; margin-bottom: 10px;", 
-                                 column(12, uiOutput("inbound_item_info"))
-                             ),
-                             div(style = "flex-grow: 1; overflow-y: auto; padding-top: 10px;", 
-                                 div(id = "item_table_container_inbound", uniqueItemsTableUI("unique_items_table_inbound"))
-                             )
+            div(id = "table_mode",
+                div(style = "height: 300px; margin-bottom: 10px;", 
+                    column(12, uiOutput("inbound_item_info"))
+                ),
+                div(style = "flex-grow: 1; overflow-y: auto; padding-top: 10px;", 
+                    div(id = "item_table_container_inbound", uniqueItemsTableUI("unique_items_table_inbound"))
+                )
             ),
             
-            conditionalPanel(condition = "input.toggle_view %% 2 == 1",
-                             div(style = "flex-grow: 1; display: flex; align-items: center; justify-content: center; height: calc(100vh - 120px);",
-                                 uiOutput("inbound_item_info")
-                             )
+            div(id = "image_mode", style = "display: none;",
+                div(style = "flex-grow: 1; display: flex; align-items: center; justify-content: center; height: calc(100vh - 120px);",
+                    uiOutput("inbound_item_info")
+                )
             )
         )
     )
