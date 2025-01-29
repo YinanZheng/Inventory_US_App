@@ -939,8 +939,7 @@ server <- function(input, output, session) {
           window.speechSynthesis.speak(msg);
         
           setTimeout(function() {
-            var audio = new Audio("www/success.mp3");
-            audio.play();
+            playInboundSuccessSound();
           }, estimatedTime);
         ', item_name, nchar(item_name))
         
