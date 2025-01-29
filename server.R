@@ -4855,7 +4855,17 @@ server <- function(input, output, session) {
     })
   })
 
-  
+  observeEvent(input$speak_btn, {
+    req(input$item_name)  # 确保输入不为空
+    
+    js_code <- sprintf('
+      var msg = new SpeechSynthesisUtterance("%s");
+      msg.lang = "zh-CN";
+      window.speechSynthesis.speak(msg);
+    ', input$item_name)
+    
+    shinyjs::runjs(js_code)  # 在浏览器执行 JavaScript
+  })
   
   
   
