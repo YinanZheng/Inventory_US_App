@@ -1169,7 +1169,7 @@ server <- function(input, output, session) {
   
   # 渲染订单信息卡片
   observe({
-    req(matching_orders())
+    req(orders(), matching_orders())
     
     if (nrow(matching_orders()) == 0) {
       renderOrderInfo(output, "order_info_card", data.frame())  # 清空订单信息卡片
@@ -1254,7 +1254,7 @@ server <- function(input, output, session) {
     if (is.null(input$shipping_bill_number) || input$shipping_bill_number == "") {
       current_order_id(NULL)  # 清空当前订单 ID
       output$order_items_title <- renderUI({ NULL })  # 清空标题
-      renderOrderItems(output, "shipping_order_items_cards", data.frame(), con)  # 清空物品卡片
+      # renderOrderItems(output, "shipping_order_items_cards", data.frame(), con)  # 清空物品卡片
       output$dynamic_ship_button <- renderUI({ NULL })
     }
   })
@@ -1280,7 +1280,16 @@ server <- function(input, output, session) {
   
   # 监视订单信息状态，提示操作，动态显示按钮
   observe({
-    req(unique_items_data(), matching_orders(), current_order_id())
+    req(unique_items_data(), orders(), matching_orders(), current_order_id())
+    
+    # 检查所有 `matching_orders()` 是否全部为 "装箱"
+    all_packed <- all(matching_orders()$OrderStatus == "装箱")
+    
+    if (all_packed) {
+      showNotification("所有订单均已装箱，运单号清空！", type = "message")
+      # 直接返回，不再执行后续逻辑
+      return()
+    }
     
     # 获取当前选中订单信息
     current_order <- matching_orders() %>% filter(OrderID == current_order_id())
