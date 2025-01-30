@@ -1198,6 +1198,7 @@ server <- function(input, output, session) {
   
   # 渲染订单物品标题
   observe({
+    req(input$shipping_bill_number)
     # 如果 current_order_id 为空，清空标题
     if (is.null(current_order_id()) || trimws(current_order_id()) == "") {
       output$order_items_title <- renderUI({ NULL })  # 清空标题
@@ -1215,7 +1216,7 @@ server <- function(input, output, session) {
   
   # 渲染物品信息卡片  
   observe({
-    req(order_items(), matching_orders())
+    req(input$shipping_bill_number, order_items(), matching_orders())
     
     if (nrow(order_items()) == 0) {
       renderOrderItems(output, "shipping_order_items_cards", data.frame(), con)  # 清空物品卡片
