@@ -1259,9 +1259,11 @@ server <- function(input, output, session) {
       output$dynamic_ship_button <- renderUI({ NULL })
       label_pdf_file_path(NULL)  # 清空运单文件路径
       
-      shinyjs::delay(5000, {
+      shinyjs::delay(3000, {
         current_order_id(NULL)  # 清空当前订单 ID
         output$order_items_title <- renderUI({ NULL })  # 清空标题
+        renderOrderItems(output, "shipping_order_items_cards", data.frame(), con)  # 清空物品卡片
+        renderOrderInfo(output, "order_info_card", data.frame())  # 清空订单信息卡片
       })
     }
   })
