@@ -1169,7 +1169,7 @@ server <- function(input, output, session) {
   
   # 渲染订单信息卡片
   observe({
-    req(orders(), matching_orders())
+    req(input$shipping_bill_number, orders(), matching_orders())
     
     if (nrow(matching_orders()) == 0) {
       renderOrderInfo(output, "order_info_card", data.frame())  # 清空订单信息卡片
