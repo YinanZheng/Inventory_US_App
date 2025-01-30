@@ -1295,7 +1295,7 @@ server <- function(input, output, session) {
   
   # 监视订单信息状态，提示操作，动态显示按钮
   observe({
-    req(unique_items_data(), matching_orders(), current_order_id())
+    req(input$shipping_bill_number, unique_items_data(), matching_orders(), current_order_id())
     
     # 获取当前选中订单信息
     current_order <- matching_orders() %>% filter(OrderID == current_order_id())
