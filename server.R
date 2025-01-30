@@ -1142,8 +1142,6 @@ server <- function(input, output, session) {
     data <- match_tracking_number(orders(), "UsTrackingNumber", input$shipping_bill_number)
     
     data %>% arrange(OrderStatus == "装箱")
-    
-    showNotification("matching_orders() is updated!")
   })
   
   # 自动装载订单ID：current_order_id
