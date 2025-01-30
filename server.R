@@ -169,11 +169,6 @@ server <- function(input, output, session) {
     dbGetQuery(con, "SELECT * FROM orders")
   })
   
-  observe({
-    orders()  # 触发 reactive 计算
-    showNotification("orders() is updated!")
-  })
-  
   ####################################################################################################################################
   
   # 物品状态历史表
@@ -1177,8 +1172,6 @@ server <- function(input, output, session) {
       return()
     }
     
-    showNotification("@#$@#$@#$")
-    
     renderOrderInfo(output, "order_info_card", matching_orders())
     
     all_packed <- all(matching_orders()$OrderStatus == "装箱")
@@ -1262,9 +1255,6 @@ server <- function(input, output, session) {
       label_pdf_file_path(NULL)  # 清空运单文件路径
       
       shinyjs::delay(3000, {
-        
-        showNotification("Cleaned up UI.")
-        
         current_order_id(NULL)  # 清空当前订单 ID
         output$order_items_title <- renderUI({ NULL })  # 清空标题
         renderOrderItems(output, "shipping_order_items_cards", data.frame(), con)  # 清空物品卡片
@@ -1458,10 +1448,11 @@ server <- function(input, output, session) {
       update_order_status(
         order_id = current_order_id(),
         new_status = "装箱",
+        refresh_trigger = orders_refresh_trigger,
         con = con
       )
       
-      orders_refresh_trigger(!orders_refresh_trigger())
+      # orders_refresh_trigger(!orders_refresh_trigger())
       
       # 关闭模态框
       removeModal()
@@ -1483,9 +1474,10 @@ server <- function(input, output, session) {
     update_order_status(
       order_id = current_order_id(),
       new_status = "装箱",
+      refresh_trigger = orders_refresh_trigger,
       con = con
     )
-    orders_refresh_trigger(!orders_refresh_trigger())
+    # orders_refresh_trigger(!orders_refresh_trigger())
   })
   
   # 定义运单下载处理器
@@ -2077,8 +2069,9 @@ server <- function(input, output, session) {
     update_order_status(order_id = order_id, 
                         new_status = "备货", 
                         updated_notes = new_notes, 
+                        refresh_trigger = orders_refresh_trigger,
                         con = con)
-    orders_refresh_trigger(!orders_refresh_trigger)
+    # orders_refresh_trigger(!orders_refresh_trigger)
   })
   
   # 渲染物品信息卡片  

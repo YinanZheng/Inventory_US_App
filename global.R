@@ -20,7 +20,9 @@ library(openxlsx)
 library(lubridate)
 
 # Source shared module R file
-lapply(list.files("/srv/shiny-server/inventory_shared_module", pattern = "\\.R$", full.names = TRUE), source)
+lapply(list.files("/srv/shiny-server/inventory_shared_module", pattern = "\\.R$", full.names = TRUE), function(f) {
+  source(f, local = TRUE)
+})
 
 system_type <<- "us"
 
