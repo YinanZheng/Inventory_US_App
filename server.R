@@ -1134,8 +1134,6 @@ server <- function(input, output, session) {
       return(data.frame())  # 返回空数据框
     }
     
-    req(input$shipping_bill_number)  # 确保运单号不为空
-    
     data <- match_tracking_number(orders(), "UsTrackingNumber", input$shipping_bill_number)
     
     data %>% arrange(OrderStatus == "装箱")
@@ -1168,7 +1166,7 @@ server <- function(input, output, session) {
   #############################################  渲染
   
   # 渲染订单信息卡片
-  observe({
+  observeEvent(orders(), {
     req(input$shipping_bill_number, orders(), matching_orders())
     
     if (nrow(matching_orders()) == 0) {
