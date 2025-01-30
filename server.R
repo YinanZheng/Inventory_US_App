@@ -1255,12 +1255,13 @@ server <- function(input, output, session) {
   # 清空运单号逻辑
   observeEvent(input$shipping_bill_number, {
     if (is.null(input$shipping_bill_number) || input$shipping_bill_number == "") {
-      shinyjs::delay(3000, {
+      output$dynamic_ship_button <- renderUI({ NULL })
+      label_pdf_file_path(NULL)  # 清空运单文件路径
+      
+      shinyjs::delay(5000, {
         current_order_id(NULL)  # 清空当前订单 ID
         output$order_items_title <- renderUI({ NULL })  # 清空标题
       })
-      # renderOrderItems(output, "shipping_order_items_cards", data.frame(), con)  # 清空物品卡片
-      output$dynamic_ship_button <- renderUI({ NULL })
     }
   })
   
