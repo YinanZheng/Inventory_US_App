@@ -167,6 +167,8 @@ server <- function(input, output, session) {
     # 当 refresh_trigger 改变时触发更新
     orders_refresh_trigger()
     dbGetQuery(con, "SELECT * FROM orders")
+    
+    showNotification("orders() is updated!")
   })
   
   ####################################################################################################################################
@@ -1137,6 +1139,8 @@ server <- function(input, output, session) {
     data <- match_tracking_number(orders(), "UsTrackingNumber", input$shipping_bill_number)
     
     data %>% arrange(OrderStatus == "装箱")
+    
+    showNotification("matching_orders() is updated!")
   })
   
   # 自动装载订单ID：current_order_id
@@ -1146,9 +1150,6 @@ server <- function(input, output, session) {
     if (nrow(matching_orders()) > 0) {
       # 设置第一个订单的 OrderID 为当前订单 ID
       current_order_id(matching_orders()$OrderID[1])
-    } else {
-      # 如果没有订单，清空 current_order_id
-      current_order_id(NULL)
     }
   })
   
@@ -1175,6 +1176,8 @@ server <- function(input, output, session) {
       return()
     }
     
+    showNotification("@#$@#$@#$")
+    
     renderOrderInfo(output, "order_info_card", matching_orders())
     
     all_packed <- all(matching_orders()$OrderStatus == "装箱")
@@ -1197,6 +1200,7 @@ server <- function(input, output, session) {
   # 渲染订单物品标题
   observe({
     req(input$shipping_bill_number)
+    
     # 如果 current_order_id 为空，清空标题
     if (is.null(current_order_id()) || trimws(current_order_id()) == "") {
       output$order_items_title <- renderUI({ NULL })  # 清空标题
