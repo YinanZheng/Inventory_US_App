@@ -167,7 +167,10 @@ server <- function(input, output, session) {
     # 当 refresh_trigger 改变时触发更新
     orders_refresh_trigger()
     dbGetQuery(con, "SELECT * FROM orders")
-    
+  })
+  
+  observe({
+    orders()  # 触发 reactive 计算
     showNotification("orders() is updated!")
   })
   
