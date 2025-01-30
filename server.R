@@ -1166,7 +1166,7 @@ server <- function(input, output, session) {
   #############################################  渲染
   
   # 渲染订单信息卡片
-  observeEvent(orders(), {
+  observe({
     req(input$shipping_bill_number, orders(), matching_orders())
     
     if (nrow(matching_orders()) == 0) {
