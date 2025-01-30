@@ -1188,6 +1188,9 @@ server <- function(input, output, session) {
         footer = NULL  # 不需要关闭按钮
       ))
       
+      updateTextInput(session, "shipping_bill_number", value = "")
+      runjs("document.getElementById('shipping_bill_number').focus();")
+      
       # 延迟 2 秒后自动关闭弹窗
       shinyjs::delay(2000, removeModal())
     }
@@ -1280,16 +1283,7 @@ server <- function(input, output, session) {
   
   # 监视订单信息状态，提示操作，动态显示按钮
   observe({
-    req(unique_items_data(), orders(), matching_orders(), current_order_id())
-    
-    # 检查所有 `matching_orders()` 是否全部为 "装箱"
-    all_packed <- all(matching_orders()$OrderStatus == "装箱")
-    
-    if (all_packed) {
-      showNotification("所有订单均已装箱，运单号清空！", type = "message")
-      # 直接返回，不再执行后续逻辑
-      return()
-    }
+    req(unique_items_data(), matching_orders(), current_order_id())
     
     # 获取当前选中订单信息
     current_order <- matching_orders() %>% filter(OrderID == current_order_id())
@@ -1459,10 +1453,6 @@ server <- function(input, output, session) {
       
       # 关闭模态框
       removeModal()
-      
-      # 聚焦运单输入框
-      runjs("document.getElementById('shipping_bill_number').focus();")
-      
     }, error = function(e) {
       # 捕获错误并通知用户
       showNotification(paste("发生错误：", e$message), type = "error")
