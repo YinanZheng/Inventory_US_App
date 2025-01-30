@@ -1227,7 +1227,6 @@ server <- function(input, output, session) {
     }
     
     renderOrderItems(output, "shipping_order_items_cards", order_items(), con)
-    runjs("document.getElementById('sku_input').focus();")
   })
   
   
