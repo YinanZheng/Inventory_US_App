@@ -1219,7 +1219,7 @@ server <- function(input, output, session) {
   
   # 渲染物品信息卡片  
   observe({
-    req(input$shipping_bill_number, order_items(), matching_orders())
+    req(input$shipping_bill_number, order_items())
     
     if (nrow(order_items()) == 0) {
       renderOrderItems(output, "shipping_order_items_cards", data.frame(), con)  # 清空物品卡片
