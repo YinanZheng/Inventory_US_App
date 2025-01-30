@@ -1459,9 +1459,10 @@ server <- function(input, output, session) {
       update_order_status(
         order_id = current_order_id(),
         new_status = "装箱",
-        refresh_trigger = orders_refresh_trigger,
         con = con
       )
+      
+      orders_refresh_trigger(!orders_refresh_trigger())
       
       # 关闭模态框
       removeModal()
@@ -1483,9 +1484,9 @@ server <- function(input, output, session) {
     update_order_status(
       order_id = current_order_id(),
       new_status = "装箱",
-      refresh_trigger = orders_refresh_trigger,
       con = con
-    )  
+    )
+    orders_refresh_trigger(!orders_refresh_trigger())
   })
   
   # 定义运单下载处理器
@@ -2077,8 +2078,8 @@ server <- function(input, output, session) {
     update_order_status(order_id = order_id, 
                         new_status = "备货", 
                         updated_notes = new_notes, 
-                        refresh_trigger = orders_refresh_trigger, 
                         con = con)
+    orders_refresh_trigger(!orders_refresh_trigger)
   })
   
   # 渲染物品信息卡片  
