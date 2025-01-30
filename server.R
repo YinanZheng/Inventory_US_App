@@ -1263,6 +1263,9 @@ server <- function(input, output, session) {
       label_pdf_file_path(NULL)  # 清空运单文件路径
       
       shinyjs::delay(3000, {
+        
+        showNotification("Cleaned up UI.")
+        
         current_order_id(NULL)  # 清空当前订单 ID
         output$order_items_title <- renderUI({ NULL })  # 清空标题
         renderOrderItems(output, "shipping_order_items_cards", data.frame(), con)  # 清空物品卡片
