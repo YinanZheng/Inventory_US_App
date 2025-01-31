@@ -914,7 +914,6 @@ server <- function(input, output, session) {
     # 如果启用自动入库功能，直接执行入库逻辑
     if (input$auto_inbound) {
       req(input$inbound_sku)
-      
       item_name <- handleOperation(
         unique_items_data(),
         operation_name = "入库", 
@@ -1453,9 +1452,7 @@ server <- function(input, output, session) {
         refresh_trigger = orders_refresh_trigger,
         con = con
       )
-      
-      # orders_refresh_trigger(!orders_refresh_trigger())
-      
+
       # 关闭模态框
       removeModal()
     }, error = function(e) {
@@ -1479,7 +1476,6 @@ server <- function(input, output, session) {
       refresh_trigger = orders_refresh_trigger,
       con = con
     )
-    # orders_refresh_trigger(!orders_refresh_trigger())
   })
   
   # 定义运单下载处理器
@@ -1811,12 +1807,20 @@ server <- function(input, output, session) {
                     ),
                     tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
                     tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
-                    numericInput(
-                      paste0("outbound_qty_", item$SKU),
-                      "请求数量",
-                      value = 1,
-                      min = 1,
-                      width = "80%"
+                    tags$div(
+                      style = "width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;",
+                      numericInput(
+                        paste0("outbound_qty_", item$SKU),
+                        "请求数量",
+                        value = 1,
+                        min = 1,
+                        max = item$DomesticStock,  # 设置最大值
+                        width = "50%"
+                      ),
+                      tags$span(
+                        paste("国内库存数:", item$DomesticStock),
+                        style = "font-size: 14px; color: grey;"
+                      )
                     ),
                     actionButton(
                       paste0("create_request_outbound_", item$SKU),
@@ -2073,7 +2077,6 @@ server <- function(input, output, session) {
                         updated_notes = new_notes, 
                         refresh_trigger = orders_refresh_trigger,
                         con = con)
-    # orders_refresh_trigger(!orders_refresh_trigger)
   })
   
   # 渲染物品信息卡片  
