@@ -1788,6 +1788,13 @@ server <- function(input, output, session) {
                       min = 1,
                       width = "80%"
                     ),
+                    textAreaInput(
+                      paste0("purchase_remark_input_", item$SKU),
+                      "留言（可选）",
+                      placeholder = "输入留言...",
+                      width = "100%",
+                      rows = 2
+                    ),
                     actionButton(
                       paste0("create_request_purchase_", item$SKU),
                       "发出采购请求",
@@ -1833,6 +1840,14 @@ server <- function(input, output, session) {
                         style = "font-size: 14px; color: grey;"
                       )
                     ),
+                    # 添加留言输入框
+                    textAreaInput(
+                      paste0("outbound_remark_input_", item$SKU),
+                      "留言（可选）",
+                      placeholder = "输入留言...",
+                      width = "100%",
+                      rows = 2
+                    ),
                     actionButton(
                       paste0("create_request_outbound_", item$SKU),
                       "发出调货请求",
@@ -1851,7 +1866,7 @@ server <- function(input, output, session) {
           div(style = "max-height: 500px; overflow-y: auto;", modal_content),
           easyClose = FALSE,
           footer = tagList(
-            actionButton("complete_requests", "完成所有请求", class = "btn-success")
+            actionButton("complete_requests", "关闭", class = "btn-success")
           )
         ))
       }
@@ -1898,20 +1913,27 @@ server <- function(input, output, session) {
           
           # 获取请求数量
           qty <- input[[paste0("outbound_qty_", sku)]]
+          
+          # 获取留言
+          remark <- input[[paste0("outbound_remark_input_", sku)]]
+          remark_prefix <- if (system_type == "china") "[京]" else "[圳]"
+          new_remark <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ": ", remark_prefix, " ", remark)
+          
           request_id <- uuid::UUIDgenerate()
           
           tryCatch({
             # 插入出库请求到数据库
             dbExecute(con,
-                      "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt)
-                     VALUES (?, ?, ?, ?, ?, ?, '待处理', '出库', NOW())",
+                      "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
+                   VALUES (?, ?, ?, ?, ?, ?, '待处理', '出库', NOW(), ?)",
                       params = list(
                         request_id,
                         sku,
                         item$Maker,
                         item$ItemImagePath,
                         item$ItemName,  # 假设物品描述对应 ItemName
-                        qty
+                        qty,
+                        ifelse(remark == "", NULL, new_remark)
                       ))
             
             # 绑定按钮
@@ -1936,20 +1958,27 @@ server <- function(input, output, session) {
           
           # 获取请求数量
           qty <- input[[paste0("purchase_qty_", sku)]]
+          
+          # 获取留言
+          remark <- input[[paste0("purchase_remark_input_", sku)]]
+          remark_prefix <- if (system_type == "china") "[京]" else "[圳]"
+          new_remark <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ": ", remark_prefix, " ", remark)
+          
           request_id <- uuid::UUIDgenerate()
           
           tryCatch({
             # 插入采购请求到数据库
             dbExecute(con,
                       "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt)
-                     VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW())",
+                     VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW(), ?)",
                       params = list(
                         request_id,
                         sku,
                         item$Maker,
                         item$ItemImagePath,
                         item$ItemName,  # 假设物品描述对应 ItemName
-                        qty
+                        qty,
+                        ifelse(remark == "", NULL, new_remark)
                       ))
             
             # 绑定按钮
