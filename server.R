@@ -3848,10 +3848,17 @@ server <- function(input, output, session) {
               tags$tr(tags$td(tags$b("分类：")), tags$td(paste(sku_data$MajorType[1], "/", sku_data$MinorType[1]))),
               tags$tr(tags$td(tags$b("平均成本：")), tags$td(sprintf("¥%.2f", sku_data$ProductCost[1]))),
               tags$tr(tags$td(tags$b("平均运费：")), tags$td(sprintf("¥%.2f", sku_data$ShippingCost[1]))),
-              tags$tr(tags$td(tags$b("国内库存数：")), tags$td(sku_data$DomesticQuantity[1])),
-              tags$tr(tags$td(tags$b("在途库存数：")), tags$td(sku_data$TransitQuantity[1])),
-              tags$tr(tags$td(tags$b("美国库存数：")), tags$td(sku_data$UsQuantity[1])),
-              tags$tr(tags$td(tags$b("总库存数：")), tags$td(sku_data$Quantity[1]))
+              tags$tr(tags$td(tags$b("库存数：")), 
+                      tags$td(
+                        HTML(sprintf(
+                          "国内：%d &emsp;|&emsp; 在途：%d &emsp;|&emsp; 美国：%d &emsp;|&emsp; 总计：%d",
+                          sku_data$DomesticQuantity[1], 
+                          sku_data$TransitQuantity[1], 
+                          sku_data$UsQuantity[1], 
+                          sku_data$Quantity[1]
+                        ))
+                      )
+              )
             )
           )
         )

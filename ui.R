@@ -1030,7 +1030,7 @@ ui <- navbarPage(
                 4,
                 div(
                   class = "card",
-                  style = "height: 453.89px; margin-bottom: 5px; padding: 5px; border: 1px solid #007BFF; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
+                  style = "height: 370px; margin-bottom: 5px; padding: 5px; border: 1px solid #007BFF; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
                   tags$h4("商品信息", style = "color: #007BFF; font-weight: bold; padding-left: 10px;"),
                   uiOutput("query_item_info") # 动态渲染物品信息
                 )
@@ -1042,7 +1042,7 @@ ui <- navbarPage(
                   class = "card",
                   style = "margin-bottom: 5px; padding: 5px; border: 1px solid #28a745; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
                   tags$h4("库存状态图表", style = "color: #28a745; font-weight: bold; padding-left: 10px;"),
-                  plotlyOutput("inventory_status_chart", height = "400px") # 使用 plotlyOutput
+                  plotlyOutput("inventory_status_chart", height = "320px") # 使用 plotlyOutput
                 )
               ),
               
@@ -1052,7 +1052,7 @@ ui <- navbarPage(
                   class = "card",
                   style = "margin-bottom: 5px; padding: 5px; border: 1px solid #dc3545; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
                   tags$h4("瑕疵情况图表", style = "color: #dc3545; font-weight: bold; padding-left: 10px"),
-                  plotlyOutput("defect_status_chart", height = "400px") # 使用 plotlyOutput
+                  plotlyOutput("defect_status_chart", height = "320px") # 使用 plotlyOutput
                 )
               )
             ),
