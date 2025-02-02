@@ -1769,7 +1769,7 @@ server <- function(input, output, session) {
             modal_content,
             tags$div(
               style = "padding: 10px; background-color: #ffe6e6; border-radius: 8px; margin-bottom: 20px;",
-              tags$h4("需要补货：", style = "color: red; margin-bottom: 15px;"),
+              tags$h4("需要采购补货：", style = "color: red; margin-bottom: 15px;"),
               tags$div(
                 style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
                 lapply(zero_items, function(item) {
@@ -1863,7 +1863,7 @@ server <- function(input, output, session) {
 
         showModal(modalDialog(
           title = "处理库存请求",
-          div(style = "max-height: 500px; overflow-y: auto;", modal_content),
+          div(style = "max-height: 600px; overflow-y: auto;", modal_content),
           easyClose = FALSE,
           footer = tagList(
             actionButton("complete_requests", "关闭", class = "btn-success")
@@ -1931,7 +1931,7 @@ server <- function(input, output, session) {
                         sku,
                         item$Maker,
                         item$ItemImagePath,
-                        item$ItemName,  # 假设物品描述对应 ItemName
+                        item$ItemName,
                         qty,
                         ifelse(remark == "", NULL, new_remark)
                       ))
@@ -1969,14 +1969,14 @@ server <- function(input, output, session) {
           tryCatch({
             # 插入采购请求到数据库
             dbExecute(con,
-                      "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt)
+                      "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
                      VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW(), ?)",
                       params = list(
                         request_id,
                         sku,
                         item$Maker,
                         item$ItemImagePath,
-                        item$ItemName,  # 假设物品描述对应 ItemName
+                        item$ItemName,
                         qty,
                         ifelse(remark == "", NULL, new_remark)
                       ))
