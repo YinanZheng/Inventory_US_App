@@ -582,6 +582,9 @@ server <- function(input, output, session) {
       MajorType = "大类",
       MinorType = "小类",
       Quantity = "总库存数",
+      DomesticQuantity = "国内库存数",
+      TransitQuantity = "在途库存数",
+      UsQuantity = "美国库存数",
       ProductCost = "平均成本",
       ShippingCost = "平均运费"
     )
