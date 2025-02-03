@@ -3857,37 +3857,68 @@ server <- function(input, output, session) {
       output$query_item_info <- renderUI({
         img_path <- ifelse(
           is.na(sku_data$ItemImagePath[1]),
-          placeholder_150px_path,
+          placeholder_200px_path,
           paste0(host_url, "/images/", basename(sku_data$ItemImagePath[1]))
         )
         
-        # 渲染图片和表格信息
         div(
-          style = "display: flex; flex-direction: column; align-items: center; padding: 10px;",
+          style = "display: flex; flex-direction: column; padding: 10px;",
+          
+          # 上部分：图片和基本信息
           div(
-            style = "text-align: center; margin-bottom: 10px;",
-            tags$img(src = img_path, height = "150px", style = "border: 1px solid #ddd; border-radius: 8px;")
-          ),
-          div(
-            style = "width: 100%; padding-left: 10px;",
-            tags$table(
-              style = "width: 100%; border-collapse: collapse;",
-              tags$tr(tags$td(tags$b("商品名称：")), tags$td(sku_data$ItemName[1])),
-              tags$tr(tags$td(tags$b("供应商：")), tags$td(sku_data$Maker[1])),
-              tags$tr(tags$td(tags$b("分类：")), tags$td(paste(sku_data$MajorType[1], "/", sku_data$MinorType[1]))),
-              tags$tr(tags$td(tags$b("平均成本：")), tags$td(sprintf("¥%.2f", sku_data$ProductCost[1]))),
-              tags$tr(tags$td(tags$b("平均运费：")), tags$td(sprintf("¥%.2f", sku_data$ShippingCost[1]))),
-              tags$tr(tags$td(tags$b("库存数：")), 
-                      tags$td(
-                        HTML(sprintf(
-                          "国内：%d &emsp;|&emsp; 在途：%d &emsp;|&emsp; 美国：%d &emsp;|&emsp; 总计：%d",
-                          sku_data$DomesticQuantity[1], 
-                          sku_data$TransitQuantity[1], 
-                          sku_data$UsQuantity[1], 
-                          sku_data$Quantity[1]
-                        ))
-                      )
+            style = "display: flex; align-items: flex-start; width: 100%;",
+            
+            # 左侧：商品图片
+            div(
+              style = "flex: 1; text-align: center; padding-right: 10px;",
+              tags$img(src = img_path, height = "200px", 
+                       style = "border: 1px solid #ddd; border-radius: 8px;")
+            ),
+            
+            # 右侧：商品信息
+            div(
+              style = "flex: 2;",
+              tags$table(
+                style = "width: 100%; border-collapse: collapse; line-height: 2;",
+                tags$tr(
+                  tags$td(style = "white-space: nowrap; font-weight: bold; min-width: 90px;", "商品名称："), 
+                  tags$td(style = "word-break: break-word;", sku_data$ItemName[1])
+                ),
+                tags$tr(
+                  tags$td(style = "white-space: nowrap; font-weight: bold; min-width: 90px;", "供应商："), 
+                  tags$td(style = "word-break: break-word;", sku_data$Maker[1])
+                ),
+                tags$tr(
+                  tags$td(style = "white-space: nowrap; font-weight: bold; min-width: 90px;", "分类："), 
+                  tags$td(style = "word-break: break-word;", paste(sku_data$MajorType[1], "/", sku_data$MinorType[1]))
+                ),
+                tags$tr(
+                  tags$td(style = "white-space: nowrap; font-weight: bold; min-width: 90px;", "平均成本："), 
+                  tags$td(style = "word-break: break-word;", sprintf("¥%.2f", sku_data$ProductCost[1]))
+                ),
+                tags$tr(
+                  tags$td(style = "white-space: nowrap; font-weight: bold; min-width: 90px;", "平均运费："), 
+                  tags$td(style = "word-break: break-word;", sprintf("¥%.2f", sku_data$ShippingCost[1]))
+                )
               )
+            )
+          ),
+          
+          # 底部：库存信息
+          div(
+            style = "width: 100%; margin-top: 10px; text-align: center; padding-top: 5px; border-top: 1px solid #ddd;",
+            tags$span(
+              style = "font-weight: bold;",
+              "库存数："
+            ),
+            tags$span(
+              HTML(sprintf(
+                "国内：%d &emsp;|&emsp; 在途：%d &emsp;|&emsp; 美国：%d &emsp;|&emsp; 总计：%d",
+                sku_data$DomesticQuantity[1], 
+                sku_data$TransitQuantity[1], 
+                sku_data$UsQuantity[1], 
+                sku_data$Quantity[1]
+              ))
             )
           )
         )
