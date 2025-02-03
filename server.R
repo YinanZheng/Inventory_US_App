@@ -117,48 +117,56 @@ server <- function(input, output, session) {
   })
   
   # 物品追踪表
-  unique_items_data <- reactive({
-    # 当 refresh_trigger 改变时触发更新
-    unique_items_data_refresh_trigger()
+  unique_items_data <- reactivePoll(
+    intervalMillis = poll_interval, 
+    session = session,       # 绑定 Shiny session，确保只在活跃时运行
     
-    dbGetQuery(con, "
-    SELECT 
-      unique_items.UniqueID, 
-      unique_items.SKU, 
-      unique_items.OrderID,
-      unique_items.ProductCost,
-      unique_items.DomesticShippingCost,
-      unique_items.Status,
-      unique_items.Defect,
-      unique_items.DefectNotes,
-      unique_items.IntlShippingMethod,
-      unique_items.IntlTracking,
-      unique_items.IntlShippingCost,
-      unique_items.PurchaseTime,
-      unique_items.DomesticEntryTime,
-      unique_items.DomesticExitTime,
-      unique_items.DomesticSoldTime,
-      unique_items.UsEntryTime,
-      unique_items.UsShippingTime,
-      unique_items.UsRelocationTime,
-      unique_items.ReturnTime,
-      unique_items.PurchaseCheck,
-      unique_items.updated_at,
-      inventory.Maker,
-      inventory.MajorType,
-      inventory.MinorType,
-      inventory.ItemName,
-      inventory.ItemImagePath
-    FROM 
-      unique_items
-    JOIN 
-      inventory 
-    ON 
-      unique_items.SKU = inventory.SKU
-    ORDER BY 
-      unique_items.updated_at DESC
-  ")
-  })
+    # **检查是否需要更新**（返回最近更新时间）
+    checkFunc = function() {
+      dbGetQuery(con, "SELECT MAX(updated_at) FROM unique_items")[[1]]  # 获取最近更新时间
+    },
+    
+    # **获取最新数据**
+    valueFunc = function() {
+      dbGetQuery(con, "
+      SELECT 
+        unique_items.UniqueID, 
+        unique_items.SKU, 
+        unique_items.OrderID,
+        unique_items.ProductCost,
+        unique_items.DomesticShippingCost,
+        unique_items.Status,
+        unique_items.Defect,
+        unique_items.DefectNotes,
+        unique_items.IntlShippingMethod,
+        unique_items.IntlTracking,
+        unique_items.IntlShippingCost,
+        unique_items.PurchaseTime,
+        unique_items.DomesticEntryTime,
+        unique_items.DomesticExitTime,
+        unique_items.DomesticSoldTime,
+        unique_items.UsEntryTime,
+        unique_items.UsShippingTime,
+        unique_items.UsRelocationTime,
+        unique_items.ReturnTime,
+        unique_items.PurchaseCheck,
+        unique_items.updated_at,
+        inventory.Maker,
+        inventory.MajorType,
+        inventory.MinorType,
+        inventory.ItemName,
+        inventory.ItemImagePath
+      FROM 
+        unique_items
+      JOIN 
+        inventory 
+      ON 
+        unique_items.SKU = inventory.SKU
+      ORDER BY 
+        unique_items.updated_at DESC
+    ")
+    }
+  )
   
   # 加载当前已有的 makers 和 item names 的对应关系
   observe({
