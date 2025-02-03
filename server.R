@@ -3833,6 +3833,25 @@ server <- function(input, output, session) {
     makers_items_map = makers_items_map
   )
   
+  # 监听点击事件，弹出大图
+  observeEvent(input$show_large_image, {
+    req(input$show_large_image)  # 确保图片路径有效
+    
+    showModal(modalDialog(
+      title = "物品图片预览",
+      tags$div(
+        style = "overflow: auto; max-height: 700px; text-align: center;",
+        tags$img(
+          src = input$show_large_image,  # 直接使用传入的图片路径
+          style = "max-width: 100%; height: auto; display: inline-block; border: 1px solid #ddd; border-radius: 8px;"
+        )
+      ),
+      size = "l",
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+  
   # 根据SKU产生图表
   observe({
     sku <- trimws(input$query_sku)
@@ -3868,11 +3887,14 @@ server <- function(input, output, session) {
           div(
             style = "display: flex; align-items: flex-start; width: 100%;",
             
-            # 左侧：商品图片
+            # 图片区域（带点击事件）
             div(
               style = "flex: 1; text-align: center; padding-right: 10px;",
-              tags$img(src = img_path, height = "200px", 
-                       style = "border: 1px solid #ddd; border-radius: 8px;")
+              tags$img(
+                src = img_path, height = "200px",
+                style = "border: 1px solid #ddd; border-radius: 8px; cursor: pointer;",
+                onclick = sprintf("Shiny.setInputValue('show_large_image', '%s', {priority: 'event'})", img_path)
+              )
             ),
             
             # 右侧：商品信息
@@ -4453,6 +4475,36 @@ server <- function(input, output, session) {
       selected_data <- filtered_inventory()[selected_row, ]
       # 更新 SKU 输入框(生成库存图表用)
       updateTextInput(session, "query_sku", value = selected_data$SKU)
+    }
+  })
+  
+  # 监听用户点击图片列
+  observeEvent(input$filtered_inventory_table_query_cell_clicked, {
+    info <- input$filtered_inventory_table_query_cell_clicked
+    
+    # 检查是否点击了图片列（第三列）
+    if (!is.null(info) && !is.null(info$col) && !is.null(info$row)) {
+      if (info$col == 2) {  # 第三列在 R 中的索引是 2
+        
+        img_path <- as.character(filtered_inventory()[info$row, "ItemImagePath"])
+        
+        img_host_path <- paste0(host_url, "/images/", basename(img_path))
+        
+        # 弹出窗口显示大图
+        showModal(modalDialog(
+          title = "物品图片预览",
+          tags$div(
+            style = "overflow: auto; max-height: 700px; text-align: center;",
+            tags$img(
+              src = img_host_path,
+              style = "max-width: 100%; height: auto; display: inline-block;"
+            )
+          ),
+          size = "l",
+          easyClose = TRUE,
+          footer = NULL
+        ))
+      }
     }
   })
   
