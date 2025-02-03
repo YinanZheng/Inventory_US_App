@@ -20,7 +20,7 @@ library(openxlsx)
 library(lubridate)
 
 # Source shared module R file
-files <- list.files("/srv/shiny-server/inventory_shared_module", pattern = "\\.R$", full.names = TRUE)
+files <- list.files("/srv/shiny-server/erp-module", pattern = "\\.R$", full.names = TRUE)
 lapply(files, function(f) {
   source(f, local = FALSE)  # 确保加载到全局环境
 })
