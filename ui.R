@@ -462,7 +462,6 @@ ui <- navbarPage(
       class = "layout-container",
       div(
         class = "sticky-sidebar",
-        style = "width: 400px;", 
         div(
           class = "card",
           style = "margin-bottom: 5px; padding: 15px; border: 1px solid #28A745; border-radius: 8px;",
@@ -544,7 +543,6 @@ ui <- navbarPage(
       class = "layout-container",  # Flexbox 容器
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
-        
         itemFilterUI(id = "manage_filter", border_color = "#28A745", text_color = "#28A745", use_purchase_date = TRUE),
         
         tags$hr(), # 分隔线
@@ -635,7 +633,6 @@ ui <- navbarPage(
       class = "layout-container",  # Flexbox 容器
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
-        
         itemFilterUI(id = "defect_filter", border_color = "#28A745", text_color = "#28A745", use_status = FALSE, use_purchase_date = FALSE),
         
         tags$hr(), # 分隔线
@@ -999,7 +996,6 @@ ui <- navbarPage(
       class = "layout-container",  # Flexbox 容器
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
-        style = "width: 280px;",
         itemFilterUI(id = "query_filter", border_color = "#28A745", text_color = "#28A745", use_status = FALSE, use_purchase_date = FALSE),
         
         tags$hr(),
@@ -1262,7 +1258,6 @@ ui <- navbarPage(
       class = "layout-container",  # Flexbox 容器
       div(
         class = "sticky-sidebar",  # sticky 侧边栏
-        
         div(
           class = "card shadow-sm", # 添加卡片样式
           style = "border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; background-color: #f9f9f9;",
