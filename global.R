@@ -31,7 +31,7 @@ system_type <<- "us"
 poll_interval <<- 1000  # 每 1 秒检查一次
 
 # 主机URL
-host_url <<- "http://54.254.120.88/"
+host_url <<- "https://www.goldenbeanllc.com/"
 
 # 通用物品表的列名
 placeholder_300px_path <<- "https://dummyimage.com/300x300/cccccc/000000.png&text=No+Image"
