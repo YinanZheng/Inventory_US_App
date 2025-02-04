@@ -123,10 +123,7 @@ server <- function(input, output, session) {
     
     # **检查是否需要更新**（返回最近更新时间）
     checkFunc = function() {
-      list(
-        dbGetQuery(con, "SELECT MAX(updated_at) FROM unique_items")[[1]], # 监测数据库更新
-        unique_items_data_refresh_trigger()
-      )
+      dbGetQuery(con, "SELECT MAX(updated_at) FROM unique_items")[[1]]
     },
     
     # **获取最新数据**
@@ -1723,6 +1720,21 @@ server <- function(input, output, session) {
       orders_refresh_trigger(!orders_refresh_trigger())
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
+      sku_list_str <- paste0("'", paste(unique(items$SKU), collapse = "','"), "'")  # 转换为 SQL 格式
+      
+      # **手动查询仅包含需要的 SKU 的最新数据**
+      latest_unique_items <- dbGetQuery(con, paste0("
+        SELECT 
+          ui.SKU, 
+          ui.Status, 
+          inv.ItemName, 
+          inv.ItemImagePath, 
+          inv.Maker
+        FROM unique_items AS ui
+        JOIN inventory AS inv ON ui.SKU = inv.SKU
+        WHERE ui.SKU IN (", sku_list_str, ")
+      "))
+      
       # 检查库存并记录库存为零的物品
       zero_items <- list()  # 临时列表存储库存为零的物品
       outbound_items <- list()  # 临时列表存储需要出库的物品
@@ -1735,7 +1747,7 @@ server <- function(input, output, session) {
         )
         
         # 检查库存
-        result <- unique_items_data() %>%
+        result <- latest_unique_items %>%
           filter(SKU == sku) %>%
           group_by(SKU, ItemName, ItemImagePath, Maker) %>%
           summarise(
@@ -1744,11 +1756,7 @@ server <- function(input, output, session) {
             UsStock = sum(Status == "美国入库", na.rm = TRUE),
             .groups = "drop"
           )
-        
-        showNotification(sku)
-        showNotification(result$DomesticStock)
-        showNotification(result$UsStock)
-
+ 
         total_stock <- sum(result$DomesticStock, result$InTransitStock, result$UsStock)
         if (total_stock == 0) {
           zero_items <- append(zero_items, list(result))
@@ -1774,10 +1782,7 @@ server <- function(input, output, session) {
       
       added_order_items <- unique_items_data() %>% filter(OrderID == order$OrderID)
       renderOrderItems(output, "shipping_order_items_cards", added_order_items, con, deletable = FALSE)
-      
-      showNotification(length(zero_items))
-      showNotification(length(outbound_items))
-      
+
       # 弹出模态框提示补货和出库请求
       if (length(zero_items) > 0 || length(outbound_items) > 0) {
         modal_content <- tagList()
