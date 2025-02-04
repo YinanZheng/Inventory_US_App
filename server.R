@@ -1745,6 +1745,7 @@ server <- function(input, output, session) {
             .groups = "drop"
           )
         
+        showNotification(sku)
         showNotification(result$DomesticStock)
         showNotification(result$UsStock)
 
