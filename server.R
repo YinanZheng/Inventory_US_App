@@ -1745,6 +1745,9 @@ server <- function(input, output, session) {
             .groups = "drop"
           )
         
+        showNotification(result$DomesticStock)
+        showNotification(result$UsStock)
+
         total_stock <- sum(result$DomesticStock, result$InTransitStock, result$UsStock)
         if (total_stock == 0) {
           zero_items <- append(zero_items, list(result))
