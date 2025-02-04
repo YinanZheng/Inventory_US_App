@@ -255,6 +255,8 @@ ui <- navbarPage(
     "协作", icon = icon("users"),
     div(
       class = "layout-container",
+      
+      # 左侧侧边栏
       div(
         class = "sticky-sidebar",
         div(
@@ -284,43 +286,74 @@ ui <- navbarPage(
         )
       ),
       
-      div(
-        class = "resizable-divider",
-      ),
+      # 可调整的分割线
+      div(class = "resizable-divider"),
       
+      # 右侧主要面板
       div(
         class = "main-panel",
+        
+        # 采购流程 tabset
         tabsetPanel(
           id = "collaboration_tabs",
           type = "pills",
-          tags$div(
-            class = "tab-flow",
-            tabPanel(title = "采购请求", uiOutput("purchase_request_board")),
-            tags$span(class = "arrow-icon", icon("arrow-right")),
-            tabPanel(title = "已安排供应", uiOutput("provider_arranged_board")),
-            tags$span(class = "arrow-icon", icon("arrow-right")),
-            tabPanel(title = "做好已付款", uiOutput("done_paid_board"))
+          
+          # 采购流程链
+          tabPanel(
+            title = div(
+              "采购请求",
+              tags$span(class = "arrow-icon", icon("arrow-right"))
+            ), 
+            uiOutput("purchase_request_board")
           ),
+          tabPanel(
+            title = div(
+              "已安排供应",
+              tags$span(class = "arrow-icon", icon("arrow-right"))
+            ), 
+            uiOutput("provider_arranged_board")
+          ),
+          tabPanel(
+            title = "做好已付款",
+            uiOutput("done_paid_board")
+          ),
+          
+          # 额外的出库请求 Tab
           tabPanel(
             title = "出库请求",
             uiOutput("outbound_request_board")
           )
-        ),
-        # 自定义 CSS 样式
-        tags$head(tags$style(HTML("
-        .tab-flow {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-        }
-        .arrow-icon {
-          font-size: 18px;
-          color: #007bff;
-        }
-      ")))
+        )
       )
-    )
+    ),
+    
+    # 自定义 CSS 样式
+    tags$head(tags$style(HTML("
+    .layout-container {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .sticky-sidebar {
+      width: 300px;
+      position: sticky;
+      top: 10px;
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    
+    .main-panel {
+      flex-grow: 1;
+    }
+
+    .arrow-icon {
+      font-size: 16px;
+      color: #007bff;
+      margin-left: 8px;
+    }
+  ")))
   ), # End of 协作 tab
   
   tabPanel(
