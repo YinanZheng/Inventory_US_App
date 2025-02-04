@@ -171,12 +171,12 @@ ui <- navbarPage(
         margin-left: 8px;
       }
       
-      /* 垂直分隔线 */
+      /* 垂直分隔线样式 */
       .vertical-divider {
-        width: 2px;
-        height: 30px;
-        background-color: #ccc;
-        margin: 10px auto;
+        width: 3px; /* 加宽分隔线 */
+        height: 50px; /* 增加高度 */
+        background-color: #007bff; /* 设置更深的颜色 */
+        margin: auto 10px; /* 调整上下间距 */
       }
     ")),
       
