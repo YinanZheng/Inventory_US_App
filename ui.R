@@ -171,10 +171,12 @@ ui <- navbarPage(
         margin-left: 8px;
       }
       
-      /* 分隔出库请求和采购流程 */
-      .section-divider {
-        border-top: 3px solid #DC3545;
-        margin: 20px 0;
+      /* 垂直分隔线 */
+      .vertical-divider {
+        width: 2px;
+        height: 30px;
+        background-color: #ccc;
+        margin: 10px auto;
       }
     ")),
       
@@ -331,13 +333,12 @@ ui <- navbarPage(
             uiOutput("done_paid_board")
           ),
           
-          # **分割线 + 出库请求**
+          # **添加垂直分隔线**
+          div(class = "vertical-divider"),
+          
+          # 出库请求
           tabPanel(
-            title = div(
-              tags$hr(class = "section-divider"),
-              tags$h4("出库流程", style = "font-weight: bold; color: #DC3545; margin-top: 10px;"),
-              "出库请求"
-            ),
+            title = "出库请求",
             uiOutput("outbound_request_board")
           )
         )
