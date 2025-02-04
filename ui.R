@@ -166,7 +166,7 @@ ui <- navbarPage(
       
       /* 采购流程链条箭头 */
       .arrow-icon {
-        margin-left: 8px;
+        margin-right: 10px;
       }
     ")),
       
@@ -305,24 +305,24 @@ ui <- navbarPage(
           
           # 采购流程链
           tabPanel(
-            title = div(
-              "采购请求",
-              tags$span(class = "arrow-icon", icon("arrow-right"))
-            ), 
+            title = "采购请求",
             uiOutput("purchase_request_board")
           ),
           tabPanel(
             title = div(
+              tags$span(class = "arrow-icon", icon("arrow-right")),
               "已安排供应",
-              tags$span(class = "arrow-icon", icon("arrow-right"))
             ), 
             uiOutput("provider_arranged_board")
           ),
           tabPanel(
-            title = "做好已付款",
+            title = div(
+              tags$span(class = "arrow-icon", icon("arrow-right")),
+              "做好已付款",
+            ), 
             uiOutput("done_paid_board")
           ),
- 
+          
           # 出库请求
           tabPanel(
             title = "出库请求",
