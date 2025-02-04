@@ -1771,6 +1771,9 @@ server <- function(input, output, session) {
       added_order_items <- unique_items_data() %>% filter(OrderID == order$OrderID)
       renderOrderItems(output, "shipping_order_items_cards", added_order_items, con, deletable = FALSE)
       
+      showNotification(length(zero_items))
+      showNotification(length(outbound_items))
+      
       # 弹出模态框提示补货和出库请求
       if (length(zero_items) > 0 || length(outbound_items) > 0) {
         modal_content <- tagList()
