@@ -163,6 +163,19 @@ ui <- navbarPage(
         align-items: center;       /* 垂直居中对齐 */
         gap: 5px;                  /* 间距调整 */
       }
+      
+      /* 采购流程链条箭头 */
+      .arrow-icon {
+        font-size: 16px;
+        color: #007bff;
+        margin-left: 8px;
+      }
+      
+      /* 分隔出库请求和采购流程 */
+      .section-divider {
+        border-top: 3px solid #DC3545;
+        margin: 20px 0;
+      }
     ")),
       
       tags$script(HTML("
@@ -318,42 +331,18 @@ ui <- navbarPage(
             uiOutput("done_paid_board")
           ),
           
-          # 额外的出库请求 Tab
+          # **分割线 + 出库请求**
           tabPanel(
-            title = "出库请求",
+            title = div(
+              tags$hr(class = "section-divider"),
+              tags$h4("出库流程", style = "font-weight: bold; color: #DC3545; margin-top: 10px;"),
+              "出库请求"
+            ),
             uiOutput("outbound_request_board")
           )
         )
       )
-    ),
-    
-    # 自定义 CSS 样式
-    tags$head(tags$style(HTML("
-    .layout-container {
-      display: flex;
-      gap: 10px;
-    }
-    
-    .sticky-sidebar {
-      width: 300px;
-      position: sticky;
-      top: 10px;
-      background-color: #f8f9fa;
-      padding: 15px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-    }
-    
-    .main-panel {
-      flex-grow: 1;
-    }
-
-    .arrow-icon {
-      font-size: 16px;
-      color: #007bff;
-      margin-left: 8px;
-    }
-  ")))
+    )
   ), # End of 协作 tab
   
   tabPanel(
