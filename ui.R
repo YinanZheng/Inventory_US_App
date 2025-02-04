@@ -272,20 +272,22 @@ ui <- navbarPage(
             )
           ),
           numericInput("request_quantity", "请求数量", value = 0, min = 1, width = "100%"),
+          textAreaInput("request_remark", "留言", placeholder = "（选填）", width = "100%", height = "60px"),
           actionButton("add_request", "创建请求", icon = icon("plus"), class = "btn-success", style = "width: 100%; margin-top: 10px;"),
           tags$hr(),
           tags$h4("新商品请求", style = "font-weight: bold; color: #007BFF;"),
           imageModuleUI("image_requests", label = "请求物品图片上传"),
           textInput("custom_description", "物品名", placeholder = "输入物品名", width = "100%"),
           numericInput("custom_quantity", "请求数量", value = 0, min = 1, width = "100%"),
+          textAreaInput("custom_remark", "留言", placeholder = "（选填）", width = "100%", height = "60px"),
           actionButton("submit_custom_request", "创建请求", icon = icon("plus"), class = "btn-success", style = "width: 100%; margin-top: 10px;")
         )
       ),
-
+      
       div(
         class = "resizable-divider",
       ),
-
+      
       div(
         class = "main-panel",
         tabsetPanel(
@@ -294,6 +296,14 @@ ui <- navbarPage(
           tabPanel(
             title = "采购请求",
             uiOutput("purchase_request_board")
+          ),
+          tabPanel(
+            title = "已安排供应",
+            uiOutput("provider_arranged_board")
+          ),
+          tabPanel(
+            title = "做好已付款",
+            uiOutput("done_paid_board")
           ),
           tabPanel(
             title = "出库请求",
