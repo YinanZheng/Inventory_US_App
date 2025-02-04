@@ -1949,8 +1949,8 @@ server <- function(input, output, session) {
           showNotification(paste0("Maker:",  item$Maker))
           showNotification(paste0("ItemImagePath:", item$ItemImagePath))
           showNotification(paste0("ItemDescription:",  item$ItemName))
-          showNotification(paste0("Remarks:", ifelse(remark == "", NULL, new_remark)))
-
+          showNotification(paste0("Remarks:", ifelse(remark == "", NA_character_, new_remark)))
+          
           
           tryCatch({
             # **出库请求：只出库实际有的库存**
@@ -1966,7 +1966,7 @@ server <- function(input, output, session) {
                           item$ItemImagePath,
                           item$ItemName,
                           outbound_qty,
-                          ifelse(remark == "", NULL, new_remark)
+                          ifelse(remark == "", NA_character_, new_remark)
                         )
               )
               showNotification(paste0("已发出出库请求，SKU：", sku, "，数量：", outbound_qty), type = "message")
