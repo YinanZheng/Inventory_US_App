@@ -1944,6 +1944,18 @@ server <- function(input, output, session) {
           
           request_id <- uuid::UUIDgenerate()
           
+          showNotification(paste0("RequestID:", request_id))
+          showNotification(paste0("SKU:", sku))
+          showNotification(paste0("Maker:",  item$Maker))
+          showNotification(paste0("ItemImagePath:", item$ItemImagePath))
+          showNotification(paste0("ItemDescription:",  item$ItemName))
+          showNotification(paste0("Quantity:", outbound_qty))
+          showNotification(paste0("RequestStatus:", request_id))
+          showNotification(paste0("RequestType:", request_id))
+          showNotification(paste0("CreatedAt:", request_id))
+          showNotification(paste0("Remarks:", ifelse(remark == "", NULL, new_remark)))
+          
+          
           tryCatch({
             # **出库请求：只出库实际有的库存**
             outbound_qty <- min(qty, domestic_stock)  # 出库数量不能超过现有库存
