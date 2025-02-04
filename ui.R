@@ -166,8 +166,6 @@ ui <- navbarPage(
       
       /* 采购流程链条箭头 */
       .arrow-icon {
-        font-size: 16px;
-        color: #007bff;
         margin-left: 8px;
       }
     ")),
