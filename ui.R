@@ -170,14 +170,6 @@ ui <- navbarPage(
         color: #007bff;
         margin-left: 8px;
       }
-      
-      /* 垂直分隔线样式 */
-      .vertical-divider {
-        width: 3px; /* 加宽分隔线 */
-        height: 50px; /* 增加高度 */
-        background-color: #007bff; /* 设置更深的颜色 */
-        margin: auto 10px; /* 调整上下间距 */
-      }
     ")),
       
       tags$script(HTML("
@@ -332,10 +324,7 @@ ui <- navbarPage(
             title = "做好已付款",
             uiOutput("done_paid_board")
           ),
-          
-          # **添加垂直分隔线**
-          div(class = "vertical-divider"),
-          
+ 
           # 出库请求
           tabPanel(
             title = "出库请求",
