@@ -293,23 +293,32 @@ ui <- navbarPage(
         tabsetPanel(
           id = "collaboration_tabs",
           type = "pills",
-          tabPanel(
-            title = "采购请求",
-            uiOutput("purchase_request_board")
-          ),
-          tabPanel(
-            title = "已安排供应",
-            uiOutput("provider_arranged_board")
-          ),
-          tabPanel(
-            title = "做好已付款",
-            uiOutput("done_paid_board")
+          tags$div(
+            class = "tab-flow",
+            tabPanel(title = "采购请求", uiOutput("purchase_request_board")),
+            tags$span(class = "arrow-icon", icon("arrow-right")),
+            tabPanel(title = "已安排供应", uiOutput("provider_arranged_board")),
+            tags$span(class = "arrow-icon", icon("arrow-right")),
+            tabPanel(title = "做好已付款", uiOutput("done_paid_board"))
           ),
           tabPanel(
             title = "出库请求",
             uiOutput("outbound_request_board")
           )
-        )
+        ),
+        # 自定义 CSS 样式
+        tags$head(tags$style(HTML("
+        .tab-flow {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+        }
+        .arrow-icon {
+          font-size: 18px;
+          color: #007bff;
+        }
+      ")))
       )
     )
   ), # End of 协作 tab
