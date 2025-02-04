@@ -1855,7 +1855,6 @@ server <- function(input, output, session) {
                         "请求数量",
                         value = 1,
                         min = 1,
-                        max = item$DomesticStock,  # 设置最大值
                         width = "50%"
                       ),
                       tags$span(
@@ -1936,6 +1935,7 @@ server <- function(input, output, session) {
           
           # 获取请求数量
           qty <- input[[paste0("outbound_qty_", sku)]]
+          domestic_stock <- item$DomesticStock  # 国内现存库存数
           
           # 获取留言
           remark <- input[[paste0("outbound_remark_input_", sku)]]
@@ -1945,30 +1945,56 @@ server <- function(input, output, session) {
           request_id <- uuid::UUIDgenerate()
           
           tryCatch({
-            # 插入出库请求到数据库
-            dbExecute(con,
-                      "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
-                   VALUES (?, ?, ?, ?, ?, ?, '待处理', '出库', NOW(), ?)",
-                      params = list(
-                        request_id,
-                        sku,
-                        item$Maker,
-                        item$ItemImagePath,
-                        item$ItemName,
-                        qty,
-                        ifelse(remark == "", NULL, new_remark)
-                      ))
+            # **出库请求：只出库实际有的库存**
+            outbound_qty <- min(qty, domestic_stock)  # 出库数量不能超过现有库存
+            if (outbound_qty > 0) {
+              dbExecute(con,
+                        "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
+         VALUES (?, ?, ?, ?, ?, ?, '待处理', '出库', NOW(), ?)",
+                        params = list(
+                          request_id,
+                          sku,
+                          item$Maker,
+                          item$ItemImagePath,
+                          item$ItemName,
+                          outbound_qty,
+                          ifelse(remark == "", NULL, new_remark)
+                        )
+              )
+              showNotification(paste0("已发出出库请求，SKU：", sku, "，数量：", outbound_qty), type = "message")
+              
+              # 动态更新按钮文本和样式
+              updateActionButton(session, inputId = button_id, label = HTML("<i class='fa fa-check'></i> 出库请求已发送"))
+              runjs(sprintf("$('#%s').removeClass('btn-primary').addClass('btn-success');", button_id))
+              shinyjs::disable(button_id)
+            }
+            
+            # **如果出库数量不足，超出的部分创建采购请求**
+            purchase_qty <- max(0, qty - domestic_stock)  # 需要采购的数量
+            if (purchase_qty > 0) {
+              purchase_request_id <- uuid::UUIDgenerate()
+              dbExecute(con,
+                        "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
+         VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW(), ?)",
+                        params = list(
+                          purchase_request_id,
+                          sku,
+                          item$Maker,
+                          item$ItemImagePath,
+                          item$ItemName,
+                          purchase_qty,
+                          ifelse(remark == "", NULL, new_remark)
+                        )
+              )
+              showNotification(paste0("超出国内库存部分已创建采购请求，SKU：", sku, "，数量：", purchase_qty), type = "warning")
+              # 动态更新按钮文本和样式
+              updateActionButton(session, inputId = button_id, label = HTML("<i class='fa fa-check'></i> 出库+采购请求已发送"))
+              runjs(sprintf("$('#%s').removeClass('btn-primary').addClass('btn-success');", button_id))
+              shinyjs::disable(button_id)
+            }
             
             # 绑定按钮
             bind_buttons(request_id, requests_data(), input, output, session, con)
-            
-            # 动态更新按钮文本和样式
-            updateActionButton(session, inputId = button_id, label = HTML("<i class='fa fa-check'></i> 出库请求已发送"))
-            runjs(sprintf("$('#%s').removeClass('btn-primary').addClass('btn-success');", button_id))
-            shinyjs::disable(button_id)
-            
-            # 提示成功消息
-            showNotification(paste0("已发出出库请求，SKU：", sku, "，数量：", qty), type = "message")
           }, error = function(e) {
             # 提示错误消息
             showNotification(paste("发出出库请求失败：", e$message), type = "error")
