@@ -1949,9 +1949,6 @@ server <- function(input, output, session) {
           showNotification(paste0("Maker:",  item$Maker))
           showNotification(paste0("ItemImagePath:", item$ItemImagePath))
           showNotification(paste0("ItemDescription:",  item$ItemName))
-          showNotification(paste0("RequestStatus:", request_id))
-          showNotification(paste0("RequestType:", request_id))
-          showNotification(paste0("CreatedAt:", request_id))
           showNotification(paste0("Remarks:", ifelse(remark == "", NULL, new_remark)))
 
           
