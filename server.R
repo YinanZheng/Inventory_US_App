@@ -3473,7 +3473,21 @@ server <- function(input, output, session) {
     )
   })
   
+  # 12月23日前统计数据
+  output$before_20241223_total_value <- renderText({
+    sprintf("¥%.2f", overview_data()$before$total_value)
+  })
+  output$before_20241223_total_shipping <- renderText({
+    sprintf("¥%.2f", overview_data()$before$total_shipping)
+  })
   
+  # 12月23日后统计数据
+  output$after_20241223_total_value <- renderText({
+    sprintf("¥%.2f", overview_data()$after$total_value)
+  })
+  output$after_20241223_total_shipping <- renderText({
+    sprintf("¥%.2f", overview_data()$after$total_shipping)
+  })
   
   ################################################################
   ##                                                            ##
