@@ -852,6 +852,11 @@ ui <- navbarPage(
         h4("功能面板", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
         p("此处为侧边栏内容，暂时留空。")
       ),
+      
+      div(
+        class = "resizable-divider",
+      ),
+      
       div(
         class = "main-panel",
         fluidRow(
