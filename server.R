@@ -3454,6 +3454,7 @@ server <- function(input, output, session) {
     )
   })
   
+  
   # 12月23日前统计数据
   output$before_20241223_total_value <- renderText({
     sprintf("¥%.2f", inventory_value_cost_data()$before$total_value)
@@ -3464,14 +3465,26 @@ server <- function(input, output, session) {
   output$before_20241223_domestic_value <- renderText({
     sprintf("¥%.2f", inventory_value_cost_data()$before$domestic$value)
   })
+  output$before_20241223_domestic_shipping <- renderText({
+    sprintf("¥%.2f", inventory_value_cost_data()$before$domestic$shipping)
+  })
   output$before_20241223_logistics_value <- renderText({
     sprintf("¥%.2f", inventory_value_cost_data()$before$logistics$value)
+  })
+  output$before_20241223_logistics_shipping <- renderText({
+    sprintf("¥%.2f", inventory_value_cost_data()$before$logistics$shipping)
   })
   output$before_20241223_us_value <- renderText({
     sprintf("¥%.2f", inventory_value_cost_data()$before$us$value)
   })
+  output$before_20241223_us_shipping <- renderText({
+    sprintf("¥%.2f", inventory_value_cost_data()$before$us$shipping)
+  })
   output$before_20241223_sold_value <- renderText({
     sprintf("¥%.2f", inventory_value_cost_data()$before$sold$value)
+  })
+  output$before_20241223_sold_shipping <- renderText({
+    sprintf("¥%.2f", inventory_value_cost_data()$before$sold$shipping)
   })
   
   # 12月23日后统计数据
@@ -3484,14 +3497,26 @@ server <- function(input, output, session) {
   output$after_20241223_domestic_value <- renderText({
     sprintf("¥%.2f", inventory_value_cost_data()$after$domestic$value)
   })
+  output$after_20241223_domestic_shipping <- renderText({
+    sprintf("¥%.2f", inventory_value_cost_data()$after$domestic$shipping)
+  })
   output$after_20241223_logistics_value <- renderText({
     sprintf("¥%.2f", inventory_value_cost_data()$after$logistics$value)
+  })
+  output$after_20241223_logistics_shipping <- renderText({
+    sprintf("¥%.2f", inventory_value_cost_data()$after$logistics$shipping)
   })
   output$after_20241223_us_value <- renderText({
     sprintf("¥%.2f", inventory_value_cost_data()$after$us$value)
   })
+  output$after_20241223_us_shipping <- renderText({
+    sprintf("¥%.2f", inventory_value_cost_data()$after$us$shipping)
+  })
   output$after_20241223_sold_value <- renderText({
     sprintf("¥%.2f", inventory_value_cost_data()$after$sold$value)
+  })
+  output$after_20241223_sold_shipping <- renderText({
+    sprintf("¥%.2f", inventory_value_cost_data()$after$sold$shipping)
   })
   
   
