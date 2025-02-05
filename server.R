@@ -3456,18 +3456,42 @@ server <- function(input, output, session) {
   
   # 12月23日前统计数据
   output$before_20241223_total_value <- renderText({
-    sprintf("¥%.2f", transaction_overview_data()$before$total_value)
+    sprintf("¥%.2f", overview_data()$before$total_value)
   })
   output$before_20241223_total_shipping <- renderText({
-    sprintf("¥%.2f", transaction_overview_data()$before$total_shipping)
+    sprintf("¥%.2f", overview_data()$before$total_shipping)
+  })
+  output$before_20241223_domestic_value <- renderText({
+    sprintf("¥%.2f", overview_data()$before$domestic$value)
+  })
+  output$before_20241223_logistics_value <- renderText({
+    sprintf("¥%.2f", overview_data()$before$logistics$value)
+  })
+  output$before_20241223_us_value <- renderText({
+    sprintf("¥%.2f", overview_data()$before$us$value)
+  })
+  output$before_20241223_sold_value <- renderText({
+    sprintf("¥%.2f", overview_data()$before$sold$value)
   })
   
   # 12月23日后统计数据
   output$after_20241223_total_value <- renderText({
-    sprintf("¥%.2f", transaction_overview_data()$after$total_value)
+    sprintf("¥%.2f", overview_data()$after$total_value)
   })
   output$after_20241223_total_shipping <- renderText({
-    sprintf("¥%.2f", transaction_overview_data()$after$total_shipping)
+    sprintf("¥%.2f", overview_data()$after$total_shipping)
+  })
+  output$after_20241223_domestic_value <- renderText({
+    sprintf("¥%.2f", overview_data()$after$domestic$value)
+  })
+  output$after_20241223_logistics_value <- renderText({
+    sprintf("¥%.2f", overview_data()$after$logistics$value)
+  })
+  output$after_20241223_us_value <- renderText({
+    sprintf("¥%.2f", overview_data()$after$us$value)
+  })
+  output$after_20241223_sold_value <- renderText({
+    sprintf("¥%.2f", overview_data()$after$sold$value)
   })
   
   
