@@ -3601,6 +3601,10 @@ server <- function(input, output, session) {
   })
   
   
+  # 显示对账差额
+  output$reconciliation_difference <- renderText({
+    sprintf("¥%.2f", total_investment_value() - actual_total_value() )
+  })
   
   
   ### 货值与运费

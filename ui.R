@@ -859,7 +859,7 @@ ui <- navbarPage(
             class = "card shadow-lg",
             style = "background: orange; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("对账差额", style = "font-weight: bold; font-size: 20px; margin-bottom: 10px;"),
-            textOutput("reconciliation_difference")
+            tags$h3(textOutput("reconciliation_difference"), style = "font-size: 24px; font-weight: bold; color: #FF0000; margin-bottom: 0;")
           ))
         ),
         fluidRow(
