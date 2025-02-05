@@ -1023,7 +1023,7 @@ ui <- navbarPage(
             class = "card shadow-lg",
             style = "background: gray; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("公司债务", style = "font-weight: bold; margin-bottom: 10px;"),
-            textOutput("company_liabilities")
+            tags$h3(textOutput("company_liabilities"), style = "font-size: 24px; font-weight: bold; color: #007BFF; margin-bottom: 0;")
           )),
           column(6, div(
             class = "card shadow-lg",

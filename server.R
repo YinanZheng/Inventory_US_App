@@ -3435,6 +3435,7 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # 计算货值与运费
   inventory_value_cost_data <- reactive({
     data <- unique_items_data()
     date_cutoff <- as.Date("2024-12-23")
@@ -3454,6 +3455,25 @@ server <- function(input, output, session) {
     )
   })
   
+  # 计算公司债务
+  company_liabilities_data <- reactive({
+    initial_liabilities <- 45000  # 初始公司债务
+    
+    # 从 transactions 表中筛选 TransactionType 为 "债务" 的记录
+    debt_transactions <- dbReadTable(con, "transactions") %>%
+      filter(TransactionType == "债务") %>%
+      pull(Amount)  # 提取金额列
+    
+    # 计算总债务
+    total_liabilities <- initial_liabilities + sum(debt_transactions, na.rm = TRUE)
+    
+    return(total_liabilities)
+  })
+  
+  # 输出公司债务总额
+  output$company_liabilities <- renderText({
+    sprintf("¥%.2f", company_liabilities_data())
+  })
   
   # 12月23日前统计数据
   output$before_20241223_total_value <- renderText({
