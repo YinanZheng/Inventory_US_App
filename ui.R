@@ -849,10 +849,11 @@ ui <- navbarPage(
       class = "layout-container",
       div(
         class = "sticky-sidebar",
+        style = "width = 450px;",
         h4("算法备忘录", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
         p("对账差额 = 投入总金额 - 实际总金额"),
         p("投入总金额 = 初始资金82445.90 + 美元转账（换算人民币）总计"),
-        p("实际总金额 = 工资 + 现金流 + 新货值与运费 + 公司杂费 + 公司税费"),
+        p("实际总金额 = 现金流 + 工资 + 公司税费 + 公司杂费 + 新货值与运费"),
         p("现金流 = 四卡总余额 - 公司债务 - 社保")
       ),
       
