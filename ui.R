@@ -879,25 +879,25 @@ ui <- navbarPage(
         fluidRow(
           column(3, div(
             class = "card shadow-lg",
-            style = "background: green; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            style = "background: #9be0a4; color: Black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("现金流", style = "font-weight: bold; margin-bottom: 10px;"),
             textOutput("cash_flow")
           )),
           column(3, div(
             class = "card shadow-lg",
-            style = "background: green; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            style = "background: #9be0a4; color: Black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("工资", style = "font-weight: bold; margin-bottom: 10px;"),
             textOutput("salary")
           )),
           column(3, div(
             class = "card shadow-lg",
-            style = "background: green; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            style = "background: #9be0a4; color: Black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("公司税费", style = "font-weight: bold; margin-bottom: 10px;"),
             textOutput("company_tax")
           )),
           column(3, div(
             class = "card shadow-lg",
-            style = "background: green; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            style = "background: #9be0a4; color: Black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("公司杂费", style = "font-weight: bold; margin-bottom: 10px;"),
             textOutput("company_expenses")
           ))
@@ -1029,7 +1029,7 @@ ui <- navbarPage(
             class = "card shadow-lg",
             style = "background: #e0e0e0; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("社保", style = "font-weight: bold; margin-bottom: 10px;"),
-            tags$h3(textOutput("social_security"), style = "font-size: 24px; font-weight: bold; color: #28A745; margin-bottom: 0;")
+            tags$h3(textOutput("social_security"), style = "font-size: 24px; font-weight: bold; color: #007BFF; margin-bottom: 0;")
           ))
         )
       )
