@@ -3468,8 +3468,8 @@ server <- function(input, output, session) {
     initial_social_security + social_transactions
   })
   
-  # 显示投入总金额
-  output$total_investment <- renderText({
+  # 输出现金流
+  output$cash_flow <- renderText({
     # 从 transactions_data 获取所有 Amount 的总和
     total_amount <- transactions_data() %>%
       summarise(total = sum(Amount, na.rm = TRUE)) %>%
@@ -3479,12 +3479,13 @@ server <- function(input, output, session) {
     total_liabilities <- company_liabilities_total()
     total_social_security <- social_security_total()
     
-    # 计算投入总金额
-    total_investment <- total_amount - total_liabilities - total_social_security
+    # 计算现金流
+    cash_flow <- total_amount - total_liabilities - total_social_security
     
     # 格式化输出为 ¥XXXX.XX
-    sprintf("¥%.2f", total_investment)
+    sprintf("¥%.2f", cash_flow)
   })
+  
   
   
   # 显示公司债务
