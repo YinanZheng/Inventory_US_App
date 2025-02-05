@@ -3586,7 +3586,7 @@ server <- function(input, output, session) {
   actual_total_value <- reactive({
     total_salary <- salary_total()  # 总工资
     total_cash_flow <- cash_flow_total()  # 现金流
-    total_after_20241223 <- inventory_value_cost_data()$after$total_value  # 12月23日后货值（含运费）
+    total_after_20241223 <- inventory_value_cost_data()$after$total_value + inventory_value_cost_data()$after$total_shipping  # 12月23日后货值（含运费）
     total_tax <- company_tax_total()  # 公司税费
     total_expenses <- company_expenses_total()  # 公司杂费
     
