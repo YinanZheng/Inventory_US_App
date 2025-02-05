@@ -3435,17 +3435,17 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  output$reconciliation_difference <- renderText({ "待计算" })
-  output$total_investment <- renderText({ "待计算" })
-  output$actual_total <- renderText({ "待计算" })
-  output$cash_flow <- renderText({ "待计算" })
-  output$salary <- renderText({ "待计算" })
-  output$company_tax <- renderText({ "待计算" })
-  output$company_expenses <- renderText({ "待计算" })
-  output$pre_december_23_value <- renderText({ "待计算" })
-  output$post_december_23_value <- renderText({ "待计算" })
-  output$company_liabilities <- renderText({ "待计算" })
-  output$social_security <- renderText({ "待计算" })
+  # output$reconciliation_difference <- renderText({ "待计算" })
+  # output$total_investment <- renderText({ "待计算" })
+  # output$actual_total <- renderText({ "待计算" })
+  # output$cash_flow <- renderText({ "待计算" })
+  # output$salary <- renderText({ "待计算" })
+  # output$company_tax <- renderText({ "待计算" })
+  # output$company_expenses <- renderText({ "待计算" })
+  # output$pre_december_23_value <- renderText({ "待计算" })
+  # output$post_december_23_value <- renderText({ "待计算" })
+  # output$company_liabilities <- renderText({ "待计算" })
+  # output$social_security <- renderText({ "待计算" })
   
   
   
