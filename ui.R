@@ -920,7 +920,7 @@ ui <- navbarPage(
           column(6, div(
             class = "card shadow-lg",
             style = "background: gray; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
-            tags$h4("公司负债", style = "font-weight: bold; margin-bottom: 10px;"),
+            tags$h4("公司债务", style = "font-weight: bold; margin-bottom: 10px;"),
             textOutput("company_liabilities")
           )),
           column(6, div(
