@@ -3440,6 +3440,8 @@ server <- function(input, output, session) {
     dbReadTable(con, "transactions")
   })
   
+  ### 公司债务
+  
   # Reactive 计算公司债务总和
   company_liabilities_total <- reactive({
     initial_liabilities <- 45000  # 初始公司债务
@@ -3453,6 +3455,13 @@ server <- function(input, output, session) {
     # 返回公司债务总和
     initial_liabilities + debt_transactions
   })
+    # 显示公司债务
+  output$company_liabilities <- renderText({
+    sprintf("¥%.2f", company_liabilities_total())
+  })
+  
+  
+  ### 社保
   
   # Reactive 计算公司社保总和
   social_security_total <- reactive({
@@ -3468,36 +3477,55 @@ server <- function(input, output, session) {
     initial_social_security + social_transactions
   })
   
-  # 输出现金流
-  output$cash_flow <- renderText({
-    # 从 transactions_data 获取所有 Amount 的总和
+  # 显示公司社保
+  output$social_security <- renderText({
+    sprintf("¥%.2f", social_security_total())
+  })
+  
+  
+  ### 工资
+  
+  # Reactive 计算工资总支出（只计算 Amount < 0 的部分，并取绝对值）
+  salary_total <- reactive({
+    transactions_data() %>%
+      filter(TransactionType == "工资", Amount < 0) %>%
+      summarise(total_salary = abs(sum(Amount, na.rm = TRUE))) %>%
+      pull(total_salary)
+  })
+  
+  # 显示工资总支出
+  output$salary <- renderText({
+    sprintf("¥%.2f", salary_total())
+  })
+  
+  
+  ### 现金流
+  
+  # 计算现金流
+  cash_flow_total <- reactive({
+    # 获取 transactions_data 中所有 Amount 的总和
     total_amount <- transactions_data() %>%
       summarise(total = sum(Amount, na.rm = TRUE)) %>%
       pull(total)
     
-    # 使用 Reactive 获取债务和社保总和
+    # 获取公司债务和社保总额
     total_liabilities <- company_liabilities_total()
     total_social_security <- social_security_total()
     
     # 计算现金流
     cash_flow <- total_amount - total_liabilities - total_social_security
     
-    # 格式化输出为 ¥XXXX.XX
-    sprintf("¥%.2f", cash_flow)
+    return(cash_flow)
+  })
+  
+  # 显示现金流
+  output$cash_flow <- renderText({
+    sprintf("¥%.2f", cash_flow_total())
   })
   
   
+  ### 货值与运费
   
-  # 显示公司债务
-  output$company_liabilities <- renderText({
-    sprintf("¥%.2f", company_liabilities_total())
-  })
-  
-  # 显示公司社保
-  output$social_security <- renderText({
-    sprintf("¥%.2f", social_security_total())
-  })
-
   # 计算货值与运费
   inventory_value_cost_data <- reactive({
     data <- unique_items_data()

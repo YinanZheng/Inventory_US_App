@@ -881,13 +881,13 @@ ui <- navbarPage(
             class = "card shadow-lg",
             style = "background: #9be0a4; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("现金流", style = "font-weight: bold; margin-bottom: 10px;"),
-            tags$h3(textOutput("cash_flow"), style = "font-size: 24px; font-weight: bold; color: #006400; margin-bottom: 0;")
+            tags$h3(textOutput("cash_flow"), style = "font-size: 24px; font-weight: bold; color: #007BFF; margin-bottom: 0;")
           )),
           column(3, div(
             class = "card shadow-lg",
-            style = "background: #9be0a4; color: Black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            style = "background: #9be0a4; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("工资", style = "font-weight: bold; margin-bottom: 10px;"),
-            textOutput("salary")
+            tags$h3(textOutput("salary"), style = "font-size: 24px; font-weight: bold; color: #007BFF; margin-bottom: 0;")
           )),
           column(3, div(
             class = "card shadow-lg",
