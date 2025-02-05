@@ -867,7 +867,7 @@ ui <- navbarPage(
             class = "card shadow-lg",
             style = "background: yellow; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("投入总金额", style = "font-weight: bold; margin-bottom: 10px;"),
-            textOutput("total_investment")
+            tags$h3(textOutput("total_investment"), style = "font-size: 24px; font-weight: bold; color: #007BFF; margin-bottom: 0;")
           )),
           column(6, div(
             class = "card shadow-lg",
@@ -906,7 +906,7 @@ ui <- navbarPage(
           column(6, div(
             class = "card shadow-lg",
             style = "background: #d8eaf5; color: black; padding: 20px; border-radius: 16px; margin-top: 20px;",
-            tags$h4("2024年12月23日前货值", style = "font-weight: bold; text-align: center; margin-bottom: 20px;"),
+            tags$h4("2024年12月23日前货值与运费", style = "font-weight: bold; text-align: center; margin-bottom: 20px;"),
             tags$div(
               style = "display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px;",
               tags$div(
@@ -963,7 +963,7 @@ ui <- navbarPage(
           column(6, div(
             class = "card shadow-lg",
             style = "background: #d8eaf5; color: black; padding: 20px; border-radius: 16px; margin-top: 20px;",
-            tags$h4("2024年12月23日后货值", style = "font-weight: bold; text-align: center; margin-bottom: 20px;"),
+            tags$h4("2024年12月23日后货值与运费", style = "font-weight: bold; text-align: center; margin-bottom: 20px;"),
             tags$div(
               style = "display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px;",
               tags$div(

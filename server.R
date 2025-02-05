@@ -3440,26 +3440,61 @@ server <- function(input, output, session) {
     dbReadTable(con, "transactions")
   })
   
-  # 计算并显示公司债务
-  output$company_liabilities <- renderText({
-    initial_debt <- 45000
-    transaction_debt <- transactions_data() %>% 
-      filter(TransactionType == "债务") %>% 
-      summarise(total_debt = sum(Amount, na.rm = TRUE)) %>% 
+  # Reactive 计算公司债务总和
+  company_liabilities_total <- reactive({
+    initial_liabilities <- 45000  # 初始公司债务
+    
+    # 从 transactions_data 获取 TransactionType 为 "债务" 的总和
+    debt_transactions <- transactions_data() %>%
+      filter(TransactionType == "债务") %>%
+      summarise(total_debt = sum(Amount, na.rm = TRUE)) %>%
       pull(total_debt)
-    total_liabilities <- initial_debt + transaction_debt
-    sprintf("¥%.2f", total_liabilities)
+    
+    # 返回公司债务总和
+    initial_liabilities + debt_transactions
   })
   
-  # 计算并显示社保
+  # Reactive 计算公司社保总和
+  social_security_total <- reactive({
+    initial_social_security <- 4618  # 初始社保金额
+    
+    # 从 transactions_data 获取 TransactionType 为 "社保" 的总和
+    social_transactions <- transactions_data() %>%
+      filter(TransactionType == "社保") %>%
+      summarise(total_social = sum(Amount, na.rm = TRUE)) %>%
+      pull(total_social)
+    
+    # 返回公司社保总和
+    initial_social_security + social_transactions
+  })
+  
+  # 显示投入总金额
+  output$total_investment <- renderText({
+    # 从 transactions_data 获取所有 Amount 的总和
+    total_amount <- transactions_data() %>%
+      summarise(total = sum(Amount, na.rm = TRUE)) %>%
+      pull(total)
+    
+    # 使用 Reactive 获取债务和社保总和
+    total_liabilities <- company_liabilities_total()
+    total_social_security <- social_security_total()
+    
+    # 计算投入总金额
+    total_investment <- total_amount - total_liabilities - total_social_security
+    
+    # 格式化输出为 ¥XXXX.XX
+    sprintf("¥%.2f", total_investment)
+  })
+  
+  
+  # 显示公司债务
+  output$company_liabilities <- renderText({
+    sprintf("¥%.2f", company_liabilities_total())
+  })
+  
+  # 显示公司社保
   output$social_security <- renderText({
-    initial_social_security <- 4618
-    transaction_social_security <- transactions_data() %>% 
-      filter(TransactionType == "社保") %>% 
-      summarise(total_social_security = sum(Amount, na.rm = TRUE)) %>% 
-      pull(total_social_security)
-    total_social_security <- initial_social_security + transaction_social_security
-    sprintf("¥%.2f", total_social_security)
+    sprintf("¥%.2f", social_security_total())
   })
 
   # 计算货值与运费
