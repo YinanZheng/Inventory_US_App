@@ -844,184 +844,91 @@ ui <- navbarPage(
   ), # end of 国际物流管理 tab
 
   tabPanel(
-    "账务管理", icon = icon("wallet"),
+    "账务核对", icon = icon("wallet"),
     div(
       class = "layout-container",
       div(
         class = "sticky-sidebar",
-        tabsetPanel(
-          id = "sidebar_tabs",  # 用于服务器监听当前选中的分页
-          type = "pills",
-          selected = "账务登记", # 默认选中的分页
-          
-          # 账务登记分页
-          tabPanel(
-            title = "账务登记", icon = icon("file-invoice-dollar"),
-            tags$h4("账务登记", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
-            
-            fluidRow(
-              column(7, numericInput("amount", "金额:", value = 0, min = 0, width = "100%")),
-              column(5,  
-                     radioButtons(
-                       inputId = "transaction_type",
-                       label = "交易类型:",
-                       choices = c("转出" = "out", "转入" = "in"),
-                       selected = NULL,
-                       inline = FALSE
-                     )
-              )
-            ),
-            
-            # 指定转款选择器
-            fluidRow(
-              column(12, dateInput("custom_date", "转款日期:", value = Sys.Date(), width = "100%")),
-              column(12, timeInput("custom_time", "转款时间:", value = format(Sys.time(), "%H:%M:%S"), width = "100%"))
-            ),
-            
-            # 转账证据图片上传
-            imageModuleUI("image_transactions", label = "转账证据上传", label_color = "#007BFF"),
-            
-            textAreaInput("remarks", "备注:", placeholder = "请输入备注内容", width = "100%"),
-            
-            # 提交按钮
-            actionButton("record_transaction", "登记", icon = icon("save"), 
-                         class = "btn-primary", style = "width: 100%; margin-bottom: 10px;"),
-            
-            # 删除和重置按钮同一行
-            fluidRow(
-              column(
-                width = 6,
-                actionButton("delete_transaction", "删除选中行", icon = icon("trash"), 
-                             class = "btn-danger", style = "width: 100%;")
-              ),
-              column(
-                width = 6,
-                actionButton("reset_form", "重置", icon = icon("redo"), 
-                             class = "btn-info", style = "width: 100%;")
-              )
-            )
-          ),
-          
-          # 资金转移分页
-          tabPanel(
-            title = "资金转移", icon = icon("exchange-alt"),
-            tags$h4("资金转移", style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"),
-            
-            # 转移金额输入框
-            numericInput("transfer_amount", "转移金额:", value = 0, min = 0, width = "100%"),
-            
-            # 转出账户选择
-            selectInput(
-              inputId = "from_account",
-              label = "转出账户:",
-              choices = c("工资卡", "美元卡", "买货卡", "一般户卡"),
-              selected = "美元卡",
-              width = "100%"
-            ),
-            
-            # 转入账户选择
-            selectInput(
-              inputId = "to_account",
-              label = "转入账户:",
-              choices = c("工资卡", "美元卡", "买货卡", "一般户卡"),
-              selected = NULL,
-              width = "100%"
-            ),
-            
-            # 转账证据图片上传
-            imageModuleUI("image_transfer", label = "转账证据上传", label_color = "#28A745"),
-            
-            # 备注输入框
-            textAreaInput("transfer_remarks", "备注:", placeholder = "请输入备注内容", width = "100%"),
-            
-            # 转移登记按钮
-            actionButton("record_transfer", "记录转移", icon = icon("exchange-alt"), 
-                         class = "btn-success", style = "width: 100%; margin-bottom: 10px;"),
-            
-            # 删除和重置按钮同一行
-            fluidRow(
-              column(
-                width = 6,
-                actionButton("delete_transfer", "删除选中行", icon = icon("trash"), 
-                             class = "btn-danger", style = "width: 100%;")
-              ),
-              column(
-                width = 6,
-                actionButton("reset_form_transfer", "重置", icon = icon("redo"), 
-                             class = "btn-info", style = "width: 100%;")
-              )
-            )
-          )
-        )
+        h4("功能面板", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
+        p("此处为侧边栏内容，暂时留空。")
       ),
-      
-      div(
-        class = "resizable-divider",
-      ),
-      
       div(
         class = "main-panel",
-        tabsetPanel(
-          id = "transaction_tabs",  # 绑定到 input$tabs
-          type = "pills",
-          tabPanel("账户余额总览", 
-                   fluidRow(
-                     column(12, div(
-                       class = "card shadow-lg",
-                       style = "background: #1F1F1F; color: white; padding: 40px; text-align: center; border-radius: 16px; margin-top: 20px; margin-bottom: 40px; border: 2px solid #FFC107;",
-                       tags$h4("总余额", style = "font-weight: bold; font-size: 30px; margin-bottom: 20px; letter-spacing: 1.5px;"),
-                       tags$h3(
-                         textOutput("total_balance"),
-                         style = "font-size: 40px; margin-top: 0; font-weight: bold; text-shadow: 2px 2px 4px rgba(255, 193, 7, 0.8); color: #FFC107;"
-                       )
-                     ))
-                   ),
-                   fluidRow(
-                     column(3, div(
-                       class = "card shadow-lg",
-                       style = "background: linear-gradient(135deg, #FFC107, #FF9800); color: white; padding: 20px; text-align: center; border-radius: 16px; position: relative; overflow: hidden;",
-                       tags$div(
-                         style = "position: absolute; top: -10px; left: -10px; opacity: 0.3;",
-                         tags$img(src = "https://dummyimage.com/100x100/fff/000.png&text=$", width = "60px", height = "60px")
-                       ),
-                       tags$h4("买货卡 (139)", style = "font-weight: bold; margin-bottom: 10px;"),
-                       tags$h3(textOutput("purchase_balance"), style = "font-size: 24px; margin-top: 0;")
-                     )),
-                     column(3, div(
-                       class = "card shadow-lg",
-                       style = "background: linear-gradient(135deg, #6C757D, #495057); color: white; padding: 20px; text-align: center; border-radius: 16px; position: relative; overflow: hidden;",
-                       tags$div(
-                         style = "position: absolute; top: -10px; left: -10px; opacity: 0.3;",
-                         tags$img(src = "https://dummyimage.com/100x100/fff/000.png&text=$", width = "60px", height = "60px")
-                       ),
-                       tags$h4("一般户卡 (541)", style = "font-weight: bold; margin-bottom: 10px;"),
-                       tags$h3(textOutput("general_balance"), style = "font-size: 24px; margin-top: 0;")
-                     )),
-                     column(3, div(
-                       class = "card shadow-lg",
-                       style = "background: linear-gradient(135deg, #007BFF, #0056b3); color: white; padding: 20px; text-align: center; border-radius: 16px; position: relative; overflow: hidden;",
-                       tags$div(
-                         style = "position: absolute; top: -10px; left: -10px; opacity: 0.3;",
-                         tags$img(src = "https://dummyimage.com/100x100/fff/000.png&text=$", width = "60px", height = "60px")
-                       ),
-                       tags$h4("工资卡 (567)", style = "font-weight: bold; margin-bottom: 10px;"),
-                       tags$h3(textOutput("salary_balance"), style = "font-size: 24px; margin-top: 0;")
-                     )),
-                     column(3, div(
-                       class = "card shadow-lg",
-                       style = "background: linear-gradient(135deg, #28A745, #1E7E34); color: white; padding: 20px; text-align: center; border-radius: 16px; position: relative; overflow: hidden;",
-                       tags$div(
-                         style = "position: absolute; top: -10px; left: -10px; opacity: 0.3;",
-                         tags$img(src = "https://dummyimage.com/100x100/fff/000.png&text=$", width = "60px", height = "60px")
-                       ),
-                       tags$h4("美元卡 (553)", style = "font-weight: bold; margin-bottom: 10px;"),
-                       tags$h3(textOutput("dollar_balance"), style = "font-size: 24px; margin-top: 0;")
-                     ))
-                   )),
-          tabPanel(title = "买货卡(139)", value = "买货卡", DTOutput("purchase_card_table")),
-          tabPanel(title = "一般户卡(541)", value = "一般户卡", DTOutput("general_card_table")),
-          tabPanel(title = "工资卡(567)", value = "工资卡", DTOutput("salary_card_table")),
-          tabPanel(title = "美元卡(553)", value = "美元卡", DTOutput("dollar_card_table"))
+        fluidRow(
+          column(12, div(
+            class = "card shadow-lg",
+            style = "background: orange; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("对账差额", style = "font-weight: bold; font-size: 20px; margin-bottom: 10px;"),
+            textOutput("reconciliation_difference")
+          ))
+        ),
+        fluidRow(
+          column(6, div(
+            class = "card shadow-lg",
+            style = "background: yellow; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("投入总金额", style = "font-weight: bold; margin-bottom: 10px;"),
+            textOutput("total_investment")
+          )),
+          column(6, div(
+            class = "card shadow-lg",
+            style = "background: yellow; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("实际总金额", style = "font-weight: bold; margin-bottom: 10px;"),
+            textOutput("actual_total")
+          ))
+        ),
+        fluidRow(
+          column(3, div(
+            class = "card shadow-lg",
+            style = "background: green; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("现金流", style = "font-weight: bold; margin-bottom: 10px;"),
+            textOutput("cash_flow")
+          )),
+          column(3, div(
+            class = "card shadow-lg",
+            style = "background: green; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("工资", style = "font-weight: bold; margin-bottom: 10px;"),
+            textOutput("salary")
+          )),
+          column(3, div(
+            class = "card shadow-lg",
+            style = "background: green; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("公司税费", style = "font-weight: bold; margin-bottom: 10px;"),
+            textOutput("company_tax")
+          )),
+          column(3, div(
+            class = "card shadow-lg",
+            style = "background: green; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("公司杂费", style = "font-weight: bold; margin-bottom: 10px;"),
+            textOutput("company_expenses")
+          ))
+        ),
+        fluidRow(
+          column(6, div(
+            class = "card shadow-lg",
+            style = "background: lightblue; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("12月23日前货值", style = "font-weight: bold; margin-bottom: 10px;"),
+            textOutput("pre_december_23_value")
+          )),
+          column(6, div(
+            class = "card shadow-lg",
+            style = "background: lightblue; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("12月23日后货值", style = "font-weight: bold; margin-bottom: 10px;"),
+            textOutput("post_december_23_value")
+          ))
+        ),
+        fluidRow(
+          column(6, div(
+            class = "card shadow-lg",
+            style = "background: gray; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("公司负债", style = "font-weight: bold; margin-bottom: 10px;"),
+            textOutput("company_liabilities")
+          )),
+          column(6, div(
+            class = "card shadow-lg",
+            style = "background: gray; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            tags$h4("社保", style = "font-weight: bold; margin-bottom: 10px;"),
+            textOutput("social_security")
+          ))
         )
       )
     )
