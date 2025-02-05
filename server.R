@@ -3435,7 +3435,7 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  overview_data <- reactive({
+  transaction_overview_data <- reactive({
     data <- unique_items_data()
     date_cutoff <- as.Date("2024-12-23")
     
@@ -3447,25 +3447,6 @@ server <- function(input, output, session) {
     before <- process_data(before_20241223)
     after <- process_data(after_20241223)
     
-    # 计算总货值和总运费
-    calculate_totals <- function(data) {
-      total_value <- sum(c(
-        data$domestic$value,
-        data$logistics$value,
-        data$us$value,
-        data$sold$value
-      ), na.rm = TRUE)
-      
-      total_shipping <- sum(c(
-        data$domestic$shipping,
-        data$logistics$shipping,
-        data$us$shipping,
-        data$sold$shipping
-      ), na.rm = TRUE)
-      
-      list(total_value = total_value, total_shipping = total_shipping)
-    }
-    
     # 汇总数据
     list(
       before = c(before, calculate_totals(before)),
@@ -3475,19 +3456,22 @@ server <- function(input, output, session) {
   
   # 12月23日前统计数据
   output$before_20241223_total_value <- renderText({
-    sprintf("¥%.2f", overview_data()$before$total_value)
+    sprintf("¥%.2f", transaction_overview_data()$before$total_value)
   })
   output$before_20241223_total_shipping <- renderText({
-    sprintf("¥%.2f", overview_data()$before$total_shipping)
+    sprintf("¥%.2f", transaction_overview_data()$before$total_shipping)
   })
   
   # 12月23日后统计数据
   output$after_20241223_total_value <- renderText({
-    sprintf("¥%.2f", overview_data()$after$total_value)
+    sprintf("¥%.2f", transaction_overview_data()$after$total_value)
   })
   output$after_20241223_total_shipping <- renderText({
-    sprintf("¥%.2f", overview_data()$after$total_shipping)
+    sprintf("¥%.2f", transaction_overview_data()$after$total_shipping)
   })
+  
+  
+  
   
   ################################################################
   ##                                                            ##
