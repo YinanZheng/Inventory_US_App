@@ -921,38 +921,42 @@ ui <- navbarPage(
               )
             ),
             tags$div(
-              style = "border-top: 1px solid #CCC; padding-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;",
+              style = "border-top: 1px solid #CCC; padding-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center;",
               tags$div(
-                style = "text-align: center;",
                 tags$h5("国内库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
-                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("before_20241223_domestic_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("before_20241223_domestic_shipping", container = span)
+                tags$p(
+                  textOutput("before_20241223_domestic_value", container = span, inline = TRUE),
+                  " | 运费: ",
+                  textOutput("before_20241223_domestic_shipping", container = span, inline = TRUE),
+                  style = "font-size: 14px; margin-bottom: 0;"
+                )
               ),
               tags$div(
-                style = "text-align: center;",
                 tags$h5("在途库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
-                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("before_20241223_logistics_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("before_20241223_logistics_shipping", container = span)
+                tags$p(
+                  textOutput("before_20241223_logistics_value", container = span, inline = TRUE),
+                  " | 运费: ",
+                  textOutput("before_20241223_logistics_shipping", container = span, inline = TRUE),
+                  style = "font-size: 14px; margin-bottom: 0;"
+                )
               ),
               tags$div(
-                style = "text-align: center;",
                 tags$h5("美国库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
-                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("before_20241223_us_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("before_20241223_us_shipping", container = span)
+                tags$p(
+                  textOutput("before_20241223_us_value", container = span, inline = TRUE),
+                  " | 运费: ",
+                  textOutput("before_20241223_us_shipping", container = span, inline = TRUE),
+                  style = "font-size: 14px; margin-bottom: 0;"
+                )
               ),
               tags$div(
-                style = "text-align: center;",
                 tags$h5("售出", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
-                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("before_20241223_sold_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("before_20241223_sold_shipping", container = span)
+                tags$p(
+                  textOutput("before_20241223_sold_value", container = span, inline = TRUE),
+                  " | 运费: ",
+                  textOutput("before_20241223_sold_shipping", container = span, inline = TRUE),
+                  style = "font-size: 14px; margin-bottom: 0;"
+                )
               )
             )
           )),
@@ -974,38 +978,42 @@ ui <- navbarPage(
               )
             ),
             tags$div(
-              style = "border-top: 1px solid #CCC; padding-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;",
+              style = "border-top: 1px solid #CCC; padding-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center;",
               tags$div(
-                style = "text-align: center;",
                 tags$h5("国内库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
-                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("after_20241223_domestic_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("after_20241223_domestic_shipping", container = span)
+                tags$p(
+                  textOutput("after_20241223_domestic_value", container = span, inline = TRUE),
+                  " | 运费: ",
+                  textOutput("after_20241223_domestic_shipping", container = span, inline = TRUE),
+                  style = "font-size: 14px; margin-bottom: 0;"
+                )
               ),
               tags$div(
-                style = "text-align: center;",
                 tags$h5("在途库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
-                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("after_20241223_logistics_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("after_20241223_logistics_shipping", container = span)
+                tags$p(
+                  textOutput("after_20241223_logistics_value", container = span, inline = TRUE),
+                  " | 运费: ",
+                  textOutput("after_20241223_logistics_shipping", container = span, inline = TRUE),
+                  style = "font-size: 14px; margin-bottom: 0;"
+                )
               ),
               tags$div(
-                style = "text-align: center;",
                 tags$h5("美国库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
-                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("after_20241223_us_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("after_20241223_us_shipping", container = span)
+                tags$p(
+                  textOutput("after_20241223_us_value", container = span, inline = TRUE),
+                  " | 运费: ",
+                  textOutput("after_20241223_us_shipping", container = span, inline = TRUE),
+                  style = "font-size: 14px; margin-bottom: 0;"
+                )
               ),
               tags$div(
-                style = "text-align: center;",
                 tags$h5("售出", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
-                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("after_20241223_sold_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
-                textOutput("after_20241223_sold_shipping", container = span)
+                tags$p(
+                  textOutput("after_20241223_sold_value", container = span, inline = TRUE),
+                  " | 运费: ",
+                  textOutput("after_20241223_sold_shipping", container = span, inline = TRUE),
+                  style = "font-size: 14px; margin-bottom: 0;"
+                )
               )
             )
           ))
