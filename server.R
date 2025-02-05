@@ -3470,6 +3470,24 @@ server <- function(input, output, session) {
     return(total_liabilities)
   })
   
+  # 计算社保
+  output$social_security <- renderText({
+    # 固定的初始社保金额
+    initial_social_security <- 4618
+    
+    # 获取 transactions 表中 TransactionType == "社保" 的金额总和
+    transaction_social_security <- transactions_data() %>% 
+      filter(TransactionType == "社保") %>% 
+      summarise(total_social_security = sum(Amount, na.rm = TRUE)) %>% 
+      pull(total_social_security)
+    
+    # 计算总社保金额
+    total_social_security <- initial_social_security + transaction_social_security
+    
+    # 格式化金额为 ¥XXXX.XX
+    sprintf("¥%.2f", total_social_security)
+  })
+  
   # 输出公司债务总额
   output$company_liabilities <- renderText({
     sprintf("¥%.2f", company_liabilities_data())
