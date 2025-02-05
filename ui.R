@@ -873,7 +873,7 @@ ui <- navbarPage(
             class = "card shadow-lg",
             style = "background: yellow; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("实际总金额", style = "font-weight: bold; margin-bottom: 10px;"),
-            textOutput("actual_total")
+            tags$h3(textOutput("actual_total"), style = "font-size: 24px; font-weight: bold; color: #007BFF; margin-bottom: 0;")
           ))
         ),
         fluidRow(

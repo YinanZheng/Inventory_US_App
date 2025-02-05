@@ -3555,6 +3555,54 @@ server <- function(input, output, session) {
     sprintf("¥%.2f", company_expenses_total())
   })
   
+  
+  ### 投入总金额
+  
+  # 计算投入总金额
+  total_investment_value <- reactive({
+    initial_investment <- 82445.9  # 初始投入金额
+    
+    # 获取 transactions 表中 AccountType 为 "美元卡" 且 Amount > 0 的总和
+    usd_card_transactions <- transactions_data() %>%
+      filter(AccountType == "美元卡", Amount > 0) %>%
+      summarise(total_investment = sum(Amount, na.rm = TRUE)) %>%
+      pull(total_investment)
+    
+    # 计算最终投入总金额
+    total_investment <- initial_investment + usd_card_transactions
+    
+    return(total_investment)
+  })
+  
+  # 显示投入总金额
+  output$total_investment <- renderText({
+    sprintf("¥%.2f", total_investment_value())
+  })
+  
+  
+  ###
+  
+  # 计算实际总金额
+  actual_total_value <- reactive({
+    total_salary <- salary_total()  # 总工资
+    total_cash_flow <- cash_flow_total()  # 现金流
+    total_after_20241223 <- inventory_value_cost_data()$after$total_value  # 12月23日后货值（含运费）
+    total_tax <- company_tax_total()  # 公司税费
+    total_expenses <- company_expenses_total()  # 公司杂费
+    
+    actual_total <- total_salary + total_cash_flow + total_after_20241223 + total_tax + total_expenses
+    
+    return(actual_total)
+  })
+  
+  # 显示实际总金额
+  output$actual_total <- renderText({
+    sprintf("¥%.2f", actual_total_value())
+  })
+  
+  
+  
+  
   ### 货值与运费
   
   # 计算货值与运费
