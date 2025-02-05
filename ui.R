@@ -849,7 +849,7 @@ ui <- navbarPage(
       class = "layout-container",
       div(
         class = "sticky-sidebar",
-        style = "width = 450px;",
+        style = "width = 520px;",
         h4("算法备忘录", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
         p("对账差额 = 投入总金额 - 实际总金额"),
         p("投入总金额 = 初始资金82445.90 + 美元转账（换算人民币）总计"),
