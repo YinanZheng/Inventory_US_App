@@ -906,46 +906,52 @@ ui <- navbarPage(
           column(6, div(
             class = "card shadow-lg",
             style = "background: #d8eaf5; color: black; padding: 20px; border-radius: 16px; margin-top: 20px;",
-            tags$h4("12月23日前货值", style = "font-weight: bold; margin-bottom: 15px; text-align: center;"),
+            tags$h4("12月23日前货值", style = "font-weight: bold; text-align: center; margin-bottom: 20px;"),
             tags$div(
-              style = "display: flex; justify-content: space-around; margin-bottom: 15px;",
+              style = "display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px;",
               tags$div(
-                tags$p("总货值:", style = "font-size: 16px; font-weight: bold; margin-right: 10px;"),
-                textOutput("before_20241223_total_value", container = span)
+                style = "text-align: center;",
+                tags$p("总货值:", style = "font-size: 18px; font-weight: bold; margin-bottom: 5px;"),
+                tags$h3(textOutput("before_20241223_total_value"), style = "font-size: 24px; font-weight: bold; color: #007BFF; margin-bottom: 0;")
               ),
               tags$div(
-                tags$p("总运费:", style = "font-size: 16px; font-weight: bold; margin-left: 10px;"),
-                textOutput("before_20241223_total_shipping", container = span)
+                style = "text-align: center;",
+                tags$p("总运费:", style = "font-size: 18px; font-weight: bold; margin-bottom: 5px;"),
+                tags$h3(textOutput("before_20241223_total_shipping"), style = "font-size: 24px; font-weight: bold; color: #28A745; margin-bottom: 0;")
               )
             ),
             tags$div(
-              style = "margin-top: 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;",
+              style = "border-top: 1px solid #CCC; padding-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;",
               tags$div(
-                tags$p("国内库存:", style = "font-size: 14px; font-weight: bold;"),
-                tags$p("货值:", style = "font-size: 14px; font-weight: bold;"),
+                style = "text-align: center;",
+                tags$h5("国内库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("before_20241223_domestic_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; font-weight: bold;"),
+                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("before_20241223_domestic_shipping", container = span)
               ),
               tags$div(
-                tags$p("在途库存:", style = "font-size: 14px; font-weight: bold;"),
-                tags$p("货值:", style = "font-size: 14px; font-weight: bold;"),
+                style = "text-align: center;",
+                tags$h5("在途库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("before_20241223_logistics_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; font-weight: bold;"),
+                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("before_20241223_logistics_shipping", container = span)
               ),
               tags$div(
-                tags$p("美国库存:", style = "font-size: 14px; font-weight: bold;"),
-                tags$p("货值:", style = "font-size: 14px; font-weight: bold;"),
+                style = "text-align: center;",
+                tags$h5("美国库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("before_20241223_us_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; font-weight: bold;"),
+                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("before_20241223_us_shipping", container = span)
               ),
               tags$div(
-                tags$p("售出:", style = "font-size: 14px; font-weight: bold;"),
-                tags$p("货值:", style = "font-size: 14px; font-weight: bold;"),
+                style = "text-align: center;",
+                tags$h5("售出", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("before_20241223_sold_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; font-weight: bold;"),
+                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("before_20241223_sold_shipping", container = span)
               )
             )
@@ -953,46 +959,52 @@ ui <- navbarPage(
           column(6, div(
             class = "card shadow-lg",
             style = "background: #d8eaf5; color: black; padding: 20px; border-radius: 16px; margin-top: 20px;",
-            tags$h4("12月23日后货值", style = "font-weight: bold; margin-bottom: 15px; text-align: center;"),
+            tags$h4("12月23日后货值", style = "font-weight: bold; text-align: center; margin-bottom: 20px;"),
             tags$div(
-              style = "display: flex; justify-content: space-around; margin-bottom: 15px;",
+              style = "display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px;",
               tags$div(
-                tags$p("总货值:", style = "font-size: 16px; font-weight: bold; margin-right: 10px;"),
-                textOutput("after_20241223_total_value", container = span)
+                style = "text-align: center;",
+                tags$p("总货值:", style = "font-size: 18px; font-weight: bold; margin-bottom: 5px;"),
+                tags$h3(textOutput("after_20241223_total_value"), style = "font-size: 24px; font-weight: bold; color: #007BFF; margin-bottom: 0;")
               ),
               tags$div(
-                tags$p("总运费:", style = "font-size: 16px; font-weight: bold; margin-left: 10px;"),
-                textOutput("after_20241223_total_shipping", container = span)
+                style = "text-align: center;",
+                tags$p("总运费:", style = "font-size: 18px; font-weight: bold; margin-bottom: 5px;"),
+                tags$h3(textOutput("after_20241223_total_shipping"), style = "font-size: 24px; font-weight: bold; color: #28A745; margin-bottom: 0;")
               )
             ),
             tags$div(
-              style = "margin-top: 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center;",
+              style = "border-top: 1px solid #CCC; padding-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;",
               tags$div(
-                tags$p("国内库存:", style = "font-size: 14px; font-weight: bold;"),
-                tags$p("货值:", style = "font-size: 14px; font-weight: bold;"),
+                style = "text-align: center;",
+                tags$h5("国内库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("after_20241223_domestic_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; font-weight: bold;"),
+                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("after_20241223_domestic_shipping", container = span)
               ),
               tags$div(
-                tags$p("在途库存:", style = "font-size: 14px; font-weight: bold;"),
-                tags$p("货值:", style = "font-size: 14px; font-weight: bold;"),
+                style = "text-align: center;",
+                tags$h5("在途库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("after_20241223_logistics_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; font-weight: bold;"),
+                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("after_20241223_logistics_shipping", container = span)
               ),
               tags$div(
-                tags$p("美国库存:", style = "font-size: 14px; font-weight: bold;"),
-                tags$p("货值:", style = "font-size: 14px; font-weight: bold;"),
+                style = "text-align: center;",
+                tags$h5("美国库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("after_20241223_us_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; font-weight: bold;"),
+                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("after_20241223_us_shipping", container = span)
               ),
               tags$div(
-                tags$p("售出:", style = "font-size: 14px; font-weight: bold;"),
-                tags$p("货值:", style = "font-size: 14px; font-weight: bold;"),
+                style = "text-align: center;",
+                tags$h5("售出", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$p("货值:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("after_20241223_sold_value", container = span),
-                tags$p("运费:", style = "font-size: 14px; font-weight: bold;"),
+                tags$p("运费:", style = "font-size: 14px; margin-bottom: 5px;"),
                 textOutput("after_20241223_sold_shipping", container = span)
               )
             )
