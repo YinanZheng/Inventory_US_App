@@ -932,7 +932,7 @@ ui <- navbarPage(
             tags$div(
               style = "border-top: 1px solid #CCC; padding-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center;",
               tags$div(
-                tags$h5("国内库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$h5("国内", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("before_20241223_domestic_value", container = span, inline = TRUE),
                   " | ",
@@ -941,7 +941,7 @@ ui <- navbarPage(
                 )
               ),
               tags$div(
-                tags$h5("在途库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$h5("在途", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("before_20241223_logistics_value", container = span, inline = TRUE),
                   " | ",
@@ -950,7 +950,7 @@ ui <- navbarPage(
                 )
               ),
               tags$div(
-                tags$h5("美国库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$h5("美国", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("before_20241223_us_value", container = span, inline = TRUE),
                   " | ",
@@ -989,7 +989,7 @@ ui <- navbarPage(
             tags$div(
               style = "border-top: 1px solid #CCC; padding-top: 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center;",
               tags$div(
-                tags$h5("国内库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$h5("国内", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("after_20241223_domestic_value", container = span, inline = TRUE),
                   " | ",
@@ -998,7 +998,7 @@ ui <- navbarPage(
                 )
               ),
               tags$div(
-                tags$h5("在途库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$h5("在途", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("after_20241223_logistics_value", container = span, inline = TRUE),
                   " | ",
@@ -1007,7 +1007,7 @@ ui <- navbarPage(
                 )
               ),
               tags$div(
-                tags$h5("美国库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
+                tags$h5("美国", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("after_20241223_us_value", container = span, inline = TRUE),
                   " | ",
