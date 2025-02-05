@@ -926,7 +926,7 @@ ui <- navbarPage(
                 tags$h5("国内库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("before_20241223_domestic_value", container = span, inline = TRUE),
-                  " | 运费: ",
+                  " | ",
                   textOutput("before_20241223_domestic_shipping", container = span, inline = TRUE),
                   style = "font-size: 14px; margin-bottom: 0;"
                 )
@@ -935,7 +935,7 @@ ui <- navbarPage(
                 tags$h5("在途库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("before_20241223_logistics_value", container = span, inline = TRUE),
-                  " | 运费: ",
+                  " | ",
                   textOutput("before_20241223_logistics_shipping", container = span, inline = TRUE),
                   style = "font-size: 14px; margin-bottom: 0;"
                 )
@@ -944,7 +944,7 @@ ui <- navbarPage(
                 tags$h5("美国库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("before_20241223_us_value", container = span, inline = TRUE),
-                  " | 运费: ",
+                  " | ",
                   textOutput("before_20241223_us_shipping", container = span, inline = TRUE),
                   style = "font-size: 14px; margin-bottom: 0;"
                 )
@@ -953,7 +953,7 @@ ui <- navbarPage(
                 tags$h5("售出", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("before_20241223_sold_value", container = span, inline = TRUE),
-                  " | 运费: ",
+                  " | ",
                   textOutput("before_20241223_sold_shipping", container = span, inline = TRUE),
                   style = "font-size: 14px; margin-bottom: 0;"
                 )
@@ -983,7 +983,7 @@ ui <- navbarPage(
                 tags$h5("国内库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("after_20241223_domestic_value", container = span, inline = TRUE),
-                  " | 运费: ",
+                  " | ",
                   textOutput("after_20241223_domestic_shipping", container = span, inline = TRUE),
                   style = "font-size: 14px; margin-bottom: 0;"
                 )
@@ -992,7 +992,7 @@ ui <- navbarPage(
                 tags$h5("在途库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("after_20241223_logistics_value", container = span, inline = TRUE),
-                  " | 运费: ",
+                  " | ",
                   textOutput("after_20241223_logistics_shipping", container = span, inline = TRUE),
                   style = "font-size: 14px; margin-bottom: 0;"
                 )
@@ -1001,7 +1001,7 @@ ui <- navbarPage(
                 tags$h5("美国库存", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("after_20241223_us_value", container = span, inline = TRUE),
-                  " | 运费: ",
+                  " | ",
                   textOutput("after_20241223_us_shipping", container = span, inline = TRUE),
                   style = "font-size: 14px; margin-bottom: 0;"
                 )
@@ -1010,7 +1010,7 @@ ui <- navbarPage(
                 tags$h5("售出", style = "font-size: 16px; font-weight: bold; margin-bottom: 10px;"),
                 tags$p(
                   textOutput("after_20241223_sold_value", container = span, inline = TRUE),
-                  " | 运费: ",
+                  " | ",
                   textOutput("after_20241223_sold_shipping", container = span, inline = TRUE),
                   style = "font-size: 14px; margin-bottom: 0;"
                 )
