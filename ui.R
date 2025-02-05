@@ -9,6 +9,8 @@ ui <- navbarPage(
     shinyjs::useShinyjs(),  # 启用 shinyjs
     
     tags$head(
+      tags$link(rel = "icon", type = "image/x-icon", href = "https://www.goldenbeanllc.com/icons/favicon-96x96.png"),
+      
       tags$style(HTML("
 
       /* 强制导航栏支持水平滚动 */
