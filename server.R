@@ -443,7 +443,7 @@ server <- function(input, output, session) {
     # # 只显示本页相关状态
     # data <- data %>%
     #   filter(Status %in% c("国内出库", "国内售出"), Defect != "瑕疵")
-    # 
+
     data <- filter_unique_items_data_by_inputs(
       data = data,
       input = input,
