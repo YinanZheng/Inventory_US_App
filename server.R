@@ -3524,6 +3524,37 @@ server <- function(input, output, session) {
   })
   
   
+  ### 公司税费
+  
+  # 计算公司税费总支出
+  company_tax_total <- reactive({
+    transactions_data() %>%
+      filter(TransactionType == "税费", Amount < 0) %>%
+      summarise(total_tax = abs(sum(Amount, na.rm = TRUE))) %>%
+      pull(total_tax)
+  })
+  
+  # 显示公司税费
+  output$company_tax <- renderText({
+    sprintf("¥%.2f", company_tax_total())
+  })
+  
+
+  ### 公司杂费
+  
+  # 计算公司杂费总支出
+  company_expenses_total <- reactive({
+    transactions_data() %>%
+      filter(TransactionType == "杂费", Amount < 0) %>%
+      summarise(total_expenses = abs(sum(Amount, na.rm = TRUE))) %>%
+      pull(total_expenses)
+  })
+  
+  # 显示公司杂费
+  output$company_expenses <- renderText({
+    sprintf("¥%.2f", company_expenses_total())
+  })
+  
   ### 货值与运费
   
   # 计算货值与运费
