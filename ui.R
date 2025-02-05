@@ -862,7 +862,7 @@ ui <- navbarPage(
         fluidRow(
           column(12, div(
             class = "card shadow-lg",
-            style = "background: orange; color: white; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
+            style = "background: orange; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("对账差额", style = "font-weight: bold; font-size: 20px; margin-bottom: 10px;"),
             tags$h3(textOutput("reconciliation_difference"), style = "font-size: 24px; font-weight: bold; color: #FF0000; margin-bottom: 0;")
           ))
@@ -910,8 +910,8 @@ ui <- navbarPage(
         fluidRow(
           column(6, div(
             class = "card shadow-lg",
-            style = "background: #d8eaf5; color: black; padding: 20px; border-radius: 16px; margin-top: 20px;",
-            tags$h4("2024年12月23日前货值与运费", style = "font-weight: bold; text-align: center; margin-bottom: 20px;"),
+            style = "background: #e0e0e0; color: black; padding: 20px; border-radius: 16px; margin-top: 20px;",
+            tags$h4("货值与运费 （2024年12月23日前）", style = "font-weight: bold; text-align: center; margin-bottom: 20px;"),
             tags$div(
               style = "display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px;",
               tags$div(
@@ -968,7 +968,7 @@ ui <- navbarPage(
           column(6, div(
             class = "card shadow-lg",
             style = "background: #d8eaf5; color: black; padding: 20px; border-radius: 16px; margin-top: 20px;",
-            tags$h4("2024年12月23日后货值与运费", style = "font-weight: bold; text-align: center; margin-bottom: 20px;"),
+            tags$h4("货值与运费 （2024年12月23日后）", style = "font-weight: bold; text-align: center; margin-bottom: 20px;"),
             tags$div(
               style = "display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px;",
               tags$div(
