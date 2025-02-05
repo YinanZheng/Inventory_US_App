@@ -3435,6 +3435,44 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  overview_data <- reactive({
+    data <- unique_items_data()
+    date_cutoff <- as.Date("2024-12-23")
+    
+    # 按时间分割数据
+    before_20241223 <- data %>% filter(PurchaseTime <= date_cutoff)
+    after_20241223 <- data %>% filter(PurchaseTime > date_cutoff)
+    
+    # 调用 process_data 处理数据
+    before <- process_data(before_20241223)
+    after <- process_data(after_20241223)
+    
+    # 计算总货值和总运费
+    calculate_totals <- function(data) {
+      total_value <- sum(c(
+        data$domestic$value,
+        data$logistics$value,
+        data$us$value,
+        data$sold$value
+      ), na.rm = TRUE)
+      
+      total_shipping <- sum(c(
+        data$domestic$shipping,
+        data$logistics$shipping,
+        data$us$shipping,
+        data$sold$shipping
+      ), na.rm = TRUE)
+      
+      list(total_value = total_value, total_shipping = total_shipping)
+    }
+    
+    # 汇总数据
+    list(
+      before = c(before, calculate_totals(before)),
+      after = c(after, calculate_totals(after))
+    )
+  })
+  
   
   
   ################################################################

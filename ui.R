@@ -907,13 +907,15 @@ ui <- navbarPage(
             class = "card shadow-lg",
             style = "background: lightblue; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("12月23日前货值", style = "font-weight: bold; margin-bottom: 10px;"),
-            textOutput("pre_december_23_value")
+            tags$p("总货值:"), textOutput("before_20241223_total_value"),
+            tags$p("总运费:"), textOutput("before_20241223_total_shipping")
           )),
           column(6, div(
             class = "card shadow-lg",
             style = "background: lightblue; color: black; padding: 20px; text-align: center; border-radius: 16px; margin-top: 20px;",
             tags$h4("12月23日后货值", style = "font-weight: bold; margin-bottom: 10px;"),
-            textOutput("post_december_23_value")
+            tags$p("总货值:"), textOutput("after_20241223_total_value"),
+            tags$p("总运费:"), textOutput("after_20241223_total_shipping")
           ))
         ),
         fluidRow(
