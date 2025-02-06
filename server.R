@@ -3537,7 +3537,7 @@ server <- function(input, output, session) {
   # 计算公司杂费总支出
   company_expenses_total <- reactive({
     transactions_data() %>%
-      filter(TransactionType == "杂费", Amount < 0) %>%
+      filter(TransactionType %in% c("杂费", "图解"), Amount < 0) %>%
       summarise(total_expenses = abs(sum(Amount, na.rm = TRUE))) %>%
       pull(total_expenses)
   })
