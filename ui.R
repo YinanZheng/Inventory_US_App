@@ -610,7 +610,7 @@ ui <- navbarPage(
               style = "border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; background-color: #f9f9f9;",
               
               # 添加说明
-              tags$p("请点选一行或多行物品，更新仅对选中行有效。", 
+              tags$p("请点选一行或多行进行信息更新。", 
                      style = "font-size: 14px; color: #6c757d; margin-bottom: 10px;"),
               
               fluidRow(
