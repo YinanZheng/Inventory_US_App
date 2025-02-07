@@ -545,7 +545,7 @@ server <- function(input, output, session) {
                                                   selection = "single" # 单选模式
   )
   
-  selected_orders_table_waiting_row <- callModule(orderTableServer, "orders_relocation",
+  selected_orders_table_relocation_row <- callModule(orderTableServer, "orders_relocation",
                                                   column_mapping = orders_table_columns,
                                                   options = modifyList(table_default_options, list(scrollY = "650px")),
                                                   data = filtered_orders_relocation,  # 数据源
