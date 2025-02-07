@@ -852,9 +852,8 @@ ui <- navbarPage(
       div(
         class = "sticky-sidebar",
         style = "width: 480px;",
-        h4("算法备忘录", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
-        p("对账差额 = 投入总金额 - 实际总金额"),
-        p("投入总金额 = 初始资金82445.90 + 美元转账（换算人民币）总计"),
+        h4("算法备忘", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
+        p("投入总金额 = 初始资金(82445.90) + 美元转账（换算人民币）总计"),
         p("实际总金额 = 现金流 + 工资 + 公司税费 + 公司杂费 + 新货值与运费"),
         p("现金流 = 四卡总余额 - 公司债务 - 社保")
       ),
@@ -869,7 +868,7 @@ ui <- navbarPage(
           column(12, div(
             class = "card shadow-lg",
             style = "background: orange; color: black; padding: 15px; text-align: center; border-radius: 16px; margin-top: 20px;",
-            tags$h4("对账差额", style = "font-weight: bold; font-size: 20px; margin-bottom: 10px;"),
+            tags$h4("对账差额 (投入总金额 - 实际总金额)", style = "font-weight: bold; font-size: 20px; margin-bottom: 10px;"),
             tags$h3(textOutput("reconciliation_difference"), style = "font-size: 24px; font-weight: bold; color: #FF0000; margin-bottom: 0;")
           ))
         ),
@@ -1039,7 +1038,7 @@ ui <- navbarPage(
           column(6, div(
             class = "card shadow-lg",
             style = "background: #e0e0e0; color: black; padding: 15px; text-align: center; border-radius: 16px; margin-top: 20px;",
-            tags$h4("社保", style = "font-weight: bold; margin-bottom: 10px;"),
+            tags$h4("社保(初始资金4618)", style = "font-weight: bold; margin-bottom: 10px;"),
             tags$h3(textOutput("social_security"), style = "font-size: 24px; font-weight: bold; color: #007BFF; margin-bottom: 0;")
           ))
         )
