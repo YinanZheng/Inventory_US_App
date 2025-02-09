@@ -313,14 +313,14 @@ ui <- navbarPage(
           tabPanel(
             title = div(
               tags$span(class = "arrow-icon", icon("arrow-right")),
-              "已安排供应",
+              "已安排",
             ), 
             uiOutput("provider_arranged_board")
           ),
           tabPanel(
             title = div(
               tags$span(class = "arrow-icon", icon("arrow-right")),
-              "做好已付款",
+              "制作完毕",
             ), 
             uiOutput("done_paid_board")
           ),
