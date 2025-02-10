@@ -3691,6 +3691,8 @@ server <- function(input, output, session) {
     ))
   })
   
+  ###
+  
   # 右键点击选择商品
   query_soldout_selected_item_details <- reactiveVal()
   
@@ -3764,7 +3766,7 @@ server <- function(input, output, session) {
     ))
   })
   
-  # 点击出库请求
+  # 确认采购
   observeEvent(input$query_confirm_purchase, {
     req(query_soldout_selected_item_details(), input$query_purchase_qty)
     
@@ -3792,6 +3794,7 @@ server <- function(input, output, session) {
     removeModal()  # 关闭模态框
   })
   
+  # 点击出库请求
   observeEvent(input$query_outbound_request, {
     req(query_soldout_selected_item_details())
     
@@ -3833,6 +3836,7 @@ server <- function(input, output, session) {
     ))
   })
   
+  # 确认出库
   observeEvent(input$query_confirm_outbound, {
     req(query_soldout_selected_item_details(), input$query_outbound_qty)
     
@@ -3866,6 +3870,7 @@ server <- function(input, output, session) {
     removeModal()  # 关闭模态框
   })
   
+  ###
   
   # 根据SKU产生图表
   observe({
