@@ -475,9 +475,9 @@ server <- function(input, output, session) {
     # 根据售罄筛选
     if (!is.null(input$query_stock_status) && input$query_stock_status != "none") {
       if (input$query_stock_status == "us") {
-        result <- result %>% filter(UsQuantity == 0)  # 美国库存为 0
+        result <- result %>% filter(UsQuantity == 0 & DomesticQuantity > 0)  # 美国库存为 0
       } else if (input$query_stock_status == "domestic") {
-        result <- result %>% filter(DomesticQuantity == 0)  # 国内库存为 0
+        result <- result %>% filter(DomesticQuantity == 0 & UsQuantity > 0)  # 国内库存为 0
       } else if (input$query_stock_status == "all") {
         result <- result %>% filter(Quantity == 0)  # 全库存售罄
       }
