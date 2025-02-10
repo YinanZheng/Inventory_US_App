@@ -68,12 +68,11 @@ server <- function(input, output, session) {
   
   
   
-  
   # ✅ 监听 `DT` 翻页事件，确保 `current_page()` 更新
   current_page <- reactiveVal(1)
   observeEvent(input$filtered_inventory_table_query_rows_current, {
     if (!is.null(input$filtered_inventory_table_query_rows_current)) {
-      current_page(as.numeric(input$filtered_inventory_table_query_rows_current))
+      current_page(as.integer(input$filtered_inventory_table_query_rows_current))  # 确保是整数
     }
   })
   
@@ -83,8 +82,10 @@ server <- function(input, output, session) {
     
     tryCatch({
       result <- dbGetQuery(con, query)
-      if (!is.null(result) && "count" %in% colnames(result) && nrow(result) > 0) {
-        return(as.numeric(result$count[1]))  # **确保返回数值**
+      
+      # **确保 result 是 data.frame，并包含 `count` 列**
+      if (is.data.frame(result) && "count" %in% colnames(result) && nrow(result) > 0) {
+        return(as.integer(result$count[1]))  # **返回整数**
       } else {
         return(0)  # **如果查询为空，返回 0**
       }
@@ -94,18 +95,17 @@ server <- function(input, output, session) {
     })
   })
   
-  # ✅ 计算当前页数据，修正 `sprintf()` 参数传递错误
+  # ✅ 计算当前页数据，修正 SQL 语法错误
   inventory_data <- reactive({
-    offset <- (current_page() - 1) * 50  # 每页 50 行
-    limit <- 50  # **固定 LIMIT 为数值**
+    offset <- (current_page() - 1) * 50  # 每页 50 行，确保是整数
+    limit <- 50  # 固定 LIMIT
     
-    # **⚠️ 直接用 `paste0()` 拼接 SQL，避免 `sprintf()` 参数错误**
-    query <- paste0("
+    # **使用 `sprintf()` 确保 SQL 语法正确**
+    query <- sprintf("
     SELECT SKU, Maker, ItemName, ProductCost, ShippingCost, Quantity, DomesticQuantity, TransitQuantity, UsQuantity
     FROM inventory
     ORDER BY updated_at DESC
-    LIMIT ", limit, " OFFSET ", offset
-    )
+    LIMIT %d OFFSET %d", as.integer(limit), as.integer(offset))
     
     tryCatch({
       result <- dbGetQuery(con, query)
@@ -142,6 +142,7 @@ server <- function(input, output, session) {
       )
     )
   })
+  
   
   
   
@@ -3788,16 +3789,6 @@ server <- function(input, output, session) {
   ## 查询分页                                                   ##
   ##                                                            ##
   ################################################################
-  
-  # 监听主页面和子页面的切换
-  observeEvent({
-    list(input$query_tabs)  # 仅在这些输入发生变化时触发
-  }, {
-    if (input$query_tabs == "商品状态") {
-      inventory_refresh_trigger(!inventory_refresh_trigger())
-      showNotification("库存表已加载！", type = "message")
-    }
-  }, ignoreInit = TRUE)  # 忽略初始值
   
   # 物品表过滤模块
   itemFilterServer(
