@@ -3782,7 +3782,7 @@ server <- function(input, output, session) {
       
       footer = tagList(
         modalButton("取消"),
-        actionButton("confirm_purchase", "确认采购", class = "btn-primary")
+        actionButton("query_confirm_purchase", "确认采购", class = "btn-primary")
       )
     ))
   })
@@ -3791,13 +3791,14 @@ server <- function(input, output, session) {
     req(query_soldout_selected_item_details(), input$query_purchase_qty)
     
     details <- query_soldout_selected_item_details()
+    request_id <- uuid::UUIDgenerate()
     
     # 数据库操作：插入采购请求
     dbExecute(con, "
     INSERT INTO requests (RequestID, SKU, Maker, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
     VALUES (?, ?, ?, ?, '待处理', '采购', NOW(), ?)",
               params = list(
-                uuid::UUIDgenerate(),
+                request_id,
                 details$sku,
                 details$maker,
                 input$query_purchase_qty,
@@ -3805,10 +3806,11 @@ server <- function(input, output, session) {
               )
     )
     
+    bind_buttons(request_id, requests_data(), input, output, session, con)
+    
     showNotification("采购请求已创建", type = "message")
     removeModal()  # 关闭模态框
   })
-  
   
   observeEvent(input$query_outbound_request, {
     req(query_soldout_selected_item_details())
@@ -3846,7 +3848,7 @@ server <- function(input, output, session) {
       
       footer = tagList(
         modalButton("取消"),
-        actionButton("confirm_outbound", "确认出库", class = "btn-success")
+        actionButton("query_confirm_outbound", "确认出库", class = "btn-success")
       )
     ))
   })
@@ -3855,6 +3857,7 @@ server <- function(input, output, session) {
     req(query_soldout_selected_item_details(), input$query_outbound_qty)
     
     details <- query_soldout_selected_item_details()
+    request_id <- uuid::UUIDgenerate()
     
     # 如果用户输入的出库数量大于国内库存，禁止提交
     if (input$outbound_qty > details$domestic_stock) {
@@ -3867,13 +3870,15 @@ server <- function(input, output, session) {
     INSERT INTO requests (RequestID, SKU, Maker, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
     VALUES (?, ?, ?, ?, '待处理', '出库', NOW(), ?)",
               params = list(
-                uuid::UUIDgenerate(),
+                request_id,
                 details$sku,
                 details$maker,
                 input$outbound_qty,
                 input$outbound_remark
               )
     )
+    
+    bind_buttons(request_id, requests_data(), input, output, session, con)
     
     showNotification("出库请求已创建", type = "message")
     removeModal()  # 关闭模态框
