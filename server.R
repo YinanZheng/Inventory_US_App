@@ -3738,6 +3738,15 @@ server <- function(input, output, session) {
         maker = selected_item$Maker,
         domestic_stock = selected_item$DomesticQuantity
       ))
+      
+      # 动态更新出库请求按钮
+      output$query_outbound_request_btn <- renderUI({
+        if (selected_item$DomesticQuantity > 0) {
+          actionButton("outbound_request", "出库请求", class = "btn btn-success btn-sm", style = "width: 100%;")
+        } else {
+          NULL  # 不显示按钮
+        }
+      })
     }
   })
   

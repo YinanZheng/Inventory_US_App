@@ -256,28 +256,25 @@ ui <- navbarPage(
         }
         
         $(document).ready(function() {
-        var selectedRowData = null;
-        
-        // 阻止默认右键菜单，并显示自定义菜单
-        $('#filtered_inventory_table_query').on('contextmenu', 'tr', function(event) {
-          event.preventDefault();  // 禁用默认右键菜单
-          var rowIdx = $(this).index();  // 获取被点击的行索引
-          
-          Shiny.setInputValue('selected_inventory_row', rowIdx + 1, {priority: 'event'});  // 发送选中行的索引到 R
-          $('#context-menu').css({
-            display: 'block',
-            left: event.pageX + 'px',
-            top: event.pageY + 'px'
+          $('#filtered_inventory_table_query').on('contextmenu', 'tr', function(event) {
+            event.preventDefault();
+            var rowIdx = $(this).index();
+            
+            Shiny.setInputValue('selected_inventory_row', rowIdx + 1, {priority: 'event'});
+      
+            $('#context-menu').css({
+              display: 'block',
+              left: event.pageX + 'px',
+              top: event.pageY + 'px'
+            });
+          });
+      
+          $(document).on('click', function(event) {
+            if (!$(event.target).closest('#context-menu').length) {
+              $('#context-menu').hide();
+            }
           });
         });
-    
-        // 点击其他地方隐藏菜单
-        $(document).on('click', function(event) {
-          if (!$(event.target).closest('#context-menu').length) {
-            $('#context-menu').hide();
-          }
-        });
-      });
       "))
     )
   ),
@@ -1154,7 +1151,7 @@ ui <- navbarPage(
                   id = "context-menu",
                   style = "display: none; position: absolute; background: white; border: 1px solid #ccc; box-shadow: 0px 4px 6px rgba(0,0,0,0.2); padding: 5px; border-radius: 5px; z-index: 1000;",
                   actionButton("query_purchase_request", "采购请求", class = "btn btn-primary btn-sm", style = "width: 100%; margin-bottom: 5px;"),
-                  actionButton("query_outbound_request", "出库请求", class = "btn btn-success btn-sm", style = "width: 100%;")
+                  uiOutput("query_outbound_request_btn")  # 动态生成出库请求按钮                
                 ),
                 
                 div(
