@@ -3742,7 +3742,7 @@ server <- function(input, output, session) {
       # 动态更新出库请求按钮
       output$query_outbound_request_btn <- renderUI({
         if (selected_item$DomesticQuantity > 0) {
-          actionButton("outbound_request", "出库请求", class = "btn btn-success btn-sm", style = "width: 100%;")
+          actionButton("query_outbound_request", "出库请求", class = "btn btn-success btn-sm", style = "width: 100%;")
         } else {
           NULL  # 不显示按钮
         }
@@ -3818,22 +3818,31 @@ server <- function(input, output, session) {
     showModal(modalDialog(
       title = "创建出库请求",
       
-      # 物品信息
       div(
-        style = "display: flex; align-items: center; margin-bottom: 15px;",
-        tags$img(src = details$image, style = "width: 100px; height: 100px; object-fit: cover; border-radius: 8px; margin-right: 10px;"),
+        style = "display: flex; flex-direction: row; align-items: center; gap: 20px; margin-bottom: 15px;",
+        
+        # 左侧：商品图片 + 详情
         div(
-          tags$h4(details$name, style = "margin: 0; color: #007BFF;"),
-          tags$p(paste("SKU:", details$sku), style = "margin: 0;"),
-          tags$p(paste("供应商:", details$maker), style = "margin: 0; color: #6c757d; font-size: 14px;"),
-          tags$p(paste("国内库存:", details$domestic_stock), style = "margin: 0; color: #DC3545; font-weight: bold;")
+          style = "flex: 0 0 40%; text-align: center;",
+          tags$img(src = details$image, style = "width: 150px; height: auto; object-fit: contain; border-radius: 8px;"),
+          div(
+            tags$h4(details$name, style = "margin-top: 10px; color: #007BFF;"),
+            tags$p(paste("SKU:", details$sku), style = "margin: 0; font-weight: bold;"),
+            tags$p(paste("供应商:", details$maker), style = "margin: 0; color: #6c757d; font-size: 14px;"),
+            tags$p(
+              paste("国内库存:", details$domestic_stock),
+              style = paste("margin: 0;", ifelse(details$domestic_stock == 0, "color: #DC3545; font-weight: bold;", "color: #28A745;"))
+            )
+          )
+        ),
+        
+        # 右侧：出库数量 + 备注
+        div(
+          style = "flex: 0 0 50%; display: flex; flex-direction: column; gap: 10px;",
+          numericInput("outbound_qty", "出库数量", value = 1, min = 1, max = details$domestic_stock, width = "80%"),
+          textAreaInput("outbound_remark", "备注", "", width = "80%", height = "80px")
         )
       ),
-      
-      # 出库数量输入框 (最大值设为国内库存数)
-      numericInput("outbound_qty", "出库数量", value = 1, min = 1, max = details$domestic_stock),
-      
-      textAreaInput("outbound_remark", "备注", ""),
       
       footer = tagList(
         modalButton("取消"),
