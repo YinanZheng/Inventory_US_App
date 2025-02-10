@@ -63,6 +63,12 @@ server <- function(input, output, session) {
   update_label_status_column(con)
   
   ####################################################################################################################################
+  
+  
+  
+  
+  
+  
   # ✅ 监听 `DT` 翻页事件，确保 `current_page()` 更新
   current_page <- reactiveVal(1)
   observeEvent(input$filtered_inventory_table_query_rows_current, {
@@ -78,7 +84,7 @@ server <- function(input, output, session) {
     tryCatch({
       result <- dbGetQuery(con, query)
       if (!is.null(result) && "count" %in% colnames(result) && nrow(result) > 0) {
-        return(as.numeric(result$count[1]))  # **返回总行数**
+        return(as.numeric(result$count[1]))  # **确保返回数值**
       } else {
         return(0)  # **如果查询为空，返回 0**
       }
@@ -88,15 +94,17 @@ server <- function(input, output, session) {
     })
   })
   
-  # ✅ 计算当前页数据
+  # ✅ 计算当前页数据，修正 `sprintf()` 参数传递错误
   inventory_data <- reactive({
     offset <- (current_page() - 1) * 50  # 每页 50 行
-    query <- sprintf("
+    limit <- 50  # **固定 LIMIT 为数值**
+    
+    # **⚠️ 直接用 `paste0()` 拼接 SQL，避免 `sprintf()` 参数错误**
+    query <- paste0("
     SELECT SKU, Maker, ItemName, ProductCost, ShippingCost, Quantity, DomesticQuantity, TransitQuantity, UsQuantity
     FROM inventory
     ORDER BY updated_at DESC
-    LIMIT %d OFFSET %d",
-                     50, offset
+    LIMIT ", limit, " OFFSET ", offset
     )
     
     tryCatch({
@@ -134,6 +142,7 @@ server <- function(input, output, session) {
       )
     )
   })
+  
   
   
   # # 库存表
