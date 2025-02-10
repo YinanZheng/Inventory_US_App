@@ -3749,19 +3749,27 @@ server <- function(input, output, session) {
     showModal(modalDialog(
       title = "创建采购请求",
       
-      # 物品信息
       div(
-        style = "display: flex; align-items: center; margin-bottom: 15px;",
-        tags$img(src = details$image, style = "width: 100px; height: 100px; object-fit: cover; border-radius: 8px; margin-right: 10px;"),
+        style = "display: flex; flex-direction: row; align-items: flex-start; gap: 20px; margin-bottom: 15px;",
+        
+        # 左侧：商品图片 + 详情
         div(
-          tags$h4(details$name, style = "margin: 0; color: #007BFF;"),
-          tags$p(paste("SKU:", details$sku), style = "margin: 0;"),
-          tags$p(paste("供应商:", details$maker), style = "margin: 0; color: #6c757d; font-size: 14px;")
+          style = "flex: 0 0 40%; text-align: center;",
+          tags$img(src = details$image, style = "width: 180px; height: 180px; object-fit: cover; border-radius: 8px;"),
+          div(
+            tags$h4(details$name, style = "margin-top: 10px; color: #007BFF;"),
+            tags$p(paste("SKU:", details$sku), style = "margin: 0; font-weight: bold;"),
+            tags$p(paste("供应商:", details$maker), style = "margin: 0; color: #6c757d; font-size: 14px;")
+          )
+        ),
+        
+        # 右侧：采购数量 + 备注
+        div(
+          style = "flex: 0 0 60%;",
+          numericInput("purchase_qty", "采购数量", value = 1, min = 1, width = "100%"),
+          textAreaInput("purchase_remark", "备注", "", width = "100%", height = "80px")
         )
       ),
-      
-      textInput("purchase_qty", "采购数量", value = "1"),
-      textAreaInput("purchase_remark", "备注", ""),
       
       footer = tagList(
         modalButton("取消"),
