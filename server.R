@@ -3716,7 +3716,7 @@ server <- function(input, output, session) {
     ))
   })
   
-  query_soldout_selected_sku <- reactiveVal()
+  query_soldout_selected_item_details <- reactiveVal()
   
   # 监听鼠标右键 selected_inventory_row，并获取用户点击的 SKU。
   observeEvent(input$selected_inventory_row, {
@@ -3726,33 +3726,54 @@ server <- function(input, output, session) {
     selected_item <- filtered_inventory()[row_index, ]  # 获取选中的数据
     
     if (nrow(selected_item) > 0) {
-      selected_sku <- selected_item$SKU
-      selected_item_name <- selected_item$ItemName
-      selected_maker <- selected_item$Maker
-      
-      showNotification(paste("选中 SKU:", selected_sku, "商品名:", selected_item_name), type = "message")
-      
-      # 存储到 reactiveVal，后续用于采购请求 / 出库请求
-      query_soldout_selected_sku(selected_sku)
+      # 存储物品详情
+      query_soldout_selected_item_details(list(
+        sku = selected_item$SKU,
+        name = selected_item$ItemName,
+        image = ifelse(
+          is.na(selected_item$ItemImagePath) || selected_item$ItemImagePath == "",
+          placeholder_150px_path,
+          paste0(host_url, "/images/", basename(selected_item$ItemImagePath))
+        ),
+        maker = selected_item$Maker,
+        domestic_stock = selected_item$DomesticQuantity
+      ))
     }
   })
   
   observeEvent(input$query_purchase_request, {
-    req(query_soldout_selected_sku())
+    req(query_soldout_selected_item_details())
+    
+    details <- query_soldout_selected_item_details()
     
     showModal(modalDialog(
       title = "创建采购请求",
-      textInput("query_purchase_qty", "采购数量", value = "1"),
-      textAreaInput("query_purchase_remark", "备注", ""),
+      
+      # 物品信息
+      div(
+        style = "display: flex; align-items: center; margin-bottom: 15px;",
+        tags$img(src = details$image, style = "width: 100px; height: 100px; object-fit: cover; border-radius: 8px; margin-right: 10px;"),
+        div(
+          tags$h4(details$name, style = "margin: 0; color: #007BFF;"),
+          tags$p(paste("SKU:", details$sku), style = "margin: 0;"),
+          tags$p(paste("供应商:", details$maker), style = "margin: 0; color: #6c757d; font-size: 14px;")
+        )
+      ),
+      
+      textInput("purchase_qty", "采购数量", value = "1"),
+      textAreaInput("purchase_remark", "备注", ""),
+      
       footer = tagList(
         modalButton("取消"),
-        actionButton("query_confirm_purchase", "确认采购", class = "btn-primary")
+        actionButton("confirm_purchase", "确认采购", class = "btn-primary")
       )
     ))
   })
   
   observeEvent(input$query_confirm_purchase, {
-    req(query_soldout_selected_sku(), input$query_purchase_qty)
+    req(query_soldout_selected_item_details(), input$query_purchase_qty)
+    
+    details <- query_soldout_selected_item_details()
     
     # 数据库操作：插入采购请求
     dbExecute(con, "
@@ -3760,8 +3781,8 @@ server <- function(input, output, session) {
     VALUES (?, ?, ?, ?, '待处理', '采购', NOW(), ?)",
               params = list(
                 uuid::UUIDgenerate(),
-                query_soldout_selected_sku(),
-                "供应商名称",  # 这里可以获取供应商
+                details$sku,
+                details$maker,
                 input$query_purchase_qty,
                 input$query_purchase_remark
               )
@@ -3773,21 +3794,47 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$query_outbound_request, {
-    req(query_soldout_selected_sku())
+    req(query_soldout_selected_item_details())
+    
+    details <- query_soldout_selected_item_details()
     
     showModal(modalDialog(
       title = "创建出库请求",
-      textInput("query_outbound_qty", "出库数量", value = "1"),
-      textAreaInput("query_outbound_remark", "备注", ""),
+      
+      # 物品信息
+      div(
+        style = "display: flex; align-items: center; margin-bottom: 15px;",
+        tags$img(src = details$image, style = "width: 100px; height: 100px; object-fit: cover; border-radius: 8px; margin-right: 10px;"),
+        div(
+          tags$h4(details$name, style = "margin: 0; color: #007BFF;"),
+          tags$p(paste("SKU:", details$sku), style = "margin: 0;"),
+          tags$p(paste("供应商:", details$maker), style = "margin: 0; color: #6c757d; font-size: 14px;"),
+          tags$p(paste("国内库存:", details$domestic_stock), style = "margin: 0; color: #DC3545; font-weight: bold;")
+        )
+      ),
+      
+      # 出库数量输入框 (最大值设为国内库存数)
+      numericInput("outbound_qty", "出库数量", value = 1, min = 1, max = details$domestic_stock),
+      
+      textAreaInput("outbound_remark", "备注", ""),
+      
       footer = tagList(
         modalButton("取消"),
-        actionButton("query_confirm_outbound", "确认出库", class = "btn-success")
+        actionButton("confirm_outbound", "确认出库", class = "btn-success")
       )
     ))
   })
   
   observeEvent(input$query_confirm_outbound, {
-    req(query_soldout_selected_sku(), input$query_outbound_qty)
+    req(query_soldout_selected_item_details(), input$query_outbound_qty)
+    
+    details <- query_soldout_selected_item_details()
+    
+    # 如果用户输入的出库数量大于国内库存，禁止提交
+    if (input$outbound_qty > details$domestic_stock) {
+      showNotification("出库数量不能大于国内库存数！", type = "error")
+      return()
+    }
     
     # 数据库操作：插入出库请求
     dbExecute(con, "
@@ -3795,10 +3842,10 @@ server <- function(input, output, session) {
     VALUES (?, ?, ?, ?, '待处理', '出库', NOW(), ?)",
               params = list(
                 uuid::UUIDgenerate(),
-                query_soldout_selected_sku(),
-                "供应商名称",
-                input$query_outbound_qty,
-                input$query_outbound_remark
+                details$sku,
+                details$maker,
+                input$outbound_qty,
+                input$outbound_remark
               )
     )
     
