@@ -3673,9 +3673,9 @@ server <- function(input, output, session) {
   
   # 监听主页面和子页面的切换
   observeEvent({
-    list(input$inventory_cn, input$query_tabs)  # 仅在这些输入发生变化时触发
+    list(input$inventory_us, input$query_tabs)  # 仅在这些输入发生变化时触发
   }, {
-    if (input$inventory_cn == "查询" && input$query_tabs == "商品状态") {
+    if (input$inventory_us == "查询" && input$query_tabs == "商品状态") {
       inventory_refresh_trigger(!inventory_refresh_trigger())
       showNotification("库存表已刷新！", type = "message")
     }
