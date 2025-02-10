@@ -255,6 +255,7 @@ ui <- navbarPage(
           audio.play();
         }
         
+        // 右键点击查询库存页面
         $(document).ready(function() {
           $('#filtered_inventory_table_query').on('contextmenu', 'tr', function(event) {
             event.preventDefault();

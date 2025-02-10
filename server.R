@@ -3691,6 +3691,7 @@ server <- function(input, output, session) {
     ))
   })
   
+  # 右键点击选择商品
   query_soldout_selected_item_details <- reactiveVal()
   
   # 监听鼠标右键 selected_inventory_row，并获取用户点击的 SKU。
@@ -3725,6 +3726,7 @@ server <- function(input, output, session) {
     }
   })
   
+  # 点击采购请求
   observeEvent(input$query_purchase_request, {
     req(query_soldout_selected_item_details())
     
@@ -3762,6 +3764,7 @@ server <- function(input, output, session) {
     ))
   })
   
+  # 点击出库请求
   observeEvent(input$query_confirm_purchase, {
     req(query_soldout_selected_item_details(), input$query_purchase_qty)
     
