@@ -454,20 +454,21 @@ server <- function(input, output, session) {
   
   # 查询页过滤-库存表
   filtered_inventory <- reactive({
-    req(inventory())
+    req(inventory(), unique_items_data()) # 确保数据存在
+    
     result <- inventory()
     
-    # Return empty inventory if no results
+    # 如果库存为空，返回空库存表
     if (nrow(result) == 0) {
       return(create_empty_inventory())
     }
     
-    # 按供应商筛选
+    # 供应商筛选
     if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
       result <- result %>% filter(Maker %in% input[["query_filter-maker"]])
     }
     
-    # 按商品名称筛选
+    # 商品名称模糊筛选
     if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
       result <- result %>% filter(grepl(input[["query_filter-name"]], ItemName, ignore.case = TRUE))
     }
