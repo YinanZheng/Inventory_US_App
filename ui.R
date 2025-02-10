@@ -254,6 +254,30 @@ ui <- navbarPage(
           var audio = new Audio('https://www.goldenbeanllc.com/sounds/inbound_error.mp3');
           audio.play();
         }
+        
+        $(document).ready(function() {
+        var selectedRowData = null;
+        
+        // 阻止默认右键菜单，并显示自定义菜单
+        $('#filtered_inventory_table_query').on('contextmenu', 'tr', function(event) {
+          event.preventDefault();  // 禁用默认右键菜单
+          var rowIdx = $(this).index();  // 获取被点击的行索引
+          
+          Shiny.setInputValue('selected_inventory_row', rowIdx + 1, {priority: 'event'});  // 发送选中行的索引到 R
+          $('#context-menu').css({
+            display: 'block',
+            left: event.pageX + 'px',
+            top: event.pageY + 'px'
+          });
+        });
+    
+        // 点击其他地方隐藏菜单
+        $(document).on('click', function(event) {
+          if (!$(event.target).closest('#context-menu').length) {
+            $('#context-menu').hide();
+          }
+        });
+      });
       "))
     )
   ),
@@ -1070,7 +1094,7 @@ ui <- navbarPage(
           radioButtons(
             inputId = "query_stock_status",
             label = NULL,  # 不显示默认标题，使用 h4 作为标题
-            choices = c("不过滤" = "none", "美国售罄" = "us", "国内售罄" = "domestic", "全库存售罄" = "all"),
+            choices = c("不过滤" = "none", "美国售罄, 国内有货" = "us", "国内售罄, 美国有货" = "domestic", "全库存售罄" = "all"),
             selected = "none",  # 默认选择 “不过滤”
             inline = FALSE
           )
@@ -1125,6 +1149,14 @@ ui <- navbarPage(
               style = "display: flex; flex-direction: column;",
               div(
                 style = "flex-grow: 1; overflow-y: auto; padding-top: 10px;",  # 表格自适应高度
+                
+                div(
+                  id = "context-menu",
+                  style = "display: none; position: absolute; background: white; border: 1px solid #ccc; box-shadow: 0px 4px 6px rgba(0,0,0,0.2); padding: 5px; border-radius: 5px; z-index: 1000;",
+                  actionButton("purchase_request", "采购请求", class = "btn btn-primary btn-sm", style = "width: 100%; margin-bottom: 5px;"),
+                  actionButton("outbound_request", "出库请求", class = "btn btn-success btn-sm", style = "width: 100%;")
+                ),
+                
                 div(
                   id = "inventory_table_container_query",
                   DTOutput("filtered_inventory_table_query")
