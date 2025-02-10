@@ -18,6 +18,9 @@ server <- function(input, output, session) {
   # 触发unique_items_data刷新
   unique_items_data_refresh_trigger <- reactiveVal(FALSE)
   
+  # 触发inventory刷新
+  inventory_refresh_trigger <- reactiveVal(FALSE)
+  
   # 触发order刷新
   orders_refresh_trigger <- reactiveVal(FALSE)
   
@@ -63,6 +66,7 @@ server <- function(input, output, session) {
 
   # 库存表
   inventory <- reactive({
+    inventory_refresh_trigger()
     dbGetQuery(con, "SELECT * FROM inventory")
   })
   
@@ -3666,6 +3670,16 @@ server <- function(input, output, session) {
   ## 查询分页                                                   ##
   ##                                                            ##
   ################################################################
+  
+  # 监听主页面和子页面的切换
+  observeEvent({
+    list(input$inventory_cn, input$query_tabs)  # 仅在这些输入发生变化时触发
+  }, {
+    if (input$inventory_cn == "查询" && input$query_tabs == "商品状态") {
+      inventory_refresh_trigger(!inventory_refresh_trigger())
+      showNotification("库存表已刷新！", type = "message")
+    }
+  }, ignoreInit = TRUE)  # 忽略初始值
   
   # 物品表过滤模块
   itemFilterServer(
