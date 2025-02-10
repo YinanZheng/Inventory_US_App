@@ -1072,7 +1072,7 @@ ui <- navbarPage(
             label = NULL,  # 不显示默认标题，使用 h4 作为标题
             choices = c("不过滤" = "none", "美国售罄" = "us", "国内售罄" = "domestic", "全库存售罄" = "all"),
             selected = "none",  # 默认选择 “不过滤”
-            inline = TRUE
+            inline = FALSE
           )
         )
       ),
