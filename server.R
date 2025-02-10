@@ -3770,12 +3770,14 @@ server <- function(input, output, session) {
     
     # 数据库操作：插入采购请求
     dbExecute(con, "
-    INSERT INTO requests (RequestID, SKU, Maker, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
-    VALUES (?, ?, ?, ?, '待处理', '采购', NOW(), ?)",
+    INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
+    VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '采购')",
               params = list(
                 request_id,
                 details$sku,
                 details$maker,
+                details$image,
+                details$name,
                 input$query_purchase_qty,
                 format_remark(input$query_purchase_remark, system_type) 
               )
@@ -3842,12 +3844,14 @@ server <- function(input, output, session) {
     
     # 数据库操作：插入出库请求
     dbExecute(con, "
-    INSERT INTO requests (RequestID, SKU, Maker, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
-    VALUES (?, ?, ?, ?, '待处理', '出库', NOW(), ?)",
+    INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
+    VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '出库')",
               params = list(
                 request_id,
                 details$sku,
                 details$maker,
+                details$image,
+                details$name,
                 input$query_outbound_qty,
                 format_remark(input$query_outbound_remark, system_type)
               )
