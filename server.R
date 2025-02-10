@@ -106,7 +106,7 @@ server <- function(input, output, session) {
     }
   })
   
-  # ✅ 计算当前页数据，并返回 `list(data, total count)`
+  # ✅ 计算当前页数据，确保返回 `data.frame()`
   inventory_data <- reactive({
     offset <- (current_page() - 1) * 50  # 假设每页 50 行
     query <- sprintf("
@@ -120,34 +120,43 @@ server <- function(input, output, session) {
     
     tryCatch({
       result <- dbGetQuery(con, query)
-      total_count <- inventory_total_count()
       
       if (is.null(result) || !is.data.frame(result) || nrow(result) == 0) {
-        return(list(data = data.frame(), recordsTotal = total_count, recordsFiltered = total_count))  # **返回空表**
+        return(data.frame())  # **返回空表**
       }
       
-      return(list(data = result, recordsTotal = total_count, recordsFiltered = total_count))  # **返回数据 + 总行数**
+      return(result)  # **返回 `data.frame()`**
     }, error = function(e) {
       showNotification(paste("查询库存表时发生错误：", e$message), type = "error")
-      return(list(data = data.frame(), recordsTotal = 0, recordsFiltered = 0))  # **查询失败时返回空表**
+      return(data.frame())  # **查询失败时返回空表**
     })
   })
   
   # ✅ 让 `DT::renderDataTable()` 获取 `recordsTotal`，确保正确分页
-  output$filtered_inventory_table_query <- DT::renderDataTable({
-    data_info <- inventory_data()  # 获取当前页数据 + 总行数
-    
+  output$filtered_inventory_table_query <- renderDT({
     datatable(
-      data_info$data,  # 只加载当前页数据
+      inventory_data(),  # 只加载当前页数据
       options = list(
         server = TRUE,       # 启用服务器端分页
         pageLength = 50,     # 默认每页 50 行
         lengthMenu = c(50, 100, 200),  # 用户可调整每页行数
         searching = TRUE,     # 允许搜索
         processing = TRUE,     # 显示“加载中”指示
-        recordsTotal = data_info$recordsTotal,  # **传递总行数**
-        recordsFiltered = data_info$recordsFiltered  # **确保 `DT` 知道符合筛选条件的行数**
-      )
+        drawCallback = JS(sprintf("
+        function(settings) { 
+          Shiny.setInputValue('filtered_inventory_table_query_rows_current', 
+            settings._iDisplayStart / settings._iDisplayLength + 1, 
+            {priority: 'event'}
+          ); 
+        }
+      "))
+      ),
+      callback = JS(sprintf("
+      function(settings, json) {
+        json.recordsTotal = %d;
+        json.recordsFiltered = %d;
+      }
+    ", inventory_total_count(), inventory_total_count()))
     )
   })
   
