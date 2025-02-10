@@ -168,11 +168,14 @@ server <- function(input, output, session) {
             settings._iDisplayStart / settings._iDisplayLength + 1, 
             {priority: 'event'}
           ); 
+          settings.json.recordsTotal = %d;
+          settings.json.recordsFiltered = %d;
         }
-      "))
+      ", inventory_total_count(), inventory_total_count()))
       )
     )
   })
+  
   
 
   
