@@ -237,7 +237,7 @@ server <- function(input, output, session) {
     
     # **获取最新数据**
     valueFunc = function() {
-      dbGetQuery(con, "
+      result <- dbGetQuery(con, "
       SELECT 
         unique_items.UniqueID, 
         unique_items.SKU, 
@@ -298,6 +298,7 @@ server <- function(input, output, session) {
         i.TransitQuantity = u.TransitQuantity,
         i.UsQuantity = u.UsQuantity
     ")
+      return(result)
     }
   )
   
