@@ -3716,6 +3716,95 @@ server <- function(input, output, session) {
     ))
   })
   
+  # 监听鼠标右键 selected_inventory_row，并获取用户点击的 SKU。
+  observeEvent(input$selected_inventory_row, {
+    req(input$selected_inventory_row)
+    
+    row_index <- as.numeric(input$selected_inventory_row)  # 获取用户点击的行索引
+    selected_item <- filtered_inventory()[row_index, ]  # 获取选中的数据
+    
+    if (nrow(selected_item) > 0) {
+      selected_sku <- selected_item$SKU
+      selected_item_name <- selected_item$ItemName
+      selected_maker <- selected_item$Maker
+      
+      showNotification(paste("选中 SKU:", selected_sku, "商品名:", selected_item_name), type = "message")
+      
+      # 存储到 reactiveVal，后续用于采购请求 / 出库请求
+      selected_sku_reactive(selected_sku)
+    }
+  })
+  
+  observeEvent(input$query_purchase_request, {
+    req(selected_sku_reactive())
+    
+    showModal(modalDialog(
+      title = "创建采购请求",
+      textInput("query_purchase_qty", "采购数量", value = "1"),
+      textAreaInput("query_purchase_remark", "备注", ""),
+      footer = tagList(
+        modalButton("取消"),
+        actionButton("query_confirm_purchase", "确认采购", class = "btn-primary")
+      )
+    ))
+  })
+  
+  observeEvent(input$query_confirm_purchase, {
+    req(selected_sku_reactive(), input$query_purchase_qty)
+    
+    # 数据库操作：插入采购请求
+    dbExecute(con, "
+    INSERT INTO requests (RequestID, SKU, Maker, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
+    VALUES (?, ?, ?, ?, '待处理', '采购', NOW(), ?)",
+              params = list(
+                uuid::UUIDgenerate(),
+                selected_sku_reactive(),
+                "供应商名称",  # 这里可以获取供应商
+                input$query_purchase_qty,
+                input$query_purchase_remark
+              )
+    )
+    
+    showNotification("采购请求已创建", type = "message")
+    removeModal()  # 关闭模态框
+  })
+  
+  
+  observeEvent(input$query_outbound_request, {
+    req(selected_sku_reactive())
+    
+    showModal(modalDialog(
+      title = "创建出库请求",
+      textInput("query_outbound_qty", "出库数量", value = "1"),
+      textAreaInput("query_outbound_remark", "备注", ""),
+      footer = tagList(
+        modalButton("取消"),
+        actionButton("query_confirm_outbound", "确认出库", class = "btn-success")
+      )
+    ))
+  })
+  
+  observeEvent(input$query_confirm_outbound, {
+    req(selected_sku_reactive(), input$query_outbound_qty)
+    
+    # 数据库操作：插入出库请求
+    dbExecute(con, "
+    INSERT INTO requests (RequestID, SKU, Maker, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
+    VALUES (?, ?, ?, ?, '待处理', '出库', NOW(), ?)",
+              params = list(
+                uuid::UUIDgenerate(),
+                selected_sku_reactive(),
+                "供应商名称",
+                input$query_outbound_qty,
+                input$query_outbound_remark
+              )
+    )
+    
+    showNotification("出库请求已创建", type = "message")
+    removeModal()  # 关闭模态框
+  })
+  
+  
   # 根据SKU产生图表
   observe({
     sku <- trimws(input$query_sku)
