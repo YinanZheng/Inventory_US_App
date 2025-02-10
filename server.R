@@ -24,9 +24,6 @@ server <- function(input, output, session) {
   # 触发order刷新
   orders_refresh_trigger <- reactiveVal(FALSE)
   
-  # 触发item_status_history刷新
-  item_status_history_refresh_trigger <- reactiveVal(FALSE)
-  
   # 用于存储条形码 PDF 文件路径
   barcode_pdf_file_path <- reactiveVal(NULL)
   
@@ -186,15 +183,7 @@ server <- function(input, output, session) {
   })
   
   ####################################################################################################################################
-  
-  # 物品状态历史表
-  item_status_history <- reactive({
-    item_status_history_refresh_trigger()
-    dbGetQuery(con, "SELECT * FROM item_status_history")
-  })
-  
-  ####################################################################################################################################
-  
+
   clear_invalid_item_status_history(con)
   
   ####################################################################################################################################
@@ -3696,16 +3685,11 @@ server <- function(input, output, session) {
   
   # 监听主页面和子页面的切换
   observeEvent({
-    list(input$inventory_us, input$query_tabs)  # 仅在这些输入发生变化时触发
+    list(input$query_tabs)  # 仅在这些输入发生变化时触发
   }, {
-    if (input$inventory_us == "查询" && input$query_tabs == "商品状态") {
+    if (input$query_tabs == "商品状态") {
       inventory_refresh_trigger(!inventory_refresh_trigger())
       showNotification("库存表已加载！", type = "message")
-    }
-    
-    if (input$inventory_us == "查询" && input$query_tabs == "库存总览") {
-      item_status_history_refresh_trigger(!item_status_history_refresh_trigger())
-      showNotification("库存状态历史已加载！", type = "message")
     }
   }, ignoreInit = TRUE)  # 忽略初始值
   
@@ -4253,8 +4237,8 @@ server <- function(input, output, session) {
   # 状态流转桑基图
   output$status_sankey <- renderSankeyNetwork({
     # 获取物品状态历史数据
-    history_data <- item_status_history()
-    
+    history_data <- dbGetQuery(con, "SELECT * FROM item_status_history")
+
     filtered_data <- history_data %>%
       # 标记含有重复状态的 UniqueID
       left_join(
