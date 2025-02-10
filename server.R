@@ -64,48 +64,141 @@ server <- function(input, output, session) {
   
   ####################################################################################################################################
   
-  # 库存表
-  inventory <- reactive({
-    # 当 refresh_trigger 改变时触发更新
-    inventory_refresh_trigger()
+  # 当前页码（默认第一页）
+  current_page <- reactiveVal(1)
+  
+  # 监听 `DT` 的分页变化，更新当前页码
+  observeEvent(input$inventory_table_query_rows_current, {
+    if (!is.null(input$inventory_table_query_rows_current)) {
+      current_page(input$inventory_table_query_rows_current)
+    }
+  })
+  
+  # 计算 SQL 偏移量
+  rows_per_page <- 50  # 每页 50 行
+  
+  # **计算符合筛选条件的总行数**
+  inventory_total_count <- reactive({
+    maker_filter <- if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
+      paste0("AND Maker IN ('", paste(input[["query_filter-maker"]], collapse = "','"), "')")
+    } else {
+      ""
+    }
+    
+    name_filter <- if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
+      paste0("AND ItemName LIKE '%", input[["query_filter-name"]], "%'")
+    } else {
+      ""
+    }
+    
+    query <- sprintf("
+    SELECT COUNT(*) AS count FROM inventory
+    WHERE 1=1 %s %s", maker_filter, name_filter)
     
     tryCatch({
-      # 从 unique_items 表中计算聚合数据并一次性更新
-      dbExecute(
-        con,
-        "
-        UPDATE inventory i
-        JOIN (
-          SELECT 
-            SKU,
-            AVG(ProductCost) AS AvgProductCost,
-            AVG(DomesticShippingCost + IntlShippingCost) AS AvgShippingCost,
-            SUM(Status IN ('国内入库', '国内出库', '美国入库')) AS TotalQuantity,
-            SUM(Status = '国内入库') AS DomesticQuantity,
-            SUM(Status = '国内出库') AS TransitQuantity,
-            SUM(Status = '美国入库') AS UsQuantity
-          FROM unique_items
-          GROUP BY SKU
-        ) u ON i.SKU = u.SKU
-        SET 
-          i.ProductCost = ROUND(u.AvgProductCost, 2),
-          i.ShippingCost = ROUND(u.AvgShippingCost, 2),
-          i.Quantity = u.TotalQuantity,
-          i.DomesticQuantity = u.DomesticQuantity,
-          i.TransitQuantity = u.TransitQuantity,
-          i.UsQuantity = u.UsQuantity
-        "
-      )
-      
-      # 从 inventory 表中加载最新数据
-      updated_inventory <- dbGetQuery(con, "SELECT * FROM inventory")
-      return(updated_inventory)
-      
+      dbGetQuery(con, query)$count[1]  # 获取符合条件的总行数
     }, error = function(e) {
-      showNotification(paste("更新库存表时发生错误：", e$message), type = "error")
-      return(create_empty_inventory())  # 返回空的 inventory 数据表
+      showNotification(paste("查询库存总数时发生错误：", e$message), type = "error")
+      return(0)  # 避免 R 崩溃
     })
   })
+  
+  # **查询 `inventory` 表（带分页 & 过滤）**
+  inventory <- reactive({
+    offset <- (current_page() - 1) * rows_per_page
+    
+    maker_filter <- if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
+      paste0("AND Maker IN ('", paste(input[["query_filter-maker"]], collapse = "','"), "')")
+    } else {
+      ""
+    }
+    
+    name_filter <- if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
+      paste0("AND ItemName LIKE '%%", input[["query_filter-name"]], "%%'")
+    } else {
+      ""
+    }
+    
+    query <- sprintf("
+    SELECT SKU, Maker, ItemName, ProductCost, ShippingCost, Quantity, DomesticQuantity, TransitQuantity, UsQuantity
+    FROM inventory
+    WHERE 1=1 %s %s
+    ORDER BY updated_at DESC
+    LIMIT %d OFFSET %d",
+                     maker_filter, name_filter, rows_per_page, offset
+    )
+    
+    tryCatch({
+      dbGetQuery(con, query)
+    }, error = function(e) {
+      showNotification(paste("查询库存表时发生错误：", e$message), type = "error")
+      return(data.frame())  # 避免 R 崩溃
+    })
+  })
+  
+  # **前端表格渲染**
+  output$filtered_inventory_table_query <- renderDT({
+    datatable(
+      inventory(),  # 只加载当前页数据
+      options = list(
+        server = TRUE,       # 启用服务器端分页
+        pageLength = rows_per_page,   # 默认每页 50 行
+        lengthMenu = c(50, 100, 200),  # 用户可调整每页行数
+        searching = TRUE,     # 允许搜索
+        processing = TRUE,     # 显示“加载中”指示
+        drawCallback = JS("function(settings) { 
+        Shiny.setInputValue('inventory_table_query_rows_current', 
+          settings._iDisplayStart / settings._iDisplayLength + 1, 
+          {priority: 'event'}
+        ); 
+      }")  # 监听分页事件
+      )
+    )
+  })
+  
+  
+  # # 库存表
+  # inventory <- reactive({
+  #   # 当 refresh_trigger 改变时触发更新
+  #   inventory_refresh_trigger()
+  #   
+  #   tryCatch({
+  #     # 从 unique_items 表中计算聚合数据并一次性更新
+  #     dbExecute(
+  #       con,
+  #       "
+  #       UPDATE inventory i
+  #       JOIN (
+  #         SELECT 
+  #           SKU,
+  #           AVG(ProductCost) AS AvgProductCost,
+  #           AVG(DomesticShippingCost + IntlShippingCost) AS AvgShippingCost,
+  #           SUM(Status IN ('国内入库', '国内出库', '美国入库')) AS TotalQuantity,
+  #           SUM(Status = '国内入库') AS DomesticQuantity,
+  #           SUM(Status = '国内出库') AS TransitQuantity,
+  #           SUM(Status = '美国入库') AS UsQuantity
+  #         FROM unique_items
+  #         GROUP BY SKU
+  #       ) u ON i.SKU = u.SKU
+  #       SET 
+  #         i.ProductCost = ROUND(u.AvgProductCost, 2),
+  #         i.ShippingCost = ROUND(u.AvgShippingCost, 2),
+  #         i.Quantity = u.TotalQuantity,
+  #         i.DomesticQuantity = u.DomesticQuantity,
+  #         i.TransitQuantity = u.TransitQuantity,
+  #         i.UsQuantity = u.UsQuantity
+  #       "
+  #     )
+  #     
+  #     # 从 inventory 表中加载最新数据
+  #     updated_inventory <- dbGetQuery(con, "SELECT * FROM inventory")
+  #     return(updated_inventory)
+  #     
+  #   }, error = function(e) {
+  #     showNotification(paste("更新库存表时发生错误：", e$message), type = "error")
+  #     return(create_empty_inventory())  # 返回空的 inventory 数据表
+  #   })
+  # })
   
   # 商品名自动联想
   item_names <- reactive({
@@ -161,6 +254,30 @@ server <- function(input, output, session) {
         unique_items.SKU = inventory.SKU
       ORDER BY 
         unique_items.updated_at DESC
+    ")
+      
+      # **当 `unique_items` 变更时，自动更新 `inventory`**
+      dbExecute(con, "
+      UPDATE inventory i
+      JOIN (
+        SELECT 
+          SKU,
+          AVG(ProductCost) AS AvgProductCost,
+          AVG(DomesticShippingCost + IntlShippingCost) AS AvgShippingCost,
+          SUM(Status IN ('国内入库', '国内出库', '美国入库')) AS TotalQuantity,
+          SUM(Status = '国内入库') AS DomesticQuantity,
+          SUM(Status = '国内出库') AS TransitQuantity,
+          SUM(Status = '美国入库') AS UsQuantity
+        FROM unique_items
+        GROUP BY SKU
+      ) u ON i.SKU = u.SKU
+      SET 
+        i.ProductCost = ROUND(u.AvgProductCost, 2),
+        i.ShippingCost = ROUND(u.AvgShippingCost, 2),
+        i.Quantity = u.TotalQuantity,
+        i.DomesticQuantity = u.DomesticQuantity,
+        i.TransitQuantity = u.TransitQuantity,
+        i.UsQuantity = u.UsQuantity
     ")
     }
   )
@@ -464,30 +581,30 @@ server <- function(input, output, session) {
     data
   })
   
-  # 查询页过滤-库存表
-  filtered_inventory <- reactive({
-    req(inventory())
-    result <- inventory()
-    
-    # Return empty inventory if no results
-    if (nrow(result) == 0) {
-      return(create_empty_inventory())
-    }
-    
-    # 按供应商筛选
-    if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
-      result <- result %>% filter(Maker %in% input[["query_filter-maker"]])
-    }
-    
-    # 按商品名称筛选
-    if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
-      result <- result %>% filter(ItemName == input[["query_filter-name"]])
-    }
-    
-    result <- result[order(result$updated_at, decreasing = TRUE), ]
-    
-    return(result)
-  })
+  # # 查询页过滤-库存表
+  # filtered_inventory <- reactive({
+  #   req(inventory())
+  #   result <- inventory()
+  #   
+  #   # Return empty inventory if no results
+  #   if (nrow(result) == 0) {
+  #     return(create_empty_inventory())
+  #   }
+  #   
+  #   # 按供应商筛选
+  #   if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
+  #     result <- result %>% filter(Maker %in% input[["query_filter-maker"]])
+  #   }
+  #   
+  #   # 按商品名称筛选
+  #   if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
+  #     result <- result %>% filter(ItemName == input[["query_filter-name"]])
+  #   }
+  #   
+  #   result <- result[order(result$updated_at, decreasing = TRUE), ]
+  #   
+  #   return(result)
+  # })
   
   # 下载页过滤
   filtered_unique_items_data_download <- reactive({
@@ -582,28 +699,28 @@ server <- function(input, output, session) {
                                                                                                           dom = 'lftip')))
   
   # 查询分页库存表
-  output$filtered_inventory_table_query <- renderDT({  # input$filtered_inventory_table_query_rows_selected
-    column_mapping <- list(
-      SKU = "条形码",
-      ItemName = "商品名",
-      ItemImagePath = "商品图",
-      Maker = "供应商",
-      MajorType = "大类",
-      MinorType = "小类",
-      Quantity = "总库存数",
-      DomesticQuantity = "国内库存数",
-      TransitQuantity = "在途库存数",
-      UsQuantity = "美国库存数",
-      ProductCost = "平均成本",
-      ShippingCost = "平均运费"
-    )
-    
-    render_table_with_images(
-      data = filtered_inventory(),
-      column_mapping = column_mapping,
-      image_column = "ItemImagePath"  # Specify the image column
-    )$datatable
-  })
+  # output$filtered_inventory_table_query <- renderDT({  # input$filtered_inventory_table_query_rows_selected
+  #   column_mapping <- list(
+  #     SKU = "条形码",
+  #     ItemName = "商品名",
+  #     ItemImagePath = "商品图",
+  #     Maker = "供应商",
+  #     MajorType = "大类",
+  #     MinorType = "小类",
+  #     Quantity = "总库存数",
+  #     DomesticQuantity = "国内库存数",
+  #     TransitQuantity = "在途库存数",
+  #     UsQuantity = "美国库存数",
+  #     ProductCost = "平均成本",
+  #     ShippingCost = "平均运费"
+  #   )
+  #   
+  #   render_table_with_images(
+  #     data = filtered_inventory(),
+  #     column_mapping = column_mapping,
+  #     image_column = "ItemImagePath"  # Specify the image column
+  #   )$datatable
+  # })
   
   # 下载分页物品表
   unique_items_table_download_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_download",
@@ -4310,7 +4427,7 @@ server <- function(input, output, session) {
   observeEvent(input$filtered_inventory_table_query_rows_selected, {
     selected_row <- input$filtered_inventory_table_query_rows_selected
     if (length(selected_row) > 0) {
-      selected_data <- filtered_inventory()[selected_row, ]
+      selected_data <- inventory()[selected_row, ]
       # 更新 SKU 输入框(生成库存图表用)
       updateTextInput(session, "query_sku", value = selected_data$SKU)
     }
@@ -4324,7 +4441,7 @@ server <- function(input, output, session) {
     if (!is.null(info) && !is.null(info$col) && !is.null(info$row)) {
       if (info$col == 2) {  # 第三列在 R 中的索引是 2
         
-        img_path <- as.character(filtered_inventory()[info$row, "ItemImagePath"])
+        img_path <- as.character(inventory()[info$row, "ItemImagePath"])
         
         img_host_path <- paste0(host_url, "/images/", basename(img_path))
         
