@@ -1063,13 +1063,17 @@ ui <- navbarPage(
           textInput("query_sku", NULL, placeholder = "请扫描或输入SKU", width = "100%"),
           actionButton("clear_query_sku_btn", "清空", icon = icon("eraser"), class = "btn btn-warning")
         ),
-        # 添加售罄筛选
-        radioButtons(
-          inputId = "query_stock_status",
-          label = "售罄物品",
-          choices = c("美国售罄" = "us", "国内售罄" = "domestic", "全库存售罄" = "all"),
-          selected = NULL,
-          inline = TRUE
+        div(
+          class = "card",
+          style = "margin-bottom: 20px; padding: 20px; border: 1px solid #DC3545; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
+          tags$h4("售罄物品", style = "color: #DC3545; font-weight: bold; margin-bottom: 15px;"),
+          radioButtons(
+            inputId = "query_stock_status",
+            label = NULL,  # 不显示默认标题，使用 h4 作为标题
+            choices = c("不过滤" = "none", "美国售罄" = "us", "国内售罄" = "domestic", "全库存售罄" = "all"),
+            selected = "none",  # 默认选择 “不过滤”
+            inline = TRUE
+          )
         )
       ),
       
