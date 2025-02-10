@@ -99,6 +99,7 @@ server <- function(input, output, session) {
     })
   })
   
+  rows_per_page = 50
   # ✅ 监听 `DT` 翻页事件
   current_page <- reactiveVal(1)
   observeEvent(input$inventory_table_query_rows_current, {
