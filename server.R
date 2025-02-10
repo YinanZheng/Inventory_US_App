@@ -64,7 +64,8 @@ server <- function(input, output, session) {
   
   ####################################################################################################################################
   
-  # ✅ **1️⃣ 统一的 SQL 过滤条件**
+  
+  # ✅ 计算 SQL 过滤条件
   filter_query <- reactive({
     maker_filter <- if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
       sprintf("AND Maker IN ('%s')", paste(input[["query_filter-maker"]], collapse = "','"))
@@ -81,21 +82,7 @@ server <- function(input, output, session) {
     return(paste(maker_filter, name_filter))
   })
   
-  # 当前页码（默认第一页）
-  current_page <- reactiveVal(1)
-  
-  # 监听 `DT` 的分页变化，更新当前页码
-  observeEvent(input$inventory_table_query_rows_current, {
-    if (!is.null(input$inventory_table_query_rows_current)) {
-      current_page(input$inventory_table_query_rows_current)
-    }
-  })
-  
-  # 计算 SQL 偏移量
-  rows_per_page <- 50  # 每页 50 行
-  
-  
-  # ✅ **2️⃣ 计算符合筛选条件的总行数**
+  # ✅ 计算符合筛选条件的总行数
   inventory_total_count <- reactive({
     query <- sprintf("SELECT COUNT(*) AS count FROM inventory WHERE 1=1 %s", filter_query())
     
@@ -112,7 +99,15 @@ server <- function(input, output, session) {
     })
   })
   
-  # ✅ **3️⃣ 计算当前页数据**
+  # ✅ 监听 `DT` 翻页事件
+  current_page <- reactiveVal(1)
+  observeEvent(input$inventory_table_query_rows_current, {
+    if (!is.null(input$inventory_table_query_rows_current)) {
+      current_page(input$inventory_table_query_rows_current)
+    }
+  })
+  
+  # ✅ 计算当前页数据
   inventory <- reactive({
     offset <- (current_page() - 1) * rows_per_page
     query <- sprintf("
@@ -136,7 +131,7 @@ server <- function(input, output, session) {
     })
   })
   
-  # ✅ **4️⃣ 确保前端 `DT::renderDT()` 支持分页**
+  # ✅ 让 `DT::renderDT()` 获取 `recordsTotal`，确保正确分页
   output$filtered_inventory_table_query <- renderDT({
     datatable(
       inventory(),  # 只加载当前页数据
@@ -146,12 +141,23 @@ server <- function(input, output, session) {
         lengthMenu = c(50, 100, 200),  # 用户可调整每页行数
         searching = TRUE,     # 允许搜索
         processing = TRUE,     # 显示“加载中”指示
-        recordsTotal = inventory_total_count(),  # 传递总行数，确保分页正确
-        recordsFiltered = inventory_total_count()  # 确保 `DT` 知道符合筛选条件的行数
-      )
+        drawCallback = JS("
+        function(settings) { 
+          Shiny.setInputValue('inventory_table_query_rows_current', 
+            settings._iDisplayStart / settings._iDisplayLength + 1, 
+            {priority: 'event'}
+          ); 
+        }
+      ")
+      ),
+      callback = JS(sprintf("
+      function(settings, json) {
+        json.recordsTotal = %d;
+        json.recordsFiltered = %d;
+      }
+    ", inventory_total_count(), inventory_total_count()))
     )
   })
-  
   
   
   # # 库存表
