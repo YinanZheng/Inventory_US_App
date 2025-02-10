@@ -18,9 +18,6 @@ server <- function(input, output, session) {
   # 触发unique_items_data刷新
   unique_items_data_refresh_trigger <- reactiveVal(FALSE)
   
-  # 触发inventory刷新
-  inventory_refresh_trigger <- reactiveVal(FALSE)
-  
   # 触发order刷新
   orders_refresh_trigger <- reactiveVal(FALSE)
   
@@ -63,131 +60,11 @@ server <- function(input, output, session) {
   update_label_status_column(con)
   
   ####################################################################################################################################
-  
-  
-  
-  
-  
-  # ✅ 监听 `DT` 翻页事件，确保 `current_page()` 更新
-  current_page <- reactiveVal(1)
-  observeEvent(input$filtered_inventory_table_query_rows_current, {
-    if (!is.null(input$filtered_inventory_table_query_rows_current)) {
-      current_page(as.integer(input$filtered_inventory_table_query_rows_current))  # 确保是整数
-    }
+
+  # 库存表
+  inventory <- reactive({
+    dbGetQuery(con, "SELECT * FROM inventory")
   })
-  
-  # ✅ 获取 `inventory` 总行数
-  inventory_total_count <- reactive({
-    query <- "SELECT COUNT(*) AS count FROM inventory"
-    
-    tryCatch({
-      result <- dbGetQuery(con, query)
-      
-      # **确保 result 是 data.frame，并包含 `count` 列**
-      if (is.data.frame(result) && "count" %in% colnames(result) && nrow(result) > 0) {
-        return(as.integer(result$count[1]))  # **返回整数**
-      } else {
-        return(0)  # **如果查询为空，返回 0**
-      }
-    }, error = function(e) {
-      showNotification(paste("查询库存总数时发生错误：", e$message), type = "error")
-      return(0)  # **查询失败时返回 0**
-    })
-  })
-  
-  # ✅ 计算当前页数据，修正 SQL 语法错误
-  inventory_data <- reactive({
-    offset <- (current_page() - 1) * 50  # 每页 50 行，确保是整数
-    limit <- 50  # 固定 LIMIT
-    
-    # **使用 `sprintf()` 确保 SQL 语法正确**
-    query <- sprintf("
-    SELECT SKU, Maker, ItemName, ProductCost, ShippingCost, Quantity, DomesticQuantity, TransitQuantity, UsQuantity
-    FROM inventory
-    ORDER BY updated_at DESC
-    LIMIT %d OFFSET %d", as.integer(limit), as.integer(offset))
-    
-    tryCatch({
-      result <- dbGetQuery(con, query)
-      
-      if (is.null(result) || !is.data.frame(result) || nrow(result) == 0) {
-        return(data.frame())  # **返回空表**
-      }
-      
-      return(result)  # **返回 `data.frame()`**
-    }, error = function(e) {
-      showNotification(paste("查询库存表时发生错误：", e$message), type = "error")
-      return(data.frame())  # **查询失败时返回空表**
-    })
-  })
-  
-  # ✅ 渲染 `DT`，仅支持搜索 + 分页
-  output$filtered_inventory_table_query <- renderDT({
-    datatable(
-      inventory_data(),  # 只加载当前页数据
-      options = list(
-        server = TRUE,       # 启用服务器端分页
-        pageLength = 50,     # 默认每页 50 行
-        lengthMenu = c(50, 100, 200),  # 用户可调整每页行数
-        searching = TRUE,     # **启用前端搜索框**
-        processing = TRUE,     # 显示“加载中”指示
-        drawCallback = JS("
-        function(settings) { 
-          Shiny.setInputValue('filtered_inventory_table_query_rows_current', 
-            settings._iDisplayStart / settings._iDisplayLength + 1, 
-            {priority: 'event'}
-          ); 
-        }
-      ")
-      )
-    )
-  })
-  
-  
-  
-  
-  # # 库存表
-  # inventory <- reactive({
-  #   # 当 refresh_trigger 改变时触发更新
-  #   inventory_refresh_trigger()
-  #   
-  #   tryCatch({
-  #     # 从 unique_items 表中计算聚合数据并一次性更新
-  #     dbExecute(
-  #       con,
-  #       "
-  #       UPDATE inventory i
-  #       JOIN (
-  #         SELECT 
-  #           SKU,
-  #           AVG(ProductCost) AS AvgProductCost,
-  #           AVG(DomesticShippingCost + IntlShippingCost) AS AvgShippingCost,
-  #           SUM(Status IN ('国内入库', '国内出库', '美国入库')) AS TotalQuantity,
-  #           SUM(Status = '国内入库') AS DomesticQuantity,
-  #           SUM(Status = '国内出库') AS TransitQuantity,
-  #           SUM(Status = '美国入库') AS UsQuantity
-  #         FROM unique_items
-  #         GROUP BY SKU
-  #       ) u ON i.SKU = u.SKU
-  #       SET 
-  #         i.ProductCost = ROUND(u.AvgProductCost, 2),
-  #         i.ShippingCost = ROUND(u.AvgShippingCost, 2),
-  #         i.Quantity = u.TotalQuantity,
-  #         i.DomesticQuantity = u.DomesticQuantity,
-  #         i.TransitQuantity = u.TransitQuantity,
-  #         i.UsQuantity = u.UsQuantity
-  #       "
-  #     )
-  #     
-  #     # 从 inventory 表中加载最新数据
-  #     updated_inventory <- dbGetQuery(con, "SELECT * FROM inventory")
-  #     return(updated_inventory)
-  #     
-  #   }, error = function(e) {
-  #     showNotification(paste("更新库存表时发生错误：", e$message), type = "error")
-  #     return(create_empty_inventory())  # 返回空的 inventory 数据表
-  #   })
-  # })
   
   # 商品名自动联想
   item_names <- reactive({
@@ -571,30 +448,30 @@ server <- function(input, output, session) {
     data
   })
   
-  # # 查询页过滤-库存表
-  # filtered_inventory <- reactive({
-  #   req(inventory())
-  #   result <- inventory()
-  #   
-  #   # Return empty inventory if no results
-  #   if (nrow(result) == 0) {
-  #     return(create_empty_inventory())
-  #   }
-  #   
-  #   # 按供应商筛选
-  #   if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
-  #     result <- result %>% filter(Maker %in% input[["query_filter-maker"]])
-  #   }
-  #   
-  #   # 按商品名称筛选
-  #   if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
-  #     result <- result %>% filter(ItemName == input[["query_filter-name"]])
-  #   }
-  #   
-  #   result <- result[order(result$updated_at, decreasing = TRUE), ]
-  #   
-  #   return(result)
-  # })
+  # 查询页过滤-库存表
+  filtered_inventory <- reactive({
+    req(inventory())
+    result <- inventory()
+
+    # Return empty inventory if no results
+    if (nrow(result) == 0) {
+      return(create_empty_inventory())
+    }
+
+    # 按供应商筛选
+    if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
+      result <- result %>% filter(Maker %in% input[["query_filter-maker"]])
+    }
+
+    # 按商品名称筛选
+    if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
+      result <- result %>% filter(ItemName == input[["query_filter-name"]])
+    }
+
+    result <- result[order(result$updated_at, decreasing = TRUE), ]
+
+    return(result)
+  })
   
   # 下载页过滤
   filtered_unique_items_data_download <- reactive({
@@ -689,28 +566,28 @@ server <- function(input, output, session) {
                                                                                                           dom = 'lftip')))
   
   # 查询分页库存表
-  # output$filtered_inventory_table_query <- renderDT({  # input$filtered_inventory_table_query_rows_selected
-  #   column_mapping <- list(
-  #     SKU = "条形码",
-  #     ItemName = "商品名",
-  #     ItemImagePath = "商品图",
-  #     Maker = "供应商",
-  #     MajorType = "大类",
-  #     MinorType = "小类",
-  #     Quantity = "总库存数",
-  #     DomesticQuantity = "国内库存数",
-  #     TransitQuantity = "在途库存数",
-  #     UsQuantity = "美国库存数",
-  #     ProductCost = "平均成本",
-  #     ShippingCost = "平均运费"
-  #   )
-  #   
-  #   render_table_with_images(
-  #     data = filtered_inventory(),
-  #     column_mapping = column_mapping,
-  #     image_column = "ItemImagePath"  # Specify the image column
-  #   )$datatable
-  # })
+  output$filtered_inventory_table_query <- renderDT({  # input$filtered_inventory_table_query_rows_selected
+    column_mapping <- list(
+      SKU = "条形码",
+      ItemName = "商品名",
+      ItemImagePath = "商品图",
+      Maker = "供应商",
+      MajorType = "大类",
+      MinorType = "小类",
+      Quantity = "总库存数",
+      DomesticQuantity = "国内库存数",
+      TransitQuantity = "在途库存数",
+      UsQuantity = "美国库存数",
+      ProductCost = "平均成本",
+      ShippingCost = "平均运费"
+    )
+
+    render_table_with_images(
+      data = filtered_inventory(),
+      column_mapping = column_mapping,
+      image_column = "ItemImagePath"  # Specify the image column
+    )$datatable
+  })
   
   # 下载分页物品表
   unique_items_table_download_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_download",
@@ -4407,7 +4284,7 @@ server <- function(input, output, session) {
   observeEvent(input$filtered_inventory_table_query_rows_selected, {
     selected_row <- input$filtered_inventory_table_query_rows_selected
     if (length(selected_row) > 0) {
-      selected_data <- inventory()[selected_row, ]
+      selected_data <- filtered_inventory()[selected_row, ]
       # 更新 SKU 输入框(生成库存图表用)
       updateTextInput(session, "query_sku", value = selected_data$SKU)
     }
@@ -4421,7 +4298,7 @@ server <- function(input, output, session) {
     if (!is.null(info) && !is.null(info$col) && !is.null(info$row)) {
       if (info$col == 2) {  # 第三列在 R 中的索引是 2
         
-        img_path <- as.character(inventory()[info$row, "ItemImagePath"])
+        img_path <- as.character(filtered_inventory()[info$row, "ItemImagePath"])
         
         img_host_path <- paste0(host_url, "/images/", basename(img_path))
         
