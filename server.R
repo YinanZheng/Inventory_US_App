@@ -3716,6 +3716,8 @@ server <- function(input, output, session) {
     ))
   })
   
+  query_soldout_selected_sku <- reactiveVal()
+  
   # 监听鼠标右键 selected_inventory_row，并获取用户点击的 SKU。
   observeEvent(input$selected_inventory_row, {
     req(input$selected_inventory_row)
@@ -3731,12 +3733,12 @@ server <- function(input, output, session) {
       showNotification(paste("选中 SKU:", selected_sku, "商品名:", selected_item_name), type = "message")
       
       # 存储到 reactiveVal，后续用于采购请求 / 出库请求
-      selected_sku_reactive(selected_sku)
+      query_soldout_selected_sku(selected_sku)
     }
   })
   
   observeEvent(input$query_purchase_request, {
-    req(selected_sku_reactive())
+    req(query_soldout_selected_sku())
     
     showModal(modalDialog(
       title = "创建采购请求",
@@ -3750,7 +3752,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$query_confirm_purchase, {
-    req(selected_sku_reactive(), input$query_purchase_qty)
+    req(query_soldout_selected_sku(), input$query_purchase_qty)
     
     # 数据库操作：插入采购请求
     dbExecute(con, "
@@ -3758,7 +3760,7 @@ server <- function(input, output, session) {
     VALUES (?, ?, ?, ?, '待处理', '采购', NOW(), ?)",
               params = list(
                 uuid::UUIDgenerate(),
-                selected_sku_reactive(),
+                query_soldout_selected_sku(),
                 "供应商名称",  # 这里可以获取供应商
                 input$query_purchase_qty,
                 input$query_purchase_remark
@@ -3771,7 +3773,7 @@ server <- function(input, output, session) {
   
   
   observeEvent(input$query_outbound_request, {
-    req(selected_sku_reactive())
+    req(query_soldout_selected_sku())
     
     showModal(modalDialog(
       title = "创建出库请求",
@@ -3785,7 +3787,7 @@ server <- function(input, output, session) {
   })
   
   observeEvent(input$query_confirm_outbound, {
-    req(selected_sku_reactive(), input$query_outbound_qty)
+    req(query_soldout_selected_sku(), input$query_outbound_qty)
     
     # 数据库操作：插入出库请求
     dbExecute(con, "
@@ -3793,7 +3795,7 @@ server <- function(input, output, session) {
     VALUES (?, ?, ?, ?, '待处理', '出库', NOW(), ?)",
               params = list(
                 uuid::UUIDgenerate(),
-                selected_sku_reactive(),
+                query_soldout_selected_sku(),
                 "供应商名称",
                 input$query_outbound_qty,
                 input$query_outbound_remark
