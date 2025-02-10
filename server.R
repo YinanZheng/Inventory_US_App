@@ -3750,12 +3750,12 @@ server <- function(input, output, session) {
       title = "创建采购请求",
       
       div(
-        style = "display: flex; flex-direction: row; align-items: flex-start; gap: 20px; margin-bottom: 15px;",
+        style = "display: flex; flex-direction: row; align-items: center; gap: 20px; margin-bottom: 15px;",
         
         # 左侧：商品图片 + 详情
         div(
           style = "flex: 0 0 40%; text-align: center;",
-          tags$img(src = details$image, style = "width: 180px; height: 180px; object-fit: cover; border-radius: 8px;"),
+          tags$img(src = details$image, style = "width: 150px; height: auto; object-fit: contain; border-radius: 8px;"),
           div(
             tags$h4(details$name, style = "margin-top: 10px; color: #007BFF;"),
             tags$p(paste("SKU:", details$sku), style = "margin: 0; font-weight: bold;"),
@@ -3765,9 +3765,9 @@ server <- function(input, output, session) {
         
         # 右侧：采购数量 + 备注
         div(
-          style = "flex: 0 0 60%;",
-          numericInput("purchase_qty", "采购数量", value = 1, min = 1, width = "100%"),
-          textAreaInput("purchase_remark", "备注", "", width = "100%", height = "80px")
+          style = "flex: 0 0 50%;",
+          numericInput("purchase_qty", "采购数量", value = 1, min = 1, width = "80%"),
+          textAreaInput("purchase_remark", "备注", "", width = "80%", height = "80px")
         )
       ),
       
