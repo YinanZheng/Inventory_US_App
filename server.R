@@ -777,17 +777,11 @@ server <- function(input, output, session) {
         item_image_path <- ifelse(is.na(filtered_data$ItemImagePath[1]), placeholder_150px_path, filtered_data$ItemImagePath[1])
         item_description <- ifelse(is.na(filtered_data$ItemName[1]), "未知", filtered_data$ItemName[1])
         
-        # 获取用户输入的留言，保持空值为 NULL
-        raw_remark <- input$request_remark
-        formatted_remark <- if (raw_remark == "" || is.null(raw_remark)) NA_character_ else {
-          remark_prefix <- if (system_type == "cn") "[京]" else "[圳]"  # 根据系统类型添加前缀
-          paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ": ", remark_prefix, " ", raw_remark)
-        }
-        
         dbExecute(con, 
                   "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType) 
          VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, ?)", 
-                  params = list(request_id, filtered_data$SKU, filtered_data$Maker, item_image_path, item_description, input$request_quantity, formatted_remark, request_type))
+                  params = list(request_id, filtered_data$SKU, filtered_data$Maker, item_image_path, item_description, 
+                                input$request_quantity, format_remark(input$request_remark, system_type), request_type))
         
         bind_buttons(request_id, requests_data(), input, output, session, con)
         
@@ -832,18 +826,11 @@ server <- function(input, output, session) {
     # 生成唯一 RequestID
     request_id <- uuid::UUIDgenerate()
     
-    # 获取用户输入的留言，保持空值为 NULL
-    raw_remark <- input$custom_remark
-    formatted_remark <- if (raw_remark == "" || is.null(raw_remark)) NA_character_ else {
-      remark_prefix <- if (system_type == "cn") "[京]" else "[圳]"  # 根据系统类型添加前缀
-      paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ": ", remark_prefix, " ", raw_remark)
-    }
-    
     # 将数据插入到数据库
     dbExecute(con, 
               "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType) 
              VALUES (?, ?, '待定', ?, ?, ?, '待处理', ?, '采购')", 
-              params = list(request_id, "New-Request", custom_image_path, custom_description, custom_quantity, formatted_remark))
+              params = list(request_id, "New-Request", custom_image_path, custom_description, custom_quantity, format_remark(input$custom_remark, system_type)))
     
     bind_buttons(request_id, requests_data(), input, output, session, con) #绑定按钮逻辑
     
@@ -1940,12 +1927,6 @@ server <- function(input, output, session) {
           # 获取请求数量
           qty <- input[[paste0("outbound_qty_", sku)]]
           domestic_stock <- item$DomesticStock  # 国内现存库存数
-          
-          # 获取留言
-          remark <- input[[paste0("outbound_remark_input_", sku)]]
-          remark_prefix <- if (system_type == "cn") "[京]" else "[圳]"
-          new_remark <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ": ", remark_prefix, " ", remark)
-          
           request_id <- uuid::UUIDgenerate()
           
           tryCatch({
@@ -1962,7 +1943,7 @@ server <- function(input, output, session) {
                           item$ItemImagePath,
                           item$ItemName,
                           outbound_qty,
-                          ifelse(remark == "", NA_character_, new_remark)
+                          format_remark(input[[paste0("outbound_remark_input_", sku)]], system_type)
                         )
               )
               showNotification(paste0("已发出出库请求，SKU：", sku, "，数量：", outbound_qty), type = "message")
@@ -2011,12 +1992,6 @@ server <- function(input, output, session) {
           
           # 获取请求数量
           qty <- input[[paste0("purchase_qty_", sku)]]
-          
-          # 获取留言
-          remark <- input[[paste0("purchase_remark_input_", sku)]]
-          remark_prefix <- if (system_type == "cn") "[京]" else "[圳]"
-          new_remark <- paste0(format(Sys.time(), "%Y-%m-%d %H:%M:%S"), ": ", remark_prefix, " ", remark)
-          
           request_id <- uuid::UUIDgenerate()
           
           tryCatch({
@@ -2031,7 +2006,7 @@ server <- function(input, output, session) {
                         item$ItemImagePath,
                         item$ItemName,
                         qty,
-                        ifelse(remark == "", NA_character_, new_remark)
+                        format_remark(input[[paste0("purchase_remark_input_", sku)]], system_type)
                       ))
             
             # 绑定按钮
@@ -3775,8 +3750,8 @@ server <- function(input, output, session) {
         # 右侧：采购数量 + 备注
         div(
           style = "flex: 0 0 50%;",
-          numericInput("purchase_qty", "采购数量", value = 1, min = 1, width = "80%"),
-          textAreaInput("purchase_remark", "备注", "", width = "80%", height = "80px")
+          numericInput("query_purchase_qty", "采购数量", value = 1, min = 1, width = "80%"),
+          textAreaInput("query_purchase_remark", "备注", "", width = "80%", height = "80px")
         )
       ),
       
@@ -3802,7 +3777,7 @@ server <- function(input, output, session) {
                 details$sku,
                 details$maker,
                 input$query_purchase_qty,
-                input$query_purchase_remark
+                format_remark(input$query_purchase_remark, system_type) 
               )
     )
     
@@ -3841,8 +3816,8 @@ server <- function(input, output, session) {
         # 右侧：出库数量 + 备注
         div(
           style = "flex: 0 0 50%; display: flex; flex-direction: column; gap: 10px;",
-          numericInput("outbound_qty", "出库数量", value = 1, min = 1, max = details$domestic_stock, width = "80%"),
-          textAreaInput("outbound_remark", "备注", "", width = "80%", height = "80px")
+          numericInput("query_outbound_qty", "出库数量", value = 1, min = 1, max = details$domestic_stock, width = "80%"),
+          textAreaInput("query_outbound_remark", "备注", "", width = "80%", height = "80px")
         )
       ),
       
@@ -3873,8 +3848,8 @@ server <- function(input, output, session) {
                 request_id,
                 details$sku,
                 details$maker,
-                input$outbound_qty,
-                input$outbound_remark
+                input$query_outbound_qty,
+                format_remark(input$query_outbound_remark, system_type)
               )
     )
     
