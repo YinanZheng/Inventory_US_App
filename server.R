@@ -64,40 +64,22 @@ server <- function(input, output, session) {
   
   ####################################################################################################################################
   
-  
-  # **计算符合筛选条件的总行数**
-  inventory_total_count <- reactive({
+  # ✅ **1️⃣ 统一的 SQL 过滤条件**
+  filter_query <- reactive({
     maker_filter <- if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
-      paste0("AND Maker IN ('", paste(input[["query_filter-maker"]], collapse = "','"), "')")
+      sprintf("AND Maker IN ('%s')", paste(input[["query_filter-maker"]], collapse = "','"))
     } else {
       ""
     }
     
     name_filter <- if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
-      paste0("AND ItemName LIKE '%%", input[["query_filter-name"]], "%%'")
+      sprintf("AND ItemName LIKE '%%%s%%'", input[["query_filter-name"]])
     } else {
       ""
     }
     
-    query <- sprintf("
-    SELECT COUNT(*) AS count FROM inventory
-    WHERE 1=1 %s %s", maker_filter, name_filter)
-    
-    tryCatch({
-      result <- dbGetQuery(con, query)
-      
-      # **确保 result 是 `data.frame` 且包含 `count` 列**
-      if (is.data.frame(result) && "count" %in% colnames(result) && nrow(result) > 0) {
-        return(as.numeric(result$count[1]))  # **转换为数值，防止 `pull()` 报错**
-      } else {
-        return(0)  # **如果查询为空，返回 `0`**
-      }
-    }, error = function(e) {
-      showNotification(paste("查询库存总数时发生错误：", e$message), type = "error")
-      return(0)  # **查询失败时返回 `0`**
-    })
+    return(paste(maker_filter, name_filter))
   })
-  
   
   # 当前页码（默认第一页）
   current_page <- reactiveVal(1)
@@ -112,39 +94,41 @@ server <- function(input, output, session) {
   # 计算 SQL 偏移量
   rows_per_page <- 50  # 每页 50 行
   
-  # **查询 `inventory` 表（带分页 & 过滤）**
+  
+  # ✅ **2️⃣ 计算符合筛选条件的总行数**
+  inventory_total_count <- reactive({
+    query <- sprintf("SELECT COUNT(*) AS count FROM inventory WHERE 1=1 %s", filter_query())
+    
+    tryCatch({
+      result <- dbGetQuery(con, query)
+      if (is.data.frame(result) && "count" %in% colnames(result) && nrow(result) > 0) {
+        return(as.numeric(result$count[1]))  # **返回总行数**
+      } else {
+        return(0)  # **如果查询为空，返回 0**
+      }
+    }, error = function(e) {
+      showNotification(paste("查询库存总数时发生错误：", e$message), type = "error")
+      return(0)  # **查询失败时返回 0**
+    })
+  })
+  
+  # ✅ **3️⃣ 计算当前页数据**
   inventory <- reactive({
     offset <- (current_page() - 1) * rows_per_page
-    
-    maker_filter <- if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
-      paste0("AND Maker IN ('", paste(input[["query_filter-maker"]], collapse = "','"), "')")
-    } else {
-      ""
-    }
-    
-    name_filter <- if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
-      paste0("AND ItemName LIKE '%%", input[["query_filter-name"]], "%%'")
-    } else {
-      ""
-    }
-    
     query <- sprintf("
     SELECT SKU, Maker, ItemName, ProductCost, ShippingCost, Quantity, DomesticQuantity, TransitQuantity, UsQuantity
     FROM inventory
-    WHERE 1=1 %s %s
+    WHERE 1=1 %s
     ORDER BY updated_at DESC
     LIMIT %d OFFSET %d",
-                     maker_filter, name_filter, rows_per_page, offset
+                     filter_query(), rows_per_page, offset
     )
     
     tryCatch({
       result <- dbGetQuery(con, query)
-      
-      # **确保返回 `data.frame`，即使数据为空**
       if (is.null(result) || !is.data.frame(result) || nrow(result) == 0) {
         return(data.frame())  # **返回空表，防止 `nrow()` 崩溃**
       }
-      
       return(result)
     }, error = function(e) {
       showNotification(paste("查询库存表时发生错误：", e$message), type = "error")
@@ -152,7 +136,7 @@ server <- function(input, output, session) {
     })
   })
   
-  # **前端表格渲染**
+  # ✅ **4️⃣ 确保前端 `DT::renderDT()` 支持分页**
   output$filtered_inventory_table_query <- renderDT({
     datatable(
       inventory(),  # 只加载当前页数据
@@ -162,22 +146,13 @@ server <- function(input, output, session) {
         lengthMenu = c(50, 100, 200),  # 用户可调整每页行数
         searching = TRUE,     # 允许搜索
         processing = TRUE,     # 显示“加载中”指示
-        drawCallback = JS(sprintf("
-        function(settings) { 
-          Shiny.setInputValue('inventory_table_query_rows_current', 
-            settings._iDisplayStart / settings._iDisplayLength + 1, 
-            {priority: 'event'}
-          ); 
-          settings.json.recordsTotal = %d;
-          settings.json.recordsFiltered = %d;
-        }
-      ", inventory_total_count(), inventory_total_count()))
+        recordsTotal = inventory_total_count(),  # 传递总行数，确保分页正确
+        recordsFiltered = inventory_total_count()  # 确保 `DT` 知道符合筛选条件的行数
       )
     )
   })
   
   
-
   
   # # 库存表
   # inventory <- reactive({
