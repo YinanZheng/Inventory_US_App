@@ -163,6 +163,8 @@ server <- function(input, output, session) {
     makers_items_map(makers_items)  # 更新 reactiveVal
   })
   
+  ####################################################################################################################################
+  
   # 订单表
   orders <- reactive({
     # 当 refresh_trigger 改变时触发更新
@@ -1929,14 +1931,15 @@ server <- function(input, output, session) {
           qty <- input[[paste0("outbound_qty_", sku)]]
           domestic_stock <- item$DomesticStock  # 国内现存库存数
           request_id <- uuid::UUIDgenerate()
+          formatted_remark <- format_remark(input[[paste0("outbound_remark_input_", sku)]], system_type)
           
           tryCatch({
             # **出库请求：只出库实际有的库存**
             outbound_qty <- min(qty, domestic_stock)  # 出库数量不能超过现有库存
             if (outbound_qty > 0) {
               dbExecute(con,
-                        "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
-         VALUES (?, ?, ?, ?, ?, ?, '待处理', '出库', NOW(), ?)",
+                        "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
+         VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '出库')",
                         params = list(
                           request_id,
                           sku,
@@ -1944,7 +1947,7 @@ server <- function(input, output, session) {
                           item$ItemImagePath,
                           item$ItemName,
                           outbound_qty,
-                          format_remark(input[[paste0("outbound_remark_input_", sku)]], system_type)
+                          formatted_remark
                         )
               )
               showNotification(paste0("已发出出库请求，SKU：", sku, "，数量：", outbound_qty), type = "message")
@@ -1960,8 +1963,8 @@ server <- function(input, output, session) {
             if (purchase_qty > 0) {
               purchase_request_id <- uuid::UUIDgenerate()
               dbExecute(con,
-                        "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
-         VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW(), ?)",
+                        "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
+         VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '采购')",
                         params = list(
                           purchase_request_id,
                           sku,
@@ -1969,7 +1972,7 @@ server <- function(input, output, session) {
                           item$ItemImagePath,
                           item$ItemName,
                           purchase_qty,
-                          ifelse(remark == "", NA_character_, new_remark)
+                          formatted_remark
                         )
               )
               showNotification(paste0("超出国内库存部分已创建采购请求，SKU：", sku, "，数量：", purchase_qty), type = "warning")
@@ -1998,8 +2001,8 @@ server <- function(input, output, session) {
           tryCatch({
             # 插入采购请求到数据库
             dbExecute(con,
-                      "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, RequestType, CreatedAt, Remarks)
-                     VALUES (?, ?, ?, ?, ?, ?, '待处理', '采购', NOW(), ?)",
+                      "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
+                     VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '采购')",
                       params = list(
                         request_id,
                         sku,
