@@ -3835,7 +3835,7 @@ server <- function(input, output, session) {
     request_id <- uuid::UUIDgenerate()
     
     # 如果用户输入的出库数量大于国内库存，禁止提交
-    if (input$outbound_qty > details$domestic_stock) {
+    if (input$query_outbound_qty > details$domestic_stock) {
       showNotification("出库数量不能大于国内库存数！", type = "error")
       return()
     }
