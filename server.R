@@ -456,24 +456,34 @@ server <- function(input, output, session) {
   filtered_inventory <- reactive({
     req(inventory())
     result <- inventory()
-
+    
     # Return empty inventory if no results
     if (nrow(result) == 0) {
       return(create_empty_inventory())
     }
-
+    
     # 按供应商筛选
     if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
       result <- result %>% filter(Maker %in% input[["query_filter-maker"]])
     }
-
+    
     # 按商品名称筛选
     if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
       result <- result %>% filter(ItemName == input[["query_filter-name"]])
     }
-
+    
+    # 根据售罄筛选
+    if (!is.null(input$query_stock_status) && input$query_stock_status != "") {
+      if (input$query_stock_status == "us") {
+        result <- result %>% filter(UsQuantity == 0)  # 美国库存为 0
+      } else if (input$query_stock_status == "domestic") {
+        result <- result %>% filter(DomesticQuantity == 0)  # 国内库存为 0
+      } else if (input$query_stock_status == "all") {
+        result <- result %>% filter(Quantity == 0)  # 全库存售罄
+      }
+    }
+    
     result <- result[order(result$updated_at, decreasing = TRUE), ]
-
     return(result)
   })
   

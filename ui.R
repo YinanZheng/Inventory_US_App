@@ -1062,6 +1062,14 @@ ui <- navbarPage(
           tags$h4("查询商品", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
           textInput("query_sku", NULL, placeholder = "请扫描或输入SKU", width = "100%"),
           actionButton("clear_query_sku_btn", "清空", icon = icon("eraser"), class = "btn btn-warning")
+        ),
+        # 添加售罄筛选
+        radioButtons(
+          inputId = "query_stock_status",
+          label = "售罄物品",
+          choices = c("美国售罄" = "us", "国内售罄" = "domestic", "全库存售罄" = "all"),
+          selected = NULL,
+          inline = TRUE
         )
       ),
       
