@@ -84,17 +84,20 @@ server <- function(input, output, session) {
     WHERE 1=1 %s %s", maker_filter, name_filter)
     
     tryCatch({
-      result <- dbGetQuery(con, query)  # 查询数据库
-      if (nrow(result) > 0) {
-        return(as.numeric(result$count[1]))  # 确保返回的是数值
+      result <- dbGetQuery(con, query)
+      
+      # **确保 result 是 `data.frame` 且包含 `count` 列**
+      if (is.data.frame(result) && "count" %in% colnames(result) && nrow(result) > 0) {
+        return(as.numeric(result$count[1]))  # **转换为数值，防止 `pull()` 报错**
       } else {
-        return(0)  # 如果查询结果为空，则返回 0
+        return(0)  # **如果查询为空，返回 `0`**
       }
     }, error = function(e) {
       showNotification(paste("查询库存总数时发生错误：", e$message), type = "error")
-      return(0)  # 避免 R 崩溃
+      return(0)  # **查询失败时返回 `0`**
     })
   })
+  
   
   # 当前页码（默认第一页）
   current_page <- reactiveVal(1)
@@ -113,21 +116,18 @@ server <- function(input, output, session) {
   inventory <- reactive({
     offset <- (current_page() - 1) * rows_per_page
     
-    # 处理 Maker 过滤条件
     maker_filter <- if (!is.null(input[["query_filter-maker"]]) && length(input[["query_filter-maker"]]) > 0 && any(input[["query_filter-maker"]] != "")) {
       paste0("AND Maker IN ('", paste(input[["query_filter-maker"]], collapse = "','"), "')")
     } else {
       ""
     }
     
-    # 处理 ItemName 过滤条件（修正语法错误）
     name_filter <- if (!is.null(input[["query_filter-name"]]) && input[["query_filter-name"]] != "") {
-      paste0("AND ItemName LIKE '%%", input[["query_filter-name"]], "%%'")  # **双 `%%` 转义 `%`**
+      paste0("AND ItemName LIKE '%%", input[["query_filter-name"]], "%%'")
     } else {
       ""
     }
     
-    # 构造 SQL 查询语句
     query <- sprintf("
     SELECT SKU, Maker, ItemName, ProductCost, ShippingCost, Quantity, DomesticQuantity, TransitQuantity, UsQuantity
     FROM inventory
@@ -140,18 +140,18 @@ server <- function(input, output, session) {
     tryCatch({
       result <- dbGetQuery(con, query)
       
-      # **确保 result 不是 NULL，否则 `nrow(result)` 可能会报错**
-      if (is.null(result) || nrow(result) == 0) {
-        return(data.frame())  # **返回空表，避免 Shiny 崩溃**
+      # **确保返回 `data.frame`，即使数据为空**
+      if (is.null(result) || !is.data.frame(result) || nrow(result) == 0) {
+        return(data.frame())  # **返回空表，防止 `nrow()` 崩溃**
       }
       
       return(result)
     }, error = function(e) {
       showNotification(paste("查询库存表时发生错误：", e$message), type = "error")
-      return(data.frame())  # **查询失败时，返回空表**
+      return(data.frame())  # **查询失败时返回空表**
     })
   })
-
+  
   # **前端表格渲染**
   output$filtered_inventory_table_query <- renderDT({
     datatable(
@@ -163,18 +163,17 @@ server <- function(input, output, session) {
         searching = TRUE,     # 允许搜索
         processing = TRUE,     # 显示“加载中”指示
         drawCallback = JS(sprintf("
-          function(settings) { 
-            Shiny.setInputValue('inventory_table_query_rows_current', 
-              settings._iDisplayStart / settings._iDisplayLength + 1, 
-              {priority: 'event'}
-            ); 
-            settings.json.recordsTotal = %d;
-            settings.json.recordsFiltered = %d;
-          }
-        ", inventory_total_count(), inventory_total_count()))
+        function(settings) { 
+          Shiny.setInputValue('inventory_table_query_rows_current', 
+            settings._iDisplayStart / settings._iDisplayLength + 1, 
+            {priority: 'event'}
+          ); 
+        }
+      "))
       )
     )
   })
+  
 
   
   # # 库存表
