@@ -84,6 +84,7 @@ server <- function(input, output, session) {
     # **检查是否需要更新**（返回最近更新时间）
     checkFunc = function() {
       dbGetQuery(con, "SELECT MAX(updated_at) FROM unique_items")[[1]]
+      unique_items_data_refresh_trigger()
     },
     
     # **获取最新数据**
@@ -149,6 +150,13 @@ server <- function(input, output, session) {
         i.TransitQuantity = u.TransitQuantity,
         i.UsQuantity = u.UsQuantity
     ")
+      
+      # **删除 `inventory` 中 SKU 在 `unique_items` 中不存在的物品**
+      dbExecute(con, "
+      DELETE FROM inventory 
+      WHERE SKU NOT IN (SELECT DISTINCT SKU FROM unique_items)
+    ")
+      
       return(result)
     }
   )
@@ -944,7 +952,7 @@ server <- function(input, output, session) {
         update_status_value = "美国入库",
         count_label = "待入库数", 
         count_field = "PendingQuantity", 
-        refresh_trigger = unique_items_data_refresh_trigger,      
+        refresh_trigger = NULL,      
         con,                  
         input, output, session
       )
@@ -999,7 +1007,7 @@ server <- function(input, output, session) {
         update_status_value = "美国入库",
         count_label = "待入库数", 
         count_field = "PendingQuantity", 
-        refresh_trigger = unique_items_data_refresh_trigger,      
+        refresh_trigger = NULL,      
         con,                  
         input, output, session
       )
@@ -1032,8 +1040,6 @@ server <- function(input, output, session) {
       }
     }
 
-    unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-    
     # 重置输入
     updateTextInput(session, "inbound_sku", value = "")
     updateNumericInput(session, "inbound_quantity", value = 1)
@@ -1444,7 +1450,7 @@ server <- function(input, output, session) {
         con = con,
         unique_id = next_item$UniqueID,
         new_status = "美国发货",
-        refresh_trigger = unique_items_data_refresh_trigger
+        refresh_trigger = NULL
       )
       
       # 清空输入框
@@ -1712,8 +1718,7 @@ server <- function(input, output, session) {
       
       # 更新数据并触发 UI 刷新
       orders_refresh_trigger(!orders_refresh_trigger())
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-      
+
       sku_list_str <- paste0("'", paste(unique(items$SKU), collapse = "','"), "'")  # 转换为 SQL 格式
       
       # **手动查询仅包含需要的 SKU 的最新数据**
@@ -1734,11 +1739,11 @@ server <- function(input, output, session) {
       outbound_items <- list()  # 临时列表存储需要出库的物品
       
       for (sku in unique(items$SKU)) {
-        adjust_inventory_quantity(
-          con = con,
-          sku = sku,
-          adjustment = -nrow(items %>% filter(SKU == sku))
-        )
+        # adjust_inventory_quantity(
+        #   con = con,
+        #   sku = sku,
+        #   adjustment = -nrow(items %>% filter(SKU == sku))
+        # )
         
         # 检查库存
         result <- latest_unique_items %>%
@@ -2231,7 +2236,7 @@ server <- function(input, output, session) {
           
           if (nrow(original_state) > 0) {
             # 恢复库存数量
-            adjust_inventory_quantity(con, item$SKU, adjustment = 1)  # 增加库存数量
+            # adjust_inventory_quantity(con, item$SKU, adjustment = 1)  # 增加库存数量
             
             # 恢复物品状态
             update_status(
@@ -2265,7 +2270,6 @@ server <- function(input, output, session) {
       showNotification(message, type = "message")
       
       # 更新数据并触发 UI 刷新
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       orders_refresh_trigger(!orders_refresh_trigger())
       
       # 清空关联物品表
@@ -2364,7 +2368,6 @@ server <- function(input, output, session) {
       showNotification(paste("订单合并成功！主单号为：", main_order_id, ", 共计", nrow(sub_items), "件物品"), type = "message")
       
       # 更新数据并触发 UI 刷新
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       orders_refresh_trigger(!orders_refresh_trigger())
       
     }, error = function(e) {
@@ -2488,7 +2491,7 @@ server <- function(input, output, session) {
                     WHERE SKU = ?",
                   params = list(updated_image_path, selected_sku))
         
-        # 更新数据并触发 UI 刷新
+        # 更新inventory数据需要手动触发刷新
         unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
         
         # 显示成功通知
@@ -2552,9 +2555,6 @@ server <- function(input, output, session) {
           params = list(new_product_cost, new_shipping_cost, as.Date(new_purchase_date), unique_id)
         )
       })
-      
-      # 刷新数据表
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
       # 显示成功通知
       showNotification(paste0("成功更新了 ", nrow(selected_items), " 项物品的信息！"), type = "message")
@@ -2648,20 +2648,6 @@ server <- function(input, output, session) {
         dbExecute(con, "
               DELETE FROM item_status_history
               WHERE UniqueID = ?", params = list(unique_id))
-        
-        if (status != "采购") {  # 如果状态不是采购，调整库存
-          remaining_quantity <- adjust_inventory_quantity(con, sku, adjustment = -1)
-          
-          if (is.null(remaining_quantity)) {
-            showNotification(paste("无法调整库存，SKU:", sku), type = "error")
-          } else if (remaining_quantity == 0) {
-            # 如果库存为 0，删除 inventory 表中的该 SKU
-            dbExecute(con, "
-                      DELETE FROM inventory
-                      WHERE SKU = ?", params = list(sku))
-            showNotification(paste0(sku, "已从库存表中移除！"), type = "message")
-          }
-        }
       }
       
       dbCommit(con) # 提交事务
@@ -2669,7 +2655,7 @@ server <- function(input, output, session) {
       # 通知用户成功删除
       showNotification("物品及其历史状态记录删除成功！", type = "message")
       
-      # 更新数据并触发 UI 刷新
+      # 删除物品需要手动触发更新inventory
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       
     }, error = function(e) {
@@ -2718,7 +2704,7 @@ server <- function(input, output, session) {
       # 遍历每个选中物品，进行状态更新和备注添加
       lapply(selected_data$UniqueID, function(unique_id) {
         # 更新状态为瑕疵
-        update_status(con, unique_id, defect_status = "瑕疵", refresh_trigger = unique_items_data_refresh_trigger)
+        update_status(con, unique_id, defect_status = "瑕疵", refresh_trigger = NULL)
         
         # 添加备注
         defect_notes <- trimws(input$manage_defective_notes)
@@ -2727,7 +2713,7 @@ server <- function(input, output, session) {
           unique_id = unique_id,
           note_content = defect_notes,
           status_label = "瑕疵",
-          refresh_trigger = unique_items_data_refresh_trigger
+          refresh_trigger = NULL
         )
       })
       
@@ -2763,7 +2749,7 @@ server <- function(input, output, session) {
       # 遍历每个选中物品，进行状态更新和备注添加
       lapply(selected_data$UniqueID, function(unique_id) {
         # 更新状态为修复
-        update_status(con, unique_id, defect_status = "修复", refresh_trigger = unique_items_data_refresh_trigger)
+        update_status(con, unique_id, defect_status = "修复", refresh_trigger = NULL)
         
         # 添加备注
         repair_notes <- trimws(input$manage_defective_notes)
@@ -2772,7 +2758,7 @@ server <- function(input, output, session) {
           unique_id = unique_id,
           note_content = repair_notes,
           status_label = "修复",
-          refresh_trigger = unique_items_data_refresh_trigger
+          refresh_trigger = NULL
         )
       })
       
@@ -3073,9 +3059,6 @@ server <- function(input, output, session) {
       # 重新计算所有balance记录
       update_balance("一般户卡", con)
       
-      # 刷新物品表
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-      
       # 清空输入框和相关字段
       updateTextInput(session, "intl_tracking_number", value = "")
       updateSelectInput(session, "intl_shipping_method", selected = "空运")
@@ -3091,9 +3074,6 @@ server <- function(input, output, session) {
     
     # 禁用挂靠按钮
     shinyjs::disable("link_tracking_btn")
-    
-    # 更新数据并触发 UI 刷新
-    unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
     
     # 关闭确认对话框
     removeModal()
@@ -3300,8 +3280,6 @@ server <- function(input, output, session) {
       )
       dbCommit(con)
       
-      # 数据刷新触发
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       showNotification("运单号挂靠成功，平摊运费已更新！", type = "message")
     }, error = function(e) {
       dbRollback(con)
@@ -3374,10 +3352,7 @@ server <- function(input, output, session) {
       # 提交事务
       dbCommit(con)
       
-      # 刷新数据触发 UI 更新
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
       showNotification("运单号已成功解除挂靠，相关物品的平摊运费已重新计算！", type = "message")
-      
     }, error = function(e) {
       # 回滚事务
       dbRollback(con)
@@ -4818,16 +4793,6 @@ server <- function(input, output, session) {
         
         # 更新选中物品瑕疵品状态
         actionButton("admin_update_defect_btn", "更新瑕疵品状态", class = "btn-info", style = "width: 100%; margin-top: 10px;"),
-        
-        tags$hr(),
-        
-        tags$h4("修改库存总数", style = "font-weight: bold; color: #FF5733;"),
-        
-        # 输入新的库存总数
-        numericInput("admin_new_total_quantity", "新库存总数：", value = 0, min = 0, width = "100%"),
-        
-        # 提交修改库存总数的按钮
-        actionButton("admin_update_inventory_btn", "修改库存总数", class = "btn-warning", style = "width: 100%; margin-top: 10px;")
       )
     } else {
       div(tags$p("请输入密码以访问管理员功能", style = "color: red; font-weight: bold; text-align: center;"))
@@ -4879,21 +4844,21 @@ server <- function(input, output, session) {
           con = con,
           unique_id = unique_id,
           new_status = new_status,
-          refresh_trigger = unique_items_data_refresh_trigger,
+          refresh_trigger = NULL,
           update_timestamp = record_timestamp  # 使用用户选择的值
         )
       })
       
       # 通知成功并刷新数据
       showNotification("库存状态更新成功！", type = "message")
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-      
+
     }, error = function(e) {
       # 捕获错误并通知用户
       showNotification(paste("库存状态更新失败：", e$message), type = "error")
     })
   })
   
+  # 更新瑕疵状态按钮
   observeEvent(input$admin_update_defect_btn, {
     req(input$admin_target_defect, unique_items_table_admin_selected_row())
     
@@ -4919,83 +4884,19 @@ server <- function(input, output, session) {
           unique_id = unique_id,
           new_status = NULL,  # 不更新物品状态
           defect_status = target_defect,  # 更新瑕疵品状态
-          refresh_trigger = unique_items_data_refresh_trigger
+          refresh_trigger = NULL
         )
       })
       
       # 通知成功并刷新数据
       showNotification("瑕疵品状态更新成功！", type = "message")
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-      
+
     }, error = function(e) {
       # 捕获错误并通知用户
       showNotification(paste("瑕疵品状态更新失败：", e$message), type = "error")
     })
   })
   
-  
-  # 更新总库存数按钮
-  observeEvent(input$admin_update_inventory_btn, {
-    # 获取点选的行数据
-    selected_rows <- unique_items_table_admin_selected_row()
-    selected_items <- unique_items_data()[selected_rows, ]
-    
-    # 校验是否有选中物品
-    if (is.null(selected_rows) || nrow(selected_items) == 0) {
-      showNotification("请先选择至少一件物品！", type = "error")
-      return()
-    }
-    
-    # 获取选中物品的 SKU 列表
-    sku_counts <- selected_items %>%
-      group_by(SKU) %>%
-      summarize(SelectedCount = n(), .groups = "drop")  # 按 SKU 聚合
-    
-    # 获取新库存总数
-    new_total_quantity <- input$admin_new_total_quantity
-    
-    # 校验库存输入
-    if (is.null(new_total_quantity) || new_total_quantity < 0) {
-      showNotification("库存总数必须为非负数！", type = "error")
-      return()
-    }
-    
-    tryCatch({
-      # 遍历每个 SKU，更新库存总数
-      lapply(1:nrow(sku_counts), function(i) {
-        sku <- sku_counts$SKU[i]
-        selected_count <- sku_counts$SelectedCount[i]
-        
-        # 检查 SKU 是否存在
-        existing_record <- dbGetQuery(con, "SELECT SKU, Quantity FROM inventory WHERE SKU = ?", params = list(sku))
-        if (nrow(existing_record) == 0) {
-          showNotification(paste0("SKU ", sku, " 不存在！"), type = "error")
-          return(NULL)
-        }
-        
-        # 更新库存总数为新值
-        dbExecute(con, "
-        UPDATE inventory
-        SET Quantity = ?
-        WHERE SKU = ?",
-                  params = list(new_total_quantity, sku)
-        )
-        
-        showNotification(
-          paste0("SKU ", sku, " 的库存总数已更新为 ", new_total_quantity, "！"),
-          type = "message"
-        )
-      })
-      
-      # 更新数据并触发 UI 刷新
-      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
-      
-    }, error = function(e) {
-      # 捕获错误并通知用户
-      showNotification(paste("修改库存总数时发生错误：", e$message), type = "error")
-    })
-  })
-
   # Disconnect from the database on app stop
   onStop(function() {
     dbDisconnect(con)
