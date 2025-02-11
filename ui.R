@@ -342,7 +342,7 @@ ui <- navbarPage(
           tabPanel(
             title = div(
               tags$span(class = "arrow-icon", icon("arrow-right")),
-              "制作完毕",
+              "已完成",
             ), 
             uiOutput("done_paid_board")
           ),
