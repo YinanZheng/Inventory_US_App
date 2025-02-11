@@ -4900,6 +4900,8 @@ server <- function(input, output, session) {
     })
   })
   
+  #########################################################################################################################
+  
   # Disconnect from the database on app stop
   onStop(function() {
     dbDisconnect(con)
