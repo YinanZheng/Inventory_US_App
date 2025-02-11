@@ -1742,12 +1742,6 @@ server <- function(input, output, session) {
       outbound_items <- list()  # 临时列表存储需要出库的物品
       
       for (sku in unique(items$SKU)) {
-        # adjust_inventory_quantity(
-        #   con = con,
-        #   sku = sku,
-        #   adjustment = -nrow(items %>% filter(SKU == sku))
-        # )
-        
         # 检查库存
         result <- latest_unique_items %>%
           filter(SKU == sku) %>%
@@ -2238,9 +2232,6 @@ server <- function(input, output, session) {
           ))
           
           if (nrow(original_state) > 0) {
-            # 恢复库存数量
-            # adjust_inventory_quantity(con, item$SKU, adjustment = 1)  # 增加库存数量
-            
             # 恢复物品状态
             update_status(
               con = con,
