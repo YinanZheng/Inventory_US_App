@@ -138,7 +138,8 @@ server <- function(input, output, session) {
           SUM(Status IN ('国内入库', '国内出库', '美国入库')) AS TotalQuantity,
           SUM(Status = '国内入库') AS DomesticQuantity,
           SUM(Status = '国内出库') AS TransitQuantity,
-          SUM(Status = '美国入库') AS UsQuantity
+          SUM(Status = '美国入库') AS UsQuantity,
+          MAX(updated_at) AS LatestUpdateTime
         FROM unique_items
         GROUP BY SKU
       ) u ON i.SKU = u.SKU
@@ -148,7 +149,8 @@ server <- function(input, output, session) {
         i.Quantity = u.TotalQuantity,
         i.DomesticQuantity = u.DomesticQuantity,
         i.TransitQuantity = u.TransitQuantity,
-        i.UsQuantity = u.UsQuantity
+        i.UsQuantity = u.UsQuantity,
+        i.updated_at = u.LatestUpdateTime
     ")
       
       # **删除 `inventory` 中 SKU 在 `unique_items` 中不存在的物品**
