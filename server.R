@@ -83,8 +83,9 @@ server <- function(input, output, session) {
     
     # **检查是否需要更新**（返回最近更新时间）
     checkFunc = function() {
-      dbGetQuery(con, "SELECT MAX(updated_at) FROM unique_items")[[1]]
-      unique_items_data_refresh_trigger()
+      db_time <- dbGetQuery(con, "SELECT MAX(updated_at) FROM unique_items")[[1]]
+      trigger_val <- unique_items_data_refresh_trigger()
+      paste(db_time, trigger_val)
     },
     
     # **获取最新数据**
