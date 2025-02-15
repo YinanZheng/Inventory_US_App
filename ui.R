@@ -93,7 +93,7 @@ ui <- navbarPage(
         position: sticky; /* 保持固定 */
         z-index: 900;
         flex: 0 0 auto; /* 固定宽度并防止被压缩 */
-        width: 350px; /* 默认宽度 */
+        width: 380px; /* 默认宽度 */
         min-width: 280px; /* 最小宽度 */
         max-width: 580px; /* 最大宽度 */
         height: calc(100vh - 70px); /* 自动计算高度 */
