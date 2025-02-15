@@ -966,7 +966,7 @@ server <- function(input, output, session) {
             var msg = new SpeechSynthesisUtterance("%s");
             msg.lang = "zh-CN";
             window.speechSynthesis.speak(msg);
-          ', item_name, nchar(item_name))
+          ', item_name)
           
           shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
         } else {
