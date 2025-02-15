@@ -4529,7 +4529,7 @@ server <- function(input, output, session) {
     
     # 重置商品名称筛选为空选项
     updateSelectizeInput(session, "download_item_name", choices = "", selected = "")
-    updateDateRangeInput(session, "download_date_range", start = Sys.Date() - 365, end = Sys.Date())
+    updateDateRangeInput(session, "download_date_range", start = Sys.Date() - 365, end = Sys.Date() + 1)
   })
   
   
