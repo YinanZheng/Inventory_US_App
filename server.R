@@ -946,7 +946,7 @@ server <- function(input, output, session) {
     # 如果启用自动入库功能，直接执行入库逻辑
     if (input$auto_inbound) {
       req(input$inbound_sku)
-      item_name <- handleOperation(
+      result <- handleOperation(
         unique_items_data(),
         operation_name = "入库", 
         sku_field = "inbound_sku",
@@ -960,13 +960,13 @@ server <- function(input, output, session) {
         input, output, session
       )
       
-      if (!is.null(item_name) && item_name != "") {
+      if (!is.null(result)) {
         if (input$speak_item_name) {  # 只有勾选“念出商品名”才朗读
           js_code <- sprintf('
             var msg = new SpeechSynthesisUtterance("%s");
             msg.lang = "zh-CN";
             window.speechSynthesis.speak(msg);
-          ', item_name)
+          ', result$item_name)
           
           shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读
         } else {
@@ -1001,7 +1001,7 @@ server <- function(input, output, session) {
     
     # 批量处理入库逻辑
     for (i in seq_len(inbound_quantity)) {
-      unique_id <- handleOperation(
+      result <- handleOperation(
         unique_items_data(),
         operation_name = "入库", 
         sku_field = "inbound_sku",
@@ -1016,7 +1016,7 @@ server <- function(input, output, session) {
       )
       
       # 如果未找到对应的 UniqueID，停止后续操作
-      if (is.null(unique_id) || unique_id == "") {
+      if (is.null(result)) {
         showNotification(paste0("此SKU第 ", i, " 件物品不存在，已中止入库！"), type = "error")
         break
       }
