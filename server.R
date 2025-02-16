@@ -2042,6 +2042,7 @@ server <- function(input, output, session) {
     zero_stock_items(list())        # 清空补货物品列表
     outbound_stock_items(list())    # 清空出库物品列表
     removeModal()                   # 关闭模态框
+    runjs("document.getElementById('us_shipping_bill_number').focus();")
   })
   
   
