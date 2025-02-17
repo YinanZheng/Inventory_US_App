@@ -2137,11 +2137,16 @@ server <- function(input, output, session) {
     
     # 渲染物品信息
     output$return_item_info <- renderUI({
+      formatted_us_shipping_time <- ifelse(
+        is.na(return_item$UsShippingTime) | return_item$UsShippingTime == "",
+        "无数据",
+        format(as.Date(return_item$UsShippingTime), "%Y-%m-%d")  # 格式化为 年-月-日
+      )
       div(
         tags$p(tags$b("SKU："), return_item$SKU),
         tags$p(tags$b("物品名称："), return_item$ItemName),
         tags$p(tags$b("当前状态："), return_item$Status),
-        tags$p(tags$b("美国发货日期："), ifelse(is.na(return_item$UsShippingTime), "未发货", return_item$UsShippingTime))
+        tags$p(tags$b("美国发货日期："), formatted_us_shipping_time)
       )
     })
     
