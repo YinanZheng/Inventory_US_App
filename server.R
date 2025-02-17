@@ -2140,7 +2140,7 @@ server <- function(input, output, session) {
       formatted_us_shipping_time <- ifelse(
         is.na(return_item$UsShippingTime) | return_item$UsShippingTime == "",
         "无数据",
-        format(as.Date(return_item$UsShippingTime), "%Y-%m-%d")  # 格式化为 年-月-日
+        return_item$UsShippingTime
       )
       div(
         tags$p(tags$b("SKU："), return_item$SKU),
