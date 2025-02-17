@@ -2084,7 +2084,8 @@ server <- function(input, output, session) {
     # 查询物品信息
     search_query <- trimws(input$return_sku)
     return_item <- unique_items_data() %>%
-      filter(SKU == search_query | grepl(search_query, ItemName, ignore.case = TRUE)) %>%
+      filter(Status == "美国发货", SKU == search_query | grepl(search_query, ItemName, ignore.case = TRUE)) %>%
+      arrange(UsShippingTime) %>%  # 按发货时间排序，优先显示最早发货的
       slice(1)  # 取匹配的第一条
     
     if (nrow(return_item) == 0) {
