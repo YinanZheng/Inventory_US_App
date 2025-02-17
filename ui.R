@@ -527,18 +527,6 @@ ui <- navbarPage(
       div(
         class = "main-panel",
         
-        # 订单信息卡片
-        div(
-          class = "card shadow-sm",
-          style = "padding: 15px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px;",
-          tags$h4("订单信息", style = "color: #007BFF; font-weight: bold; text-align: left; margin-bottom: 10px;"),
-          div(
-            style = "display: flex; align-items: center;",
-            div(style = "flex: 1; text-align: center; padding-right: 20px;", uiOutput("return_order_image")),
-            div(style = "flex: 2;", uiOutput("return_order_info"))
-          )
-        ),
-        
         # 物品信息卡片
         div(
           class = "card shadow-sm",
@@ -548,6 +536,18 @@ ui <- navbarPage(
             style = "display: flex; align-items: center;",
             div(style = "flex: 1; text-align: center; padding-right: 20px;", uiOutput("return_item_image")),
             div(style = "flex: 2;", uiOutput("return_item_info"))
+          )
+        ),
+        
+        # 订单信息卡片
+        div(
+          class = "card shadow-sm",
+          style = "padding: 15px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px;",
+          tags$h4("订单信息", style = "color: #007BFF; font-weight: bold; text-align: left; margin-bottom: 10px;"),
+          div(
+            style = "display: flex; align-items: center;",
+            div(style = "flex: 1; text-align: center; padding-right: 20px;", uiOutput("return_order_image")),
+            div(style = "flex: 2;", uiOutput("return_order_info"))
           )
         )
       )
