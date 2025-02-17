@@ -2147,6 +2147,9 @@ server <- function(input, output, session) {
     
     # 存储选中的物品 ID
     updateTextInput(session, "selected_return_id", value = return_item$UniqueID)
+    
+    # 渲染 UniqueID
+    output$selected_return_id <- renderText({ return_item$UniqueID })
   })
   
   observeEvent(input$confirm_return_btn, {
