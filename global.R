@@ -87,7 +87,7 @@ status_columns <<- list(
   "美国入库" = "UsEntryTime",
   "美国发货" = "UsShippingTime",
   "美国调货" = "UsRelocationTime",
-  "退货" = "ReturnTime"
+  "交易完毕" = "CompleteTime"
 )
 
 table_default_options <<- list(
