@@ -4537,14 +4537,7 @@ server <- function(input, output, session) {
                         jsonlite::toJSON(status_colors, auto_unbox = TRUE))
     
     
-    # 自定义布局参数
-    sankey_options <- '{
-      nodePadding: 20, 
-      nodeWidth: 30, 
-      iterations: 32,
-      dy: 10 
-    }'
-    
+    # 渲染桑基图
     sankeyNetwork(
       Links = links,
       Nodes = nodes,
@@ -4552,19 +4545,10 @@ server <- function(input, output, session) {
       Target = "target",
       Value = "value",
       NodeID = "name",
-      fontSize = 14,  # 增大字体
-      nodeWidth = 40, # 增加节点宽度
-      nodePadding = 15, # 增加节点间距
-      colourScale = JS(color_js),
-      sinksRight = FALSE,
-      margin = list(top = 20, right = 50, bottom = 20, left = 50)
-    ) %>%
-      htmlwidgets::onRender(sprintf("
-      function(el) { 
-        var sankey = d3.sankey().nodePadding(20).nodeWidth(30).iterations(32).dy(10);
-        sankey(el);
-      }
-    "))
+      fontSize = 12,
+      nodeWidth = 30,
+      colourScale = color_js
+    )
   })
   
   #################################################################
