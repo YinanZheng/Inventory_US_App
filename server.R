@@ -2077,6 +2077,9 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # 存储 UniqueID
+  selected_return_id <- reactiveVal(NULL)  
+  
   # 监听 SKU / 物品名输入框的变化，自动触发查询
   observeEvent(input$return_sku_itemname, {
     req(input$return_sku_itemname)
@@ -2146,17 +2149,17 @@ server <- function(input, output, session) {
     })
     
     # 存储选中的物品 ID
-    updateTextInput(session, "selected_return_id", value = return_item$UniqueID)
+    selected_return_id(return_item$UniqueID)
   })
   
   observeEvent(input$confirm_return_btn, {
-    req(input$selected_return_id)
+    req(selected_return_id())
     
     tryCatch({
       dbExecute(con, "
       UPDATE unique_items 
       SET OrderID = NULL, UsShippingTime = NULL, Status = '美国入库'
-      WHERE UniqueID = ?", params = list(input$selected_return_id))
+      WHERE UniqueID = ?", params = list(selected_return_id()))
       
       showNotification("退货操作成功，物品状态已更新为 '美国入库'！", type = "message")
       
@@ -2167,7 +2170,6 @@ server <- function(input, output, session) {
       output$return_order_image <- renderUI({ NULL })
       output$return_item_image <- renderUI({ NULL })
       updateTextInput(session, "return_sku_itemname", value = "")
-      updateTextInput(session, "selected_return_id", value = "")
       runjs("document.getElementById('return_sku_itemname').focus();")
     }, error = function(e) {
       showNotification(paste("退货失败:", e$message), type = "error")
