@@ -2137,6 +2137,7 @@ server <- function(input, output, session) {
     
     # 渲染物品信息
     output$return_item_info <- renderUI({
+      showNotification(return_item$UsShippingTime)
       formatted_us_shipping_time <- ifelse(
         is.na(return_item$UsShippingTime) | return_item$UsShippingTime == "",
         "无数据",
