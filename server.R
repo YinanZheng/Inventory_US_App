@@ -2070,6 +2070,111 @@ server <- function(input, output, session) {
   })
   
   
+  
+  ################################################################
+  ##                                                            ##
+  ## 退货分页                                                   ##
+  ##                                                            ##
+  ################################################################
+  
+  # 监听 SKU / 物品名输入框的变化，自动触发查询
+  observeEvent(input$return_sku, {
+    req(input$return_sku)
+    
+    # 查询物品信息
+    search_query <- trimws(input$return_sku)
+    return_item <- unique_items_data() %>%
+      filter(SKU == search_query | grepl(search_query, ItemName, ignore.case = TRUE)) %>%
+      slice(1)  # 取匹配的第一条
+    
+    if (nrow(return_item) == 0) {
+      showNotification("未找到匹配的物品！", type = "error")
+      output$return_order_info <- renderUI({ NULL })
+      output$return_item_info <- renderUI({ NULL })
+      output$return_order_image <- renderUI({ NULL })
+      output$return_item_image <- renderUI({ NULL })
+      return()
+    }
+    
+    # 物品对应订单信息
+    return_order <- orders() %>%
+      filter(OrderID == return_item$OrderID)
+    
+    # 渲染订单图片
+    output$return_order_image <- renderUI({
+      img_src <- ifelse(
+        is.na(return_order$OrderImagePath) | return_order$OrderImagePath == "",
+        placeholder_300px_path,  # 默认占位图片
+        paste0(host_url, "/images/", basename(return_order$OrderImagePath))
+      )
+      tags$img(src = img_src, height = "300px", style = "border-radius: 8px; border: 1px solid #ddd;")
+    })
+    
+    # 渲染订单信息
+    output$return_order_info <- renderUI({
+      if (nrow(return_order) == 0) {
+        return(tags$p("该物品未关联任何订单", style = "color: red; font-size: 16px;"))
+      }
+      
+      div(
+        tags$p(tags$b("订单号："), return_order$OrderID),
+        tags$p(tags$b("客户："), return_order$CustomerName),
+        tags$p(tags$b("平台："), return_order$Platform),
+        tags$p(tags$b("订单状态："), return_order$OrderStatus)
+      )
+    })
+    
+    # 渲染物品图片
+    output$return_item_image <- renderUI({
+      img_src <- ifelse(
+        is.na(return_item$ItemImagePath) | return_item$ItemImagePath == "",
+        placeholder_300px_path,  # 默认占位图片
+        paste0(host_url, "/images/", basename(return_item$ItemImagePath))
+      )
+      tags$img(src = img_src, height = "300px", style = "border-radius: 8px; border: 1px solid #ddd;")
+    })
+    
+    # 渲染物品信息
+    output$return_item_info <- renderUI({
+      div(
+        tags$p(tags$b("SKU："), return_item$SKU),
+        tags$p(tags$b("物品名称："), return_item$ItemName),
+        tags$p(tags$b("当前状态："), return_item$Status),
+        tags$p(tags$b("美国发货日期："), ifelse(is.na(return_item$UsShippingTime), "未发货", return_item$UsShippingTime))
+      )
+    })
+    
+    # 存储选中的物品 ID
+    updateTextInput(session, "selected_return_id", value = return_item$UniqueID)
+  })
+  
+  observeEvent(input$confirm_return_btn, {
+    req(input$selected_return_id)
+    
+    tryCatch({
+      dbExecute(con, "
+      UPDATE unique_items 
+      SET OrderID = NULL, UsShippingTime = NULL, Status = '美国入库'
+      WHERE UniqueID = ?", params = list(input$selected_return_id))
+      
+      showNotification("退货操作成功，物品状态已更新！", type = "message")
+      
+      # 刷新 UI
+      unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
+      output$return_order_info <- renderUI({ NULL })
+      output$return_item_info <- renderUI({ NULL })
+      output$return_order_image <- renderUI({ NULL })
+      output$return_item_image <- renderUI({ NULL })
+      updateTextInput(session, "return_sku", value = "")
+      updateTextInput(session, "selected_return_id", value = "")
+      
+    }, error = function(e) {
+      showNotification(paste("退货失败:", e$message), type = "error")
+    })
+  })
+  
+  
+  
   ##################################################################################################
   ##################################################################################################
   ##################################################################################################

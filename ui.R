@@ -516,7 +516,6 @@ ui <- navbarPage(
         class = "sticky-sidebar",
         tags$h4("退货管理", style = "color: #007BFF; font-weight: bold; margin-bottom: 10px;"),
         textInput("return_sku", "SKU / 物品名", placeholder = "输入 SKU 或物品名", width = "100%"),
-        actionButton("search_return_btn", "查询", icon = icon("search"), class = "btn-primary", style = "width: 100%; margin-top: 10px;"),
         actionButton("confirm_return_btn", "确认退货", icon = icon("undo"), class = "btn-danger", style = "width: 100%; margin-top: 10px;")
       ),
       
