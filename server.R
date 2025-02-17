@@ -2117,7 +2117,7 @@ server <- function(input, output, session) {
         return(tags$p("该物品未关联任何订单", style = "color: red; font-size: 16px;"))
       }
       
-      div(
+      div(style = "font-size: 18px; line-height: 1.8;",
         tags$p(tags$b("订单号："), return_order$OrderID),
         tags$p(tags$b("客户："), return_order$CustomerName),
         tags$p(tags$b("平台："), return_order$Platform),
@@ -2137,7 +2137,7 @@ server <- function(input, output, session) {
     
     # 渲染物品信息
     output$return_item_info <- renderUI({
-      div(
+      div(style = "font-size: 18px; line-height: 1.8;",
         tags$p(tags$b("SKU："), return_item$SKU),
         tags$p(tags$b("物品名称："), return_item$ItemName),
         tags$p(tags$b("当前状态："), return_item$Status),
@@ -2158,7 +2158,7 @@ server <- function(input, output, session) {
       SET OrderID = NULL, UsShippingTime = NULL, Status = '美国入库'
       WHERE UniqueID = ?", params = list(input$selected_return_id))
       
-      showNotification("退货操作成功，物品状态已更新！", type = "message")
+      showNotification("退货操作成功，物品状态已更新为 '美国入库'！", type = "message")
       
       # 刷新 UI
       unique_items_data_refresh_trigger(!unique_items_data_refresh_trigger())
@@ -2166,9 +2166,9 @@ server <- function(input, output, session) {
       output$return_item_info <- renderUI({ NULL })
       output$return_order_image <- renderUI({ NULL })
       output$return_item_image <- renderUI({ NULL })
-      updateTextInput(session, "return_sku", value = "")
+      updateTextInput(session, "return_sku_itemname", value = "")
       updateTextInput(session, "selected_return_id", value = "")
-      
+      runjs("document.getElementById('return_sku_itemname').focus();")
     }, error = function(e) {
       showNotification(paste("退货失败:", e$message), type = "error")
     })

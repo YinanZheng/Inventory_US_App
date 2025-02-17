@@ -517,7 +517,9 @@ ui <- navbarPage(
       div(
         class = "sticky-sidebar",
         tags$h4("退货管理", style = "color: #007BFF; font-weight: bold; margin-bottom: 10px;"),
-        textInput("return_sku", "SKU / 物品名", placeholder = "输入 SKU 或物品名", width = "100%"),
+        textInput("return_sku_itemname", "SKU / 物品名", placeholder = "输入 SKU 或物品名", width = "100%"),
+        tags$h5("物品 ID", style = "font-weight: bold; color: #007BFF;"),
+        textOutput("selected_return_id"),  # 显示 UniqueID
         actionButton("confirm_return_btn", "确认退货", icon = icon("undo"), class = "btn-danger", style = "width: 100%; margin-top: 10px;")
       ),
       
