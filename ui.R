@@ -530,7 +530,7 @@ ui <- navbarPage(
         # 物品信息卡片
         div(
           class = "card shadow-sm",
-          style = "padding: 15px; border: 1px solid #FF5733; border-radius: 8px;",
+          style = "padding: 15px; margin-bottom: 20px; border: 1px solid #FF5733; border-radius: 8px;",
           tags$h4("退货物品信息", style = "color: #FF5733; font-weight: bold; text-align: left; margin-bottom: 10px;"),
           div(
             style = "display: flex; align-items: center;",
@@ -542,8 +542,8 @@ ui <- navbarPage(
         # 订单信息卡片
         div(
           class = "card shadow-sm",
-          style = "padding: 15px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px;",
-          tags$h4("订单信息", style = "color: #007BFF; font-weight: bold; text-align: left; margin-bottom: 10px;"),
+          style = "padding: 15px; border: 1px solid #007BFF; border-radius: 8px;",
+          tags$h4("关联订单信息", style = "color: #007BFF; font-weight: bold; text-align: left; margin-bottom: 10px;"),
           div(
             style = "display: flex; align-items: center;",
             div(style = "flex: 1; text-align: center; padding-right: 20px;", uiOutput("return_order_image")),
