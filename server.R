@@ -4507,6 +4507,16 @@ server <- function(input, output, session) {
     
     links <- as.data.frame(links)
     
+    # 定义状态颜色映射
+    status_colors <- c("采购" = "lightgray",
+                       "国内入库" = "#c7e89b",
+                       "国内售出" = "#9ca695",
+                       "国内出库" = "#46a80d",
+                       "美国入库" = "#6f52ff",
+                       "美国调货" = "#529aff",
+                       "美国发货" = "#faf0d4",
+                       "交易完毕" = "#f4c7fc")
+    
     # 定义节点
     nodes <- data.frame(name = unique(c(links$source, links$target)))
     
@@ -4521,6 +4531,12 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
+    # 生成颜色映射 JS 代码
+    color_js <- sprintf("d3.scaleOrdinal().domain(%s).range(%s)",
+                        jsonlite::toJSON(names(status_colors), auto_unbox = TRUE),
+                        jsonlite::toJSON(status_colors, auto_unbox = TRUE))
+    
+    
     # 渲染桑基图
     sankeyNetwork(
       Links = links,
@@ -4530,7 +4546,8 @@ server <- function(input, output, session) {
       Value = "value",
       NodeID = "name",
       fontSize = 12,
-      nodeWidth = 30
+      nodeWidth = 30,
+      colourScale = color_js
     )
   })
   
