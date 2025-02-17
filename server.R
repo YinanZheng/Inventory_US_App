@@ -2086,7 +2086,7 @@ server <- function(input, output, session) {
     # 查询物品信息
     search_query <- trimws(input$return_sku_itemname)
     return_item <- unique_items_data() %>%
-      filter(Status == "美国发货", SKU == search_query | grepl(search_query, ItemName, ignore.case = TRUE)) %>%
+      filter(Status == "交易完毕", SKU == search_query | grepl(search_query, ItemName, ignore.case = TRUE)) %>%
       arrange(UsShippingTime) %>%  # 按发货时间排序，优先显示最早发货的
       slice(1)  # 取匹配的第一条
     
@@ -4063,8 +4063,8 @@ server <- function(input, output, session) {
             summarise(Count = n(), .groups = "drop")
           
           # 定义固定类别顺序和颜色
-          status_levels <- c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国调货", "美国发货", "退货")
-          status_colors <- c("lightgray", "#c7e89b", "#9ca695", "#46a80d", "#6f52ff", "#529aff", "#faf0d4", "red")
+          status_levels <- c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国调货", "美国发货", "交易完毕")
+          status_colors <- c("lightgray", "#c7e89b", "#9ca695", "#46a80d", "#6f52ff", "#529aff", "#faf0d4", "#f4c7fc")
           
           # 确保数据按照固定类别顺序排列，并用 0 填充缺失类别
           inventory_status_data <- merge(
@@ -4875,7 +4875,7 @@ server <- function(input, output, session) {
         
         # 目标状态选择
         selectInput("admin_target_status", "目标库存状态改为：", 
-                    choices = c('采购','国内入库','国内出库','国内售出','美国入库','美国发货','美国调货','退货'), 
+                    choices = c('采购','国内入库','国内出库','国内售出','美国入库','美国发货','美国调货','交易完毕'), 
                     selected = NULL, width = "100%"),
         
         # 是否记录修改时间
