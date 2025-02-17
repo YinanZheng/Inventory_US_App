@@ -2089,7 +2089,7 @@ server <- function(input, output, session) {
       slice(1)  # 取匹配的第一条
     
     if (nrow(return_item) == 0) {
-      showNotification("未找到匹配的物品！", type = "error")
+      showNotification("未找到可退货的物品！", type = "error")
       output$return_order_info <- renderUI({ NULL })
       output$return_item_info <- renderUI({ NULL })
       output$return_order_image <- renderUI({ NULL })
