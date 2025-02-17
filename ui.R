@@ -523,17 +523,35 @@ ui <- navbarPage(
       
       div(
         class = "main-panel",
+        
+        # 订单信息
         div(
-          class = "card",
-          style = "padding: 15px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px;",
-          tags$h4("退货物品关联订单", style = "color: #007BFF; font-weight: bold;"),
-          uiOutput("return_order_info")
+          class = "card shadow-sm",
+          style = "display: flex; align-items: center; padding: 15px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px;",
+          div(
+            style = "flex: 1; text-align: center; padding-right: 20px;",
+            uiOutput("return_order_image")
+          ),
+          div(
+            style = "flex: 2;",
+            tags$h4("订单信息", style = "color: #007BFF; font-weight: bold; margin-bottom: 10px;"),
+            uiOutput("return_order_info")
+          )
         ),
+        
+        # 物品信息
         div(
-          class = "card",
-          style = "padding: 15px; border: 1px solid #FF5733; border-radius: 8px;",
-          tags$h4("退货物品详情", style = "color: #FF5733; font-weight: bold;"),
-          uiOutput("return_item_info")
+          class = "card shadow-sm",
+          style = "display: flex; align-items: center; padding: 15px; border: 1px solid #FF5733; border-radius: 8px;",
+          div(
+            style = "flex: 1; text-align: center; padding-right: 20px;",
+            uiOutput("return_item_image")
+          ),
+          div(
+            style = "flex: 2;",
+            tags$h4("退货物品信息", style = "color: #FF5733; font-weight: bold; margin-bottom: 10px;"),
+            uiOutput("return_item_info")
+          )
         )
       )
     )
