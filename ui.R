@@ -512,6 +512,8 @@ ui <- navbarPage(
     "退货", icon = icon("undo"),
     div(
       class = "layout-container",
+      
+      # 左侧：搜索栏
       div(
         class = "sticky-sidebar",
         tags$h4("退货管理", style = "color: #007BFF; font-weight: bold; margin-bottom: 10px;"),
@@ -521,36 +523,31 @@ ui <- navbarPage(
       
       div(class = "resizable-divider"),
       
+      # 右侧：主面板
       div(
         class = "main-panel",
         
-        # 订单信息
+        # 订单信息卡片
         div(
           class = "card shadow-sm",
-          style = "display: flex; align-items: center; padding: 15px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px;",
+          style = "padding: 15px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 8px;",
+          tags$h4("订单信息", style = "color: #007BFF; font-weight: bold; text-align: left; margin-bottom: 10px;"),
           div(
-            style = "flex: 1; text-align: center; padding-right: 20px;",
-            uiOutput("return_order_image")
-          ),
-          div(
-            style = "flex: 2;",
-            tags$h4("订单信息", style = "color: #007BFF; font-weight: bold; margin-bottom: 10px;"),
-            uiOutput("return_order_info")
+            style = "display: flex; align-items: center;",
+            div(style = "flex: 1; text-align: center; padding-right: 20px;", uiOutput("return_order_image")),
+            div(style = "flex: 2;", uiOutput("return_order_info"))
           )
         ),
         
-        # 物品信息
+        # 物品信息卡片
         div(
           class = "card shadow-sm",
-          style = "display: flex; align-items: center; padding: 15px; border: 1px solid #FF5733; border-radius: 8px;",
+          style = "padding: 15px; border: 1px solid #FF5733; border-radius: 8px;",
+          tags$h4("退货物品信息", style = "color: #FF5733; font-weight: bold; text-align: left; margin-bottom: 10px;"),
           div(
-            style = "flex: 1; text-align: center; padding-right: 20px;",
-            uiOutput("return_item_image")
-          ),
-          div(
-            style = "flex: 2;",
-            tags$h4("退货物品信息", style = "color: #FF5733; font-weight: bold; margin-bottom: 10px;"),
-            uiOutput("return_item_info")
+            style = "display: flex; align-items: center;",
+            div(style = "flex: 1; text-align: center; padding-right: 20px;", uiOutput("return_item_image")),
+            div(style = "flex: 2;", uiOutput("return_item_info"))
           )
         )
       )
