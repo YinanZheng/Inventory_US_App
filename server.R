@@ -2078,11 +2078,11 @@ server <- function(input, output, session) {
   ################################################################
   
   # 监听 SKU / 物品名输入框的变化，自动触发查询
-  observeEvent(input$return_sku, {
-    req(input$return_sku)
+  observeEvent(input$return_sku_itemname, {
+    req(input$return_sku_itemname)
     
     # 查询物品信息
-    search_query <- trimws(input$return_sku)
+    search_query <- trimws(input$return_sku_itemname)
     return_item <- unique_items_data() %>%
       filter(Status == "美国发货", SKU == search_query | grepl(search_query, ItemName, ignore.case = TRUE)) %>%
       arrange(UsShippingTime) %>%  # 按发货时间排序，优先显示最早发货的
