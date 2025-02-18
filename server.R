@@ -2210,6 +2210,12 @@ server <- function(input, output, session) {
   # 商品名自动联想
   autocompleteInputServer("sold", get_suggestions = item_names)  # 返回商品名列表
   
+  # 手动刷新订单表
+  observeEvent(input$refresh_orders, {
+    orders_refresh_trigger(!orders_refresh_trigger()) # 触发 orders 数据刷新
+    showNotification("订单数据已刷新！", type = "message")
+  })
+  
   # 监听订单选择事件
   observeEvent(selected_order_row(), {
     selected_row <- selected_order_row()
