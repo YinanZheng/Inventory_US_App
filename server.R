@@ -1645,6 +1645,14 @@ server <- function(input, output, session) {
     current_items <- rbind(current_items, item_info)
     new_order_items(current_items)
     
+    js_code <- sprintf('
+            var msg = new SpeechSynthesisUtterance("%s");
+            msg.lang = "zh-CN";
+            window.speechSynthesis.speak(msg);
+          ', paste0(current_items$ProductCost, "元"))
+    
+    shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读物品价格
+    
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
   
@@ -2051,7 +2059,6 @@ server <- function(input, output, session) {
     removeModal()                   # 关闭模态框
     runjs("document.getElementById('us_shipping_bill_number').focus();") # 聚焦运单号输入框
   })
-  
   
   # 订单物品删除逻辑 （美国售出only）
   observeEvent(input$delete_card, {
