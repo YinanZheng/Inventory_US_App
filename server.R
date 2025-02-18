@@ -2228,6 +2228,18 @@ server <- function(input, output, session) {
     showNotification("订单数据已刷新！", type = "message")
   })
   
+  # 根据订单种类筛选的“订单查询”动态分页标题
+  observe({
+    output$dynamic_order_tab_title <- renderText({
+      order_status <- input$filter_order_status
+      if (is.null(order_status) || order_status == "") {
+        return("订单查询")  # 默认标题
+      } else {
+        return(paste0("订单查询（", order_status, "）"))  # 动态更新标题
+      }
+    })
+  })
+  
   # 监听订单选择事件
   observeEvent(selected_order_row(), {
     selected_row <- selected_order_row()

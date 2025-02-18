@@ -585,7 +585,7 @@ ui <- navbarPage(
                                   selected = "", width = "100%")),
             column(6, selectInput("filter_order_status", "订单状态", 
                                   choices = c("全部" = "", "备货", "预定", "调货", "装箱", "发出", "在途", "送达"),
-                                  selected = "", width = "100%"))
+                                  selected = "调货", width = "100%"))
           ),
           
           fluidRow(
@@ -637,7 +637,7 @@ ui <- navbarPage(
           #   )
           # ),
           tabPanel(
-            "订单查询",
+            textOutput("dynamic_order_tab_title"),  # 动态标题
             div(
               class = "card",
               style = "height: 460px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
