@@ -1448,6 +1448,14 @@ server <- function(input, output, session) {
     
     # 自动更新物品状态为“美国发货”
     tryCatch({
+      js_code <- sprintf('
+            var msg = new SpeechSynthesisUtterance("%s");
+            msg.lang = "zh-CN";
+            window.speechSynthesis.speak(msg);
+          ', paste0(next_item$ProductCost, "元"))
+      
+      shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读物品价格
+      
       update_status(
         con = con,
         unique_id = next_item$UniqueID,
