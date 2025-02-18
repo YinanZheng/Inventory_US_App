@@ -248,12 +248,12 @@ server <- function(input, output, session) {
     
     # 根据顾客姓名筛选
     if (!is.null(input$filter_customer_name) && input$filter_customer_name != "") {
-      data <- data %>% filter(grepl(input$filter_customer_name, CustomerName, ignore.case = TRUE))
+      data <- data %>% filter(grepl(trimws(input$filter_customer_name), CustomerName, ignore.case = TRUE))
     }
     
     # 根据顾客网名筛选
     if (!is.null(input$filter_customer_netname) && input$filter_customer_netname != "") {
-      data <- data %>% filter(grepl(input$filter_customer_netname, CustomerNetName, ignore.case = TRUE))
+      data <- data %>% filter(grepl(trimws(input$filter_customer_netname), CustomerNetName, ignore.case = TRUE))
     }
     
     # 根据电商平台筛选
@@ -286,6 +286,18 @@ server <- function(input, output, session) {
         pull(OrderID) %>%  # 提取与商品名相关的订单号
         unique()
       data <- data %>% filter(OrderID %in% item_orders)
+    }
+    
+    # 根据创建时间筛选
+    if (!is.null(input$filter_order_date) && !is.null(input$filter_order_date[[1]]) && !is.null(input$filter_order_date[[2]])) {
+      start_date <- input$filter_order_date[[1]]
+      end_date <- input$filter_order_date[[2]]
+      data <- data %>% filter(created_at >= start_date & created_at <= end_date)
+    }
+    
+    # 根据订单备注筛选
+    if (!is.null(input$filter_order_notes) && input$filter_order_notes != "") {
+      data <- data %>% filter(grepl(input$filter_order_notes, OrderNotes, ignore.case = TRUE))
     }
     
     # 按录入时间倒序排列
