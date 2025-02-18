@@ -1370,7 +1370,7 @@ ui <- navbarPage(
                       textOutput("sold_total_count_with_shipping"),
                       style = "color: #FF5733; font-weight: bold;"
                     ),
-                    tags$p("物品总数（已投递）")
+                    tags$p("物品总数（已送达）")
                   )
                   ,
                   tags$hr(style = "border: none; height: 1px; background-color: #ddd; margin: 15px 0;"),
