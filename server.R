@@ -1642,17 +1642,18 @@ server <- function(input, output, session) {
     
     # 添加未被选择的第一件物品
     item_info <- available_items %>% slice(1)
-    current_items <- rbind(current_items, item_info)
-    new_order_items(current_items)
     
     js_code <- sprintf('
             var msg = new SpeechSynthesisUtterance("%s");
             msg.lang = "zh-CN";
             window.speechSynthesis.speak(msg);
-          ', paste0(current_items$ProductCost, "元"))
+          ', paste0(item_info$ProductCost, "元"))
     
     shinyjs::runjs(js_code)  # 运行 JavaScript 语音朗读物品价格
     
+    current_items <- rbind(current_items, item_info)
+    new_order_items(current_items)
+
     updateTextInput(session, "us_shipping_sku_input", value = "")
   })
   
