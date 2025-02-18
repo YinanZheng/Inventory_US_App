@@ -628,14 +628,14 @@ ui <- navbarPage(
               orderTableUI("orders_table_waiting")
             )
           ),
-          tabPanel(
-            "需要调货",
-            div(
-              class = "card",
-              style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
-              orderTableUI("orders_relocation")
-            )
-          ),
+          # tabPanel(
+          #   "需要调货",
+          #   div(
+          #     class = "card",
+          #     style = "padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
+          #     orderTableUI("orders_relocation")
+          #   )
+          # ),
           tabPanel(
             "订单查询",
             div(

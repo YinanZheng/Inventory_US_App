@@ -389,14 +389,14 @@ server <- function(input, output, session) {
     return(filtered_orders)
   })
   
-  filtered_orders_relocation  <- reactive({
-    req(orders())  # 确保订单和物品数据存在
-    
-    # 筛选订单状态为“调货”的订单
-    filtered_orders <- orders() %>% filter(OrderStatus == "调货")
-    
-    return(filtered_orders)
-  })
+  # filtered_orders_relocation  <- reactive({
+  #   req(orders())  # 确保订单和物品数据存在
+  #   
+  #   # 筛选订单状态为“调货”的订单
+  #   filtered_orders <- orders() %>% filter(OrderStatus == "调货")
+  #   
+  #   return(filtered_orders)
+  # })
   
   # 物品管理页过滤
   filtered_unique_items_data_manage <- reactive({
@@ -557,12 +557,12 @@ server <- function(input, output, session) {
                                                   selection = "single" # 单选模式
   )
   
-  selected_orders_table_relocation_row <- callModule(orderTableServer, "orders_relocation",
-                                                  column_mapping = orders_table_columns,
-                                                  options = modifyList(table_default_options, list(scrollY = "650px")),
-                                                  data = filtered_orders_relocation,  # 数据源
-                                                  selection = "single" # 单选模式
-  )
+  # selected_orders_table_relocation_row <- callModule(orderTableServer, "orders_relocation",
+  #                                                 column_mapping = orders_table_columns,
+  #                                                 options = modifyList(table_default_options, list(scrollY = "650px")),
+  #                                                 data = filtered_orders_relocation,  # 数据源
+  #                                                 selection = "single" # 单选模式
+  # )
   
   # 物品管理分页物品表
   unique_items_table_manage_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_manage",
