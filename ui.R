@@ -8,6 +8,22 @@ ui <- navbarPage(
   header = tagList(
     shinyjs::useShinyjs(),  # 启用 shinyjs
     
+    # 加载动画界面
+    tags$div(
+      id = "loading-screen",
+      style = "position: fixed; width: 100%; height: 100%; background: white; 
+           z-index: 9999; display: flex; flex-direction: column; 
+           justify-content: center; align-items: center; text-align: center;",
+      
+      # 旋转的毛线球 GIF
+      tags$img(src = "https://www.goldenbeanllc.com/icons/spinning_yarn.gif", 
+               style = "width: 80px; height: 80px;"),
+      
+      # 加载提示文字
+      tags$p("系统加载中，请稍后...", 
+             style = "font-size: 18px; font-weight: bold; color: #333; margin-top: 10px;")
+    ),
+    
     tags$head(
       tags$link(rel = "icon", type = "image/x-icon", href = "https://www.goldenbeanllc.com/icons/favicon-96x96.png"),
       
@@ -173,110 +189,116 @@ ui <- navbarPage(
     ")),
       
       tags$script(HTML("
-        $(document).on('paste', '[id$=\"paste_area\"]', function(event) {
-          const items = (event.originalEvent.clipboardData || event.clipboardData).items;
-          for (let i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf('image') !== -1) {
-              const file = items[i].getAsFile();
-              const reader = new FileReader();
-    
-              reader.onload = function(evt) {
-                // 使用 currentTarget 确保获取的是父级元素的 id
-                const inputId = event.currentTarget.id + '_pasted_image';
-                Shiny.setInputValue(inputId, evt.target.result, {priority: 'event'});
-              };
-    
-              reader.readAsDataURL(file);
-              break;
-            }
+      // 系统加载画面淡出
+      $(document).ready(function() {
+        $('#loading-screen').css('transition', 'opacity 1s ease-out');
+      });
+      
+      // 复制粘贴图片
+      $(document).on('paste', '[id$=\"paste_area\"]', function(event) {
+        const items = (event.originalEvent.clipboardData || event.clipboardData).items;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile();
+            const reader = new FileReader();
+  
+            reader.onload = function(evt) {
+              // 使用 currentTarget 确保获取的是父级元素的 id
+              const inputId = event.currentTarget.id + '_pasted_image';
+              Shiny.setInputValue(inputId, evt.target.result, {priority: 'event'});
+            };
+  
+            reader.readAsDataURL(file);
+            break;
           }
-        });
+        }
+      });
         
-        // JavaScript 实现分隔条拖拽
-        document.addEventListener('DOMContentLoaded', function() {
-          function enableResizing(divider) {
-            const sidebar = divider.previousElementSibling;  // 分隔条左侧的 sidebar
-            let isResizing = false;
-      
-            divider.addEventListener('mousedown', function(e) {
-              isResizing = true;
-              document.body.style.cursor = 'ew-resize';
-              document.body.style.userSelect = 'none';
-            });
-      
-            document.addEventListener('mousemove', function(e) {
-              if (!isResizing) return;
-              const newSidebarWidth = Math.max(200, Math.min(600, e.clientX)); // 限制宽度范围
-              sidebar.style.flex = `0 0 ${newSidebarWidth}px`;
-              
-               // 调整所有表格列宽
-              $('.dataTable').DataTable().columns.adjust();
-            });
-      
-            document.addEventListener('mouseup', function() {
-              if (isResizing) {
-                isResizing = false;
-                document.body.style.cursor = '';
-                document.body.style.userSelect = '';
-                
-                // 再次确保表格布局正确
-                $('.dataTable').DataTable().columns.adjust();
-              }
-            });
-          }
-      
-          function bindResizableDividers() {
-            document.querySelectorAll('.resizable-divider').forEach(function(divider) {
-              if (!divider.dataset.bound) { // 避免重复绑定
-                enableResizing(divider);
-                divider.dataset.bound = true; // 标记为已绑定
-              }
-            });
-          }
-      
-          bindResizableDividers();
-      
-          // 分页切换后重新绑定
-          $(document).on('shown.bs.tab', function() {
-            bindResizableDividers();
+      // JavaScript 实现分隔条拖拽
+      document.addEventListener('DOMContentLoaded', function() {
+        function enableResizing(divider) {
+          const sidebar = divider.previousElementSibling;  // 分隔条左侧的 sidebar
+          let isResizing = false;
+    
+          divider.addEventListener('mousedown', function(e) {
+            isResizing = true;
+            document.body.style.cursor = 'ew-resize';
+            document.body.style.userSelect = 'none';
+          });
+    
+          document.addEventListener('mousemove', function(e) {
+            if (!isResizing) return;
+            const newSidebarWidth = Math.max(200, Math.min(600, e.clientX)); // 限制宽度范围
+            sidebar.style.flex = `0 0 ${newSidebarWidth}px`;
+            
+             // 调整所有表格列宽
             $('.dataTable').DataTable().columns.adjust();
           });
-        });
-        
-         // 入库成功音效
-        function playInboundSuccessSound() {
-          var audio = new Audio('https://www.goldenbeanllc.com/sounds/success-josie.mp3');
-          audio.play();
-        }
-        
-        // 入库错误音效
-        function playInboundErrorSound() {
-          var audio = new Audio('https://www.goldenbeanllc.com/sounds/inbound_error.mp3');
-          audio.play();
-        }
-        
-        // 右键点击查询库存页面
-        $(document).ready(function() {
-          $('#filtered_inventory_table_query').on('contextmenu', 'tr', function(event) {
-            event.preventDefault();
-            var rowIdx = $(this).index();
-            
-            Shiny.setInputValue('selected_inventory_row', rowIdx + 1, {priority: 'event'});
-      
-            $('#context-menu').css({
-              display: 'block',
-              left: event.pageX + 'px',
-              top: event.pageY + 'px'
-            });
-          });
-      
-          $(document).on('click', function(event) {
-            if (!$(event.target).closest('#context-menu').length) {
-              $('#context-menu').hide();
+    
+          document.addEventListener('mouseup', function() {
+            if (isResizing) {
+              isResizing = false;
+              document.body.style.cursor = '';
+              document.body.style.userSelect = '';
+              
+              // 再次确保表格布局正确
+              $('.dataTable').DataTable().columns.adjust();
             }
           });
+        }
+    
+        function bindResizableDividers() {
+          document.querySelectorAll('.resizable-divider').forEach(function(divider) {
+            if (!divider.dataset.bound) { // 避免重复绑定
+              enableResizing(divider);
+              divider.dataset.bound = true; // 标记为已绑定
+            }
+          });
+        }
+    
+        bindResizableDividers();
+    
+        // 分页切换后重新绑定
+        $(document).on('shown.bs.tab', function() {
+          bindResizableDividers();
+          $('.dataTable').DataTable().columns.adjust();
         });
-      "))
+      });
+      
+       // 入库成功音效
+      function playInboundSuccessSound() {
+        var audio = new Audio('https://www.goldenbeanllc.com/sounds/success-josie.mp3');
+        audio.play();
+      }
+      
+      // 入库错误音效
+      function playInboundErrorSound() {
+        var audio = new Audio('https://www.goldenbeanllc.com/sounds/inbound_error.mp3');
+        audio.play();
+      }
+      
+      // 右键点击查询库存页面
+      $(document).ready(function() {
+        $('#filtered_inventory_table_query').on('contextmenu', 'tr', function(event) {
+          event.preventDefault();
+          var rowIdx = $(this).index();
+          
+          Shiny.setInputValue('selected_inventory_row', rowIdx + 1, {priority: 'event'});
+    
+          $('#context-menu').css({
+            display: 'block',
+            left: event.pageX + 'px',
+            top: event.pageY + 'px'
+          });
+        });
+    
+        $(document).on('click', function(event) {
+          if (!$(event.target).closest('#context-menu').length) {
+            $('#context-menu').hide();
+          }
+        });
+      });
+    "))
     )
   ),
   

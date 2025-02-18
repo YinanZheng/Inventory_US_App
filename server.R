@@ -1,6 +1,24 @@
 # Define server logic
 server <- function(input, output, session) {
   
+  # 显示加载动画
+  future::plan(multicore)  # 让数据加载异步执行，避免阻塞 UI
+  shinyjs::show("loading-screen")  # 显示加载界面
+  
+  future({
+    Sys.sleep(3)  # 模拟数据加载（3秒）
+    return(TRUE)  # 任务完成
+  }) %>% 
+    then(function(result) {
+      shinyjs::runjs("$('#loading-screen').fadeOut(1000);")  # 1秒淡出加载界面
+    }) %>% 
+    catch(function(e) {
+      showNotification(paste("数据加载失败:", e$message), type = "error")
+      shinyjs::runjs("$('#loading-screen').fadeOut(1000);")  # 失败时也淡出
+    })
+  
+  ##############################################################################
+  
   source("global.R", local = TRUE)
   
   # Database
