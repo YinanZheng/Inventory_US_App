@@ -8,6 +8,15 @@ ui <- navbarPage(
   header = tagList(
     shinyjs::useShinyjs(),  # 启用 shinyjs
     
+    # 物品表刷新（联动刷新库存表与订单表）
+    actionButton(
+      "refresh_global_items_btn",
+      "",
+      icon = icon("sync"),
+      class = "btn-success",
+      style = "position: absolute; top: 8px; right: 20px; z-index: 9999;"
+    ),
+    
     # 加载动画界面
     tags$div(
       id = "loading-screen",
@@ -192,6 +201,13 @@ ui <- navbarPage(
       // 系统加载画面淡出
       $(document).ready(function() {
         $('#loading-screen').css('transition', 'opacity 1s ease-out');
+      });
+      
+      // 刷新物品表
+      $(document).ready(function() {
+        $('#refresh_global_items_btn').on('click', function() {
+          Shiny.setInputValue('refresh_item_table', new Date().getTime(), {priority: 'event'});
+        });
       });
       
       // 复制粘贴图片
