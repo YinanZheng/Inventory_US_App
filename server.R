@@ -4974,7 +4974,7 @@ server <- function(input, output, session) {
                     selected = NULL, width = "100%"),
         
         # 更新选中物品瑕疵品状态
-        actionButton("admin_update_defect_btn", "更新瑕疵品状态", class = "btn-info", style = "width: 100%; margin-top: 10px;"),
+        actionButton("admin_update_defect_btn", "更新瑕疵品状态", class = "btn-info", style = "width: 100%; margin-top: 10px;")
       )
     } else {
       div(tags$p("请输入密码以访问管理员功能", style = "color: red; font-weight: bold; text-align: center;"))
