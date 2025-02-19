@@ -458,6 +458,7 @@ server <- function(input, output, session) {
   })
   
   # 国际物流筛选
+  # 国际物流筛选
   filtered_unique_items_data_logistics <- reactive({
     req(unique_items_data())
     data <- unique_items_data()
@@ -465,7 +466,7 @@ server <- function(input, output, session) {
     # # 只显示本页相关状态
     # data <- data %>%
     #   filter(Status %in% c("国内出库", "国内售出"), Defect != "瑕疵")
-
+    
     data <- filter_unique_items_data_by_inputs(
       data = data,
       input = input,
@@ -486,7 +487,7 @@ server <- function(input, output, session) {
     }
     
     # 优先显示没有国际运单号的物品
-    data <- data %>% arrange(is.na(IntlTracking), IntlTracking)
+    data <- data %>% arrange(desc(is.na(IntlTracking)), IntlTracking)
     
     data
   })
@@ -616,7 +617,7 @@ server <- function(input, output, session) {
                                                                                                           searching = FALSE, 
                                                                                                           paging = TRUE,
                                                                                                           pageLength = 30,
-                                                                                                          lengthMenu = c(30, 100, 200),
+                                                                                                          lengthMenu = c(30, 100, 200, 500, 1000),
                                                                                                           dom = 'lftip')))
   
   # 查询分页库存表
