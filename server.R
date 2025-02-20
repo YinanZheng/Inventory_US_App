@@ -1801,18 +1801,21 @@ server <- function(input, output, session) {
                   if (request_exists) {
                     # **如果已有请求，则显示当前采购请求信息，并允许追加数量**
                     tagList(
-                      tags$p(tags$b("已有采购请求："), style = "color: blue; margin: 5px 0;"),
-                      tags$p(paste0("请求类型：", existing_request$RequestType), style = "margin: 2px 0;"),
-                      tags$p(paste0("当前请求数量：", existing_request$Quantity), style = "margin: 2px 0;"),
+                      tags$div(
+                        style = "border: 2px solid #007BFF; border-radius: 8px; padding: 10px; background-color: #f0f8ff; margin-bottom: 10px; width: 100%;",
+                        tags$p(tags$b("已有采购请求："), style = "color: blue; margin: 5px 0;"),
+                        tags$p(paste0("当前请求状态：", existing_request$RequestType), style = "margin: 2px 0;"),
+                        tags$p(paste0("当前请求数量：", existing_request$Quantity), style = "margin: 2px 0;")
+                      ),
                       tags$hr(style = "width: 100%; border: 1px solid #ddd;"),
-                      numericInput(paste0("purchase_qty_", item$SKU), "追加数量", value = 1, min = 1, width = "80%"),
+                      numericInput(paste0("purchase_qty_", item$SKU), "追加数量", value = 1, min = 1, width = "50%"),
                       textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "100%", rows = 2),
                       actionButton(paste0("create_request_purchase_", item$SKU), "追加采购请求", class = "btn-primary", style = "margin-top: 10px; width: 100%;")
                     )
                   } else {
                     # **如果没有已有请求，则显示“请求数量”和“发出采购请求”**
                     tagList(
-                      numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "80%"),
+                      numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "50%"),
                       textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "100%", rows = 2),
                       actionButton(paste0("create_request_purchase_", item$SKU), "发出采购请求", class = "btn-primary", style = "margin-top: 10px; width: 100%;")
                     )
