@@ -1247,8 +1247,7 @@ ui <- navbarPage(
                 div(
                   id = "context-menu",
                   style = "display: none; position: absolute; background: white; border: 1px solid #ccc; box-shadow: 0px 4px 6px rgba(0,0,0,0.2); padding: 5px; border-radius: 5px; z-index: 1000;",
-                  actionButton("query_purchase_request", "采购请求", class = "btn btn-primary btn-sm", style = "width: 100%; margin-bottom: 5px;"),
-                  uiOutput("query_outbound_request_btn")  # 动态生成出库请求按钮                
+                  actionButton("query_purchase_request", "采购请求", class = "btn btn-primary btn-sm", style = "width: 100%; margin-bottom: 5px;")
                 ),
                 
                 div(
