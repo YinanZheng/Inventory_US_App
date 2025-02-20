@@ -1608,6 +1608,8 @@ server <- function(input, output, session) {
       # **获取当前订单下的所有物品**
       order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
       
+      showNotification(nrow(order_items))
+    
       # **调用公共方法检测美国库存并弹出采购请求**
       check_us_stock_and_request_purchase(order_items)
       
