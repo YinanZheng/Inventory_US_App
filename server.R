@@ -1305,13 +1305,34 @@ server <- function(input, output, session) {
     }
   })
   
-  # 计算订单内物品数量
-  order_items_count <- reactive({
+  # 计算订单内物品数量和截取运单后四位
+  order_info <- reactive({
     req(current_order_id())  # 确保订单 ID 存在
     order_id <- current_order_id()
     
-    # 查询 `unique_items_data()` 以统计该订单内的物品总数
-    sum(unique_items_data()$OrderID == order_id, na.rm = TRUE)
+    # 获取当前订单的所有物品
+    items_in_order <- unique_items_data() %>% filter(OrderID == order_id)
+    
+    # 计算订单物品总数
+    item_count <- nrow(items_in_order)
+    
+    # 查询 `orders` 表，获取该订单的运单号
+    tracking_num <- orders() %>%
+      filter(OrderID == order_id) %>%
+      pull(UsTrackingNumber)  # 取运单号
+    
+    # 获取运单号的最后四位（如果运单号为空，则返回"无"）
+    tracking_last4 <- if (!is.null(tracking_num) && nchar(tracking_num) >= 4) {
+      substr(tracking_num, nchar(tracking_num) - 3, nchar(tracking_num))
+    } else {
+      "无"
+    }
+    
+    # 返回包含物品数量和运单号后四位的列表
+    list(
+      item_count = item_count,
+      tracking_last4 = tracking_last4
+    )
   })
   
   # 装载当前订单物品信息
@@ -1409,8 +1430,7 @@ server <- function(input, output, session) {
       updateTextInput(session, "shipping_bill_number", value = result$UsTrackingNumber[1])
       showNotification("运单号更新成功！", type = "message")
     } else {
-      showNotification("未找到相关订单，请检查输入！", type = "warning")
-      runjs("playWarningSound()")  # 播放警告音效
+      speak_text("未找到相关订单")
     }
     updateTextInput(session, "order_id_input", value = "")
   })
@@ -1467,11 +1487,7 @@ server <- function(input, output, session) {
     # 提示操作或警告
     if (current_order$OrderStatus != "装箱") {
       if (current_order$OrderStatus != "备货") {
-        showNotification(
-          paste0("当前订单状态为 '", current_order$OrderStatus, "' ，操作可能受限！请核对后继续。"),
-          type = "warning"
-        )
-        runjs("playWarningSound()")  # 播放警告音效
+        speak_text(paste0("当前订单状态为 '", current_order$OrderStatus, "' ，操作可能受限！请核对后继续。"))
       } else { #如果订单状态为备货
         # 如果订单内无物品
         if (nrow(current_items) == 0) {
@@ -1503,11 +1519,22 @@ server <- function(input, output, session) {
                 easyClose = FALSE,
                 div(
                   style = "padding: 10px; font-size: 16px; color: #FF0000;",
-                  paste0("订单 ", current_order_id(), " 混合了调货物品，登记物品共 "),
+                  paste0("订单 ", current_order_id(), " 含调货物品！运单尾号 "),
+                  
+                  # 运单号后四位，22px、加粗、红色
+                  tags$span(
+                    style = "font-size: 22px; font-weight: bold; color: red;",
+                    order_info()$tracking_last4
+                  ),
+                  
+                  "，共 ",
+                  
+                  # 订单物品总数，22px、加粗、蓝色
                   tags$span(
                     style = "font-size: 22px; font-weight: bold; color: blue;",
-                    paste0(order_items_count(), " 件")
+                    paste0(order_info()$item_count, " 件")
                   ),
+                  
                   "。请核对物品备齐后手动发货。"
                 ),
                 footer = tagList(
@@ -1520,11 +1547,23 @@ server <- function(input, output, session) {
                 easyClose = FALSE,
                 div(
                   style = "padding: 10px; font-size: 16px;",
-                  paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描，"),
+                  paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描！运单尾号 "),
+                  
+                  # 运单号后四位，22px、加粗、红色
+                  tags$span(
+                    style = "font-size: 22px; font-weight: bold; color: red;",
+                    order_info()$tracking_last4
+                  ),
+                  
+                  "，共 ",
+                  
+                  # 订单物品总数，22px、加粗、蓝色
                   tags$span(
                     style = "font-size: 22px; font-weight: bold; color: blue;",
-                    paste0(order_items_count(), " 件")
-                  )
+                    paste0(order_info()$item_count, " 件")
+                  ),
+                  
+                  "。"
                 ),
                 footer = tagList(
                   actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
@@ -1586,8 +1625,7 @@ server <- function(input, output, session) {
     
     # 如果未找到对应的 SKU
     if (nrow(matching_item) == 0) {
-      showNotification("未找到商品，请检查输入的商品是否存在于本订单！", type = "warning")
-      runjs("playWarningSound()")  # 播放警告音效
+      speak_text("未找到商品，请检查输入的商品是否存在于本订单！")
       updateTextInput(session, "sku_input", value = "")
       return()
     }
@@ -1780,8 +1818,7 @@ server <- function(input, output, session) {
     # 校验 SKU 是否有效
     valid_sku <- stock_data() %>% filter(SKU == new_sku)
     if (nrow(valid_sku) == 0) {
-      showNotification("输入的 SKU 不存在或状态不为 '美国入库'！", type = "warning")
-      runjs("playWarningSound()")  # 播放警告音效
+      speak_text("输入的SKU不存在或状态不为美国入库")
       updateTextInput(session, "us_shipping_sku_input", value = "")
       return()
     }
@@ -1791,8 +1828,7 @@ server <- function(input, output, session) {
     if (!is.null(current_items)) {
       existing_count <- sum(current_items$SKU == new_sku)
       if (existing_count >= valid_sku$StockQuantity[1]) {
-        showNotification(paste0("输入的 SKU '", new_sku, "' 已达到库存上限！"), type = "warning")
-        runjs("playWarningSound()")  # 播放警告音效
+        speak_text("输入的SKU已达到库存上限")
         updateTextInput(session, "us_shipping_sku_input", value = "")
         return()
       }
@@ -1803,8 +1839,7 @@ server <- function(input, output, session) {
       filter(SKU == new_sku & Status == "美国入库" & !(UniqueID %in% current_items$UniqueID))
     
     if (nrow(available_items) == 0) {
-      showNotification("该 SKU 的库存已用尽！", type = "warning")
-      runjs("playWarningSound()")  # 播放警告音效
+      speak_text("该SKU的库存已用尽")
       updateTextInput(session, "us_shipping_sku_input", value = "")
       return()
     }
@@ -1850,8 +1885,7 @@ server <- function(input, output, session) {
     items <- new_order_items()
     
     if (nrow(items) == 0) {
-      showNotification("没有物品需要发货！", type = "warning")
-      runjs("playWarningSound()")  # 播放警告音效
+      speak_text("没有物品需要发货")
       return()
     }
     
