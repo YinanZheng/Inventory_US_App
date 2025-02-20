@@ -1612,8 +1612,8 @@ server <- function(input, output, session) {
       # **调用公共方法检测美国库存并弹出采购请求**
       check_us_stock_and_request_purchase(order_items)
       
-      # 关闭模态框
-      removeModal()
+      # # 关闭模态框
+      # removeModal()
     }, error = function(e) {
       showNotification(paste("发生错误：", e$message), type = "error")
     })
