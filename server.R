@@ -1781,9 +1781,7 @@ server <- function(input, output, session) {
       
       # **只弹出采购请求模态框**
       if (length(zero_items) > 0) {
-        modal_content <- tagList()
-        modal_content <- tagAppendChildren(
-          modal_content,
+        modal_content <- tagList(
           tags$div(
             style = "padding: 10px; background-color: #ffe6e6; border-radius: 8px; margin-bottom: 20px;",
             tags$h4("需要采购补货：", style = "color: red; margin-bottom: 15px;"),
@@ -1791,6 +1789,7 @@ server <- function(input, output, session) {
               style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
               lapply(zero_items, function(item) {
                 existing_request <- existing_requests %>% filter(SKU == item$SKU)
+                request_exists <- nrow(existing_request) > 0
                 
                 div(
                   style = "background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center;",
@@ -1798,13 +1797,20 @@ server <- function(input, output, session) {
                            style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"),
                   tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
                   tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
-                  if (nrow(existing_request) > 0) {
+                  
+                  if (request_exists) {
+                    # **如果已有请求，则显示当前采购请求信息，并允许追加数量**
                     tagList(
-                      tags$p(tags$b("已有请求："), style = "color: blue; margin: 5px 0;"),
-                      tags$p(paste0("类型：", existing_request$RequestType), style = "margin: 2px 0;"),
-                      tags$p(paste0("数量：", existing_request$Quantity), style = "margin: 2px 0;")
+                      tags$p(tags$b("已有采购请求："), style = "color: blue; margin: 5px 0;"),
+                      tags$p(paste0("请求类型：", existing_request$RequestType), style = "margin: 2px 0;"),
+                      tags$p(paste0("当前请求数量：", existing_request$Quantity), style = "margin: 2px 0;"),
+                      tags$hr(style = "width: 100%; border: 1px solid #ddd;"),
+                      numericInput(paste0("purchase_qty_", item$SKU), "追加数量", value = 1, min = 1, width = "80%"),
+                      textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "100%", rows = 2),
+                      actionButton(paste0("create_request_purchase_", item$SKU), "追加采购请求", class = "btn-primary", style = "margin-top: 10px; width: 100%;")
                     )
                   } else {
+                    # **如果没有已有请求，则显示“请求数量”和“发出采购请求”**
                     tagList(
                       numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "80%"),
                       textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "100%", rows = 2),
@@ -1846,123 +1852,53 @@ server <- function(input, output, session) {
   
   # 监听添加请求按钮
   observe({
-    # 获取当前所有动态生成的按钮 ID
-    request_buttons <- grep("^create_request_", names(input), value = TRUE)
-    
-    # 筛选出尚未绑定的按钮
+    request_buttons <- grep("^create_request_purchase_", names(input), value = TRUE)
     new_buttons <- setdiff(request_buttons, observed_request_buttons$registered)
     
-    # 为每个新按钮动态创建监听
     lapply(new_buttons, function(button_id) {
       observeEvent(input[[button_id]], {
-        # 确定按钮类型（出库或采购）
-        if (grepl("outbound", button_id)) {
-          # 出库请求处理逻辑
-          sku <- sub("create_request_outbound_", "", button_id)  # 提取 SKU
-          items <- outbound_stock_items()  # 从 reactiveVal 获取需要出库的物品
-          item <- items[[which(sapply(items, function(x) x$SKU == sku))]]  # 找到匹配的物品
+        sku <- sub("create_request_purchase_", "", button_id)  # 提取 SKU
+        items <- zero_stock_items()  # 获取需要采购的物品
+        item <- items[[which(sapply(items, function(x) x$SKU == sku))]]  # 找到匹配的物品
+        
+        qty <- input[[paste0("purchase_qty_", sku)]]
+        formatted_remark <- format_remark(input[[paste0("purchase_remark_input_", sku)]], system_type)
+        request_id <- uuid::UUIDgenerate()
+        
+        tryCatch({
+          # **查询是否已有请求**
+          existing_request <- dbGetQuery(con, "SELECT Quantity, Remarks FROM requests WHERE SKU = ? AND RequestType = '采购' AND RequestStatus = '待处理'", params = list(sku))
           
-          # 获取请求数量
-          qty <- input[[paste0("outbound_qty_", sku)]]
-          domestic_stock <- item$DomesticStock  # 国内现存库存数
-          request_id <- uuid::UUIDgenerate()
-          formatted_remark <- format_remark(input[[paste0("outbound_remark_input_", sku)]], system_type)
-          
-          tryCatch({
-            # **出库请求：只出库实际有的库存**
-            outbound_qty <- min(qty, domestic_stock)  # 出库数量不能超过现有库存
-            if (outbound_qty > 0) {
-              dbExecute(con,
-                        "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
-         VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '出库')",
-                        params = list(
-                          request_id,
-                          sku,
-                          item$Maker,
-                          item$ItemImagePath,
-                          item$ItemName,
-                          outbound_qty,
-                          formatted_remark
-                        )
-              )
-              showNotification(paste0("已发出出库请求，SKU：", sku, "，数量：", outbound_qty), type = "message")
-              
-              # 动态更新按钮文本和样式
-              updateActionButton(session, inputId = button_id, label = HTML("<i class='fa fa-check'></i> 出库请求已发送"))
-              runjs(sprintf("$('#%s').removeClass('btn-primary').addClass('btn-success');", button_id))
-              shinyjs::disable(button_id)
-            }
+          if (nrow(existing_request) > 0) {
+            # **如果已有请求，追加数量和备注**
+            new_qty <- existing_request$Quantity[1] + qty
+            new_remark <- ifelse(is.na(existing_request$Remarks[1]) || existing_request$Remarks[1] == "",
+                                 formatted_remark,
+                                 paste(existing_request$Remarks[1], formatted_remark, sep = " | "))
             
-            # **如果出库数量不足，超出的部分创建采购请求**
-            purchase_qty <- max(0, qty - domestic_stock)  # 需要采购的数量
-            if (purchase_qty > 0) {
-              purchase_request_id <- uuid::UUIDgenerate()
-              dbExecute(con,
-                        "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
-         VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '采购')",
-                        params = list(
-                          purchase_request_id,
-                          sku,
-                          item$Maker,
-                          item$ItemImagePath,
-                          item$ItemName,
-                          purchase_qty,
-                          formatted_remark
-                        )
-              )
-              showNotification(paste0("超出国内库存部分已创建采购请求，SKU：", sku, "，数量：", purchase_qty), type = "warning")
-              # 动态更新按钮文本和样式
-              updateActionButton(session, inputId = button_id, label = HTML("<i class='fa fa-check'></i> 出库+采购请求已发送"))
-              runjs(sprintf("$('#%s').removeClass('btn-primary').addClass('btn-success');", button_id))
-              shinyjs::disable(button_id)
-            }
+            dbExecute(con, "UPDATE requests SET Quantity = ?, Remarks = ? WHERE SKU = ? AND RequestType = '采购' AND RequestStatus = '待处理'",
+                      params = list(new_qty, new_remark, sku))
             
-            # 绑定按钮
-            bind_buttons(request_id, requests_data(), input, output, session, con)
-          }, error = function(e) {
-            # 提示错误消息
-            showNotification(paste("发出出库请求失败：", e$message), type = "error")
-          })
-        } else if (grepl("purchase", button_id)) {
-          # 采购请求处理逻辑
-          sku <- sub("create_request_purchase_", "", button_id)  # 提取 SKU
-          items <- zero_stock_items()  # 从 reactiveVal 获取库存为零的物品
-          item <- items[[which(sapply(items, function(x) x$SKU == sku))]]  # 找到匹配的物品
-          
-          # 获取请求数量
-          qty <- input[[paste0("purchase_qty_", sku)]]
-          request_id <- uuid::UUIDgenerate()
-          
-          tryCatch({
-            # 插入采购请求到数据库
+            showNotification(paste0("采购请求追加成功，SKU：", sku, "，总数量：", new_qty), type = "message")
+            
+          } else {
+            # **如果没有已有请求，新建请求**
             dbExecute(con,
                       "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
                      VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '采购')",
-                      params = list(
-                        request_id,
-                        sku,
-                        item$Maker,
-                        item$ItemImagePath,
-                        item$ItemName,
-                        qty,
-                        format_remark(input[[paste0("purchase_remark_input_", sku)]], system_type)
-                      ))
+                      params = list(request_id, sku, item$Maker, item$ItemImagePath, item$ItemName, qty, formatted_remark))
             
-            # 绑定按钮
-            bind_buttons(request_id, requests_data(), input, output, session, con)
-            
-            # 动态更新按钮文本和样式
-            updateActionButton(session, inputId = button_id, label = HTML("<i class='fa fa-check'></i> 采购请求已发送"))
-            runjs(sprintf("$('#%s').removeClass('btn-primary').addClass('btn-success');", button_id))
-            shinyjs::disable(button_id)
-            
-            # 提示成功消息
             showNotification(paste0("已发出采购请求，SKU：", sku, "，数量：", qty), type = "message")
-          }, error = function(e) {
-            # 提示错误消息
-            showNotification(paste("发出采购请求失败：", e$message), type = "error")
-          })
-        }
+          }
+          
+          # 更新 UI：按钮变绿，避免重复提交
+          updateActionButton(session, inputId = button_id, label = HTML("<i class='fa fa-check'></i> 采购请求已发送"))
+          runjs(sprintf("$('#%s').removeClass('btn-primary').addClass('btn-success');", button_id))
+          shinyjs::disable(button_id)
+          
+        }, error = function(e) {
+          showNotification(paste("发出采购请求失败：", e$message), type = "error")
+        })
       }, ignoreInit = TRUE)  # 忽略初始绑定时的触发
     })
     
@@ -1972,10 +1908,9 @@ server <- function(input, output, session) {
   
   # 监听 "完成请求" 按钮事件
   observeEvent(input$complete_requests, {
-    zero_stock_items(list())        # 清空补货物品列表
-    outbound_stock_items(list())    # 清空出库物品列表
-    removeModal()                   # 关闭模态框
-    runjs("document.getElementById('us_shipping_bill_number').focus();") # 聚焦运单号输入框
+    zero_stock_items(list())  # 清空补货物品列表
+    removeModal()  # 关闭模态框
+    runjs("document.getElementById('us_shipping_bill_number').focus();")  # 聚焦运单号输入框
   })
   
   # 订单物品删除逻辑 （美国售出only）
@@ -1998,6 +1933,7 @@ server <- function(input, output, session) {
     updateTextInput(session, "us_shipping_bill_number", value = "")
     updateTextInput(session, "us_shipping_sku_input", value = "")
     updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
+    updateTextAreaInput(session, "us_shipping_order_notes", value = "")
     new_order_items(NULL)  # 清空物品列表
   })
   
