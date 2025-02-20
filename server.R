@@ -1503,7 +1503,12 @@ server <- function(input, output, session) {
                 easyClose = FALSE,
                 div(
                   style = "padding: 10px; font-size: 16px; color: #FF0000;",
-                  paste0("订单 ", current_order_id(), " 混合了调货物品，请核对物品备齐后手动发货。")
+                  paste0("订单 ", current_order_id(), " 混合了调货物品，登记物品共 "),
+                  tags$span(
+                    style = "font-size: 22px; font-weight: bold; color: blue;",
+                    paste0(order_items_count(), " 件")
+                  ),
+                  "。请核对物品备齐后手动发货。"
                 ),
                 footer = tagList(
                   modalButton("关闭")
@@ -1515,7 +1520,11 @@ server <- function(input, output, session) {
                 easyClose = FALSE,
                 div(
                   style = "padding: 10px; font-size: 16px;",
-                  paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描，共 ", order_items_count(), " 件")
+                  paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描，"),
+                  tags$span(
+                    style = "font-size: 22px; font-weight: bold; color: blue;",
+                    paste0(order_items_count(), " 件")
+                  )
                 ),
                 footer = tagList(
                   actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
