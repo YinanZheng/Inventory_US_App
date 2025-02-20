@@ -1382,7 +1382,7 @@ server <- function(input, output, session) {
           # 检查是否符合装箱条件
           if (all(current_items$Status == "美国发货")) {
             order_notes <- current_order$OrderNotes
-            has_transfer_note <- grepl("调货", order_notes, fixed = TRUE)
+            has_transfer_note <- grepl("【调货", order_notes, fixed = TRUE)
             
             if (has_transfer_note) {
               showModal(modalDialog(
