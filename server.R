@@ -1722,226 +1722,110 @@ server <- function(input, output, session) {
     }
     
     tryCatch({
-      # 生成拼图路径
+      # 生成订单拼图
       combined_image_paths <- items$ItemImagePath[!is.na(items$ItemImagePath) & items$ItemImagePath != ""]
-      if (length(combined_image_paths) == 0) {
-        showNotification("无法生成订单图片：没有有效的物品图片路径", type = "warning")
-        order_image_path <- ""
-      } else {
-        montage_path <- paste0("/var/www/images/", order$OrderID, "_montage_", format(Sys.time(), "%Y%m%d%H%M%S"), ".jpg")
-        order_image_path <- generate_montage(combined_image_paths, montage_path)
-      }
+      order_image_path <- ifelse(length(combined_image_paths) == 0, "", generate_montage(combined_image_paths, paste0("/var/www/images/", order$OrderID, "_montage_", format(Sys.time(), "%Y%m%d%H%M%S"), ".jpg")))
       
       # 插入订单到 `orders` 表
-      dbExecute(con,
-                "INSERT INTO orders (OrderID, UsTrackingNumber, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderNotes, OrderStatus, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
-                params = list(
-                  order$OrderID,
-                  order$UsTrackingNumber,
-                  order$CustomerName,
-                  order$CustomerNickname,
-                  order$Platform,
-                  order_image_path,
-                  order$OrderNotes,
-                  "装箱"
-                )
-      )
+      dbExecute(con, "INSERT INTO orders (OrderID, UsTrackingNumber, CustomerName, CustomerNetName, Platform, OrderImagePath, OrderNotes, OrderStatus, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())",
+                params = list(order$OrderID, order$UsTrackingNumber, order$CustomerName, order$CustomerNickname, order$Platform, order_image_path, order$OrderNotes, "装箱"))
       
-      # 使用逐条更新逻辑更新物品状态和订单号
-      for (i in seq_len(nrow(items))) {
-        next_item <- items[i, ]
-        
-        # 更新状态
-        update_status(
-          con = con,
-          unique_id = next_item$UniqueID,
-          new_status = "美国发货",
-          refresh_trigger = NULL
-        )
-        
-        # 更新订单号
-        update_order_id(
-          con = con,
-          unique_id = next_item$UniqueID,
-          order_id = order$OrderID
-        )
-      }
+      # 更新物品状态和订单号
+      lapply(seq_len(nrow(items)), function(i) {
+        update_status(con = con, unique_id = items$UniqueID[i], new_status = "美国发货", refresh_trigger = NULL)
+        update_order_id(con = con, unique_id = items$UniqueID[i], order_id = order$OrderID)
+      })
       
-      # 更新数据并触发 UI 刷新
-      orders_refresh_trigger(!orders_refresh_trigger())
-
-      sku_list_str <- paste0("'", paste(unique(items$SKU), collapse = "','"), "'")  # 转换为 SQL 格式
-      
-      # **手动查询仅包含需要的 SKU 的最新数据**
+      # 查询 SKU 最新库存情况（**仅统计美国库存**）
+      sku_list_str <- paste0("'", paste(unique(items$SKU), collapse = "','"), "'")
       latest_unique_items <- dbGetQuery(con, paste0("
-        SELECT 
-          ui.SKU, 
-          ui.Status, 
-          inv.ItemName, 
-          inv.ItemImagePath, 
-          inv.Maker
-        FROM unique_items AS ui
-        JOIN inventory AS inv ON ui.SKU = inv.SKU
-        WHERE ui.SKU IN (", sku_list_str, ")
-      "))
+      SELECT ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker,
+             SUM(CASE WHEN ui.Status = '美国入库' THEN 1 ELSE 0 END) AS UsStock
+      FROM unique_items AS ui
+      JOIN inventory AS inv ON ui.SKU = inv.SKU
+      WHERE ui.SKU IN (", sku_list_str, ")
+      GROUP BY ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker
+    "))
       
-      # 检查库存并记录库存为零的物品
-      zero_items <- list()  # 临时列表存储库存为零的物品
-      outbound_items <- list()  # 临时列表存储需要出库的物品
-      
+      # 检查库存，只记录 **美国库存为零** 的物品
+      zero_items <- list()
       for (sku in unique(items$SKU)) {
-        # 检查库存
         result <- latest_unique_items %>%
           filter(SKU == sku) %>%
-          group_by(SKU, ItemName, ItemImagePath, Maker) %>%
-          summarise(
-            DomesticStock = sum(Status == "国内入库", na.rm = TRUE),
-            InTransitStock = sum(Status == "国内出库", na.rm = TRUE),
-            UsStock = sum(Status == "美国入库", na.rm = TRUE),
-            .groups = "drop"
-          )
- 
-        total_stock <- sum(result$DomesticStock, result$InTransitStock, result$UsStock)
-        if (total_stock == 0) {
+          mutate(UsStock = ifelse(is.na(UsStock), 0, UsStock)) %>%
+          select(SKU, ItemName, ItemImagePath, Maker, UsStock)
+        
+        if (result$UsStock == 0) {
           zero_items <- append(zero_items, list(result))
-        } else if (result$UsStock == 0 && result$InTransitStock == 0 && result$DomesticStock > 0) {
-          outbound_items <- append(outbound_items, list(result))
         }
       }
       
-      # 更新 zero_stock_items 和 outbound_stock_items
-      zero_stock_items(zero_items)
-      outbound_stock_items(outbound_items)
+      zero_stock_items(zero_items)  # 仅存储需要采购的物品
+      
+      # 查询这些 SKU 在 `requests` 表中的已有采购请求
+      request_query <- paste0("SELECT SKU, RequestType, Quantity FROM requests WHERE SKU IN (", sku_list_str, ") AND RequestStatus = '待处理'")
+      existing_requests <- dbGetQuery(con, request_query)
       
       # 结果展示
       added_order <- orders() %>% filter(OrderID == order$OrderID)
       renderOrderInfo(output, "order_info_card", added_order, clickable = FALSE)
       
       output$order_items_title <- renderUI({
-        tags$h4(
-          HTML(paste0(as.character(icon("box")), " 订单号 ", order$OrderID, " 的物品")),
-          style = "color: #28A745; font-weight: bold; margin-bottom: 15px;"
-        )
+        tags$h4(HTML(paste0(as.character(icon("box")), " 订单号 ", order$OrderID, " 的物品")),
+                style = "color: #28A745; font-weight: bold; margin-bottom: 15px;")
       })
       
       added_order_items <- unique_items_data() %>% filter(OrderID == order$OrderID)
       renderOrderItems(output, "shipping_order_items_cards", added_order_items, con, deletable = FALSE)
-
-      # 弹出模态框提示补货和出库请求
-      if (length(zero_items) > 0 || length(outbound_items) > 0) {
+      
+      # **只弹出采购请求模态框**
+      if (length(zero_items) > 0) {
         modal_content <- tagList()
-        
-        if (length(zero_items) > 0) {
-          modal_content <- tagAppendChildren(
-            modal_content,
+        modal_content <- tagAppendChildren(
+          modal_content,
+          tags$div(
+            style = "padding: 10px; background-color: #ffe6e6; border-radius: 8px; margin-bottom: 20px;",
+            tags$h4("需要采购补货：", style = "color: red; margin-bottom: 15px;"),
             tags$div(
-              style = "padding: 10px; background-color: #ffe6e6; border-radius: 8px; margin-bottom: 20px;",
-              tags$h4("需要采购补货：", style = "color: red; margin-bottom: 15px;"),
-              tags$div(
-                style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
-                lapply(zero_items, function(item) {
-                  div(
-                    style = "background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center;",
-                    tags$img(
-                      src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
-                      style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"
-                    ),
-                    tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
-                    tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
-                    numericInput(
-                      paste0("purchase_qty_", item$SKU),
-                      "请求数量",
-                      value = 1,
-                      min = 1,
-                      width = "80%"
-                    ),
-                    textAreaInput(
-                      paste0("purchase_remark_input_", item$SKU),
-                      "留言（可选）",
-                      placeholder = "输入留言...",
-                      width = "100%",
-                      rows = 2
-                    ),
-                    actionButton(
-                      paste0("create_request_purchase_", item$SKU),
-                      "发出采购请求",
-                      class = "btn-primary",
-                      style = "margin-top: 10px; width: 100%;"
+              style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
+              lapply(zero_items, function(item) {
+                existing_request <- existing_requests %>% filter(SKU == item$SKU)
+                
+                div(
+                  style = "background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center;",
+                  tags$img(src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
+                           style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"),
+                  tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
+                  tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
+                  if (nrow(existing_request) > 0) {
+                    tagList(
+                      tags$p(tags$b("已有请求："), style = "color: blue; margin: 5px 0;"),
+                      tags$p(paste0("类型：", existing_request$RequestType), style = "margin: 2px 0;"),
+                      tags$p(paste0("数量：", existing_request$Quantity), style = "margin: 2px 0;")
                     )
-                  )
-                })
-              )
+                  } else {
+                    tagList(
+                      numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "80%"),
+                      textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "100%", rows = 2),
+                      actionButton(paste0("create_request_purchase_", item$SKU), "发出采购请求", class = "btn-primary", style = "margin-top: 10px; width: 100%;")
+                    )
+                  }
+                )
+              })
             )
           )
-        }
+        )
         
-        if (length(outbound_items) > 0) {
-          modal_content <- tagAppendChildren(
-            modal_content,
-            tags$div(
-              style = "padding: 10px; background-color: #e6f7ff; border-radius: 8px; margin-bottom: 20px;",
-              tags$h4("可从国内调货：", style = "color: blue; margin-bottom: 15px;"),
-              tags$div(
-                style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
-                lapply(outbound_items, function(item) {
-                  div(
-                    style = "background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center;",
-                    tags$img(
-                      src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
-                      style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"
-                    ),
-                    tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
-                    tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
-                    tags$div(
-                      style = "width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;",
-                      numericInput(
-                        paste0("outbound_qty_", item$SKU),
-                        "请求数量",
-                        value = 1,
-                        min = 1,
-                        width = "50%"
-                      ),
-                      tags$span(
-                        paste("国内库存数:", item$DomesticStock),
-                        style = "font-size: 14px; color: grey;"
-                      )
-                    ),
-                    # 添加留言输入框
-                    textAreaInput(
-                      paste0("outbound_remark_input_", item$SKU),
-                      "留言（可选）",
-                      placeholder = "输入留言...",
-                      width = "100%",
-                      rows = 2
-                    ),
-                    actionButton(
-                      paste0("create_request_outbound_", item$SKU),
-                      "发出调货请求",
-                      class = "btn-primary",
-                      style = "margin-top: 10px; width: 100%;"
-                    )
-                  )
-                })
-              )
-            )
-          )
-        }
-
         showModal(modalDialog(
-          title = "处理库存请求",
+          title = "处理采购请求",
           div(style = "max-height: 650px; overflow-y: auto;", modal_content),
           easyClose = FALSE,
-          footer = tagList(
-            actionButton("complete_requests", "关闭", class = "btn-success")
-          )
+          footer = tagList(actionButton("complete_requests", "关闭", class = "btn-success"))
         ))
       }
       
-      showNotification(
-        paste0("订单已成功发货！订单号：", order$OrderID, "，共发货 ", nrow(items), " 件。"),
-        type = "message"
-      )
+      showNotification(paste0("订单已成功发货！订单号：", order$OrderID, "，共发货 ", nrow(items), " 件。"), type = "message")
     }, error = function(e) {
       showNotification(paste("发货失败：", e$message), type = "error")
     })
@@ -1953,7 +1837,7 @@ server <- function(input, output, session) {
       updateSelectInput(session, "us_shipping_platform", selected = "TikTok")
     })
     
-    runjs("document.getElementById('us_shipping_bill_number').focus();") # 聚焦 SKU 输入框
+    runjs("document.getElementById('us_shipping_bill_number').focus();")  # 聚焦输入框
     new_order_items(NULL)  # 清空物品列表
   })
   
