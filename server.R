@@ -1164,44 +1164,7 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  zero_stock_items <- reactiveVal(list())  # 用于存储库存为零的物品
-  
-  # 采购请求处理逻辑的公共函数
-  request_purchase <- function(sku, item_name, item_image, maker, existing_request) {
-    request_exists <- !is.null(existing_request) && nrow(existing_request) > 0
-    
-    tagList(
-      tags$div(
-        style = "background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center;",
-        tags$img(src = ifelse(is.na(item_image), placeholder_150px_path, paste0(host_url, "/images/", basename(item_image))),
-                 style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"),
-        tags$p(tags$b("物品名："), item_name, style = "margin: 5px 0;"),
-        tags$p(tags$b("SKU："), sku, style = "margin: 5px 0;"),
-        
-        if (request_exists) {
-          tagList(
-            tags$div(
-              style = "border: 2px solid #007BFF; border-radius: 8px; padding: 10px; background-color: #f0f8ff; margin: 0 auto 10px auto; width: 50%; text-align: center;",                        
-              tags$p(tags$b("采购请求已存在："), style = "color: blue; margin: 5px 0;"),
-              tags$p(paste0("当前请求状态：", existing_request$RequestType), style = "margin: 2px 0;"),
-              tags$p(paste0("当前请求数量：", existing_request$Quantity), style = "margin: 2px 0;")
-            ),
-            numericInput(paste0("purchase_qty_", sku), "追加数量", value = 1, min = 1, width = "50%"),
-            textAreaInput(paste0("purchase_remark_input_", sku), "留言（可选）", placeholder = "输入留言...", width = "50%", rows = 2),
-            actionButton(paste0("create_request_purchase_", sku), "追加采购请求", class = "btn-primary", style = "margin-top: 10px; width: 50%;")
-          )
-        } else {
-          tagList(
-            numericInput(paste0("purchase_qty_", sku), "请求数量", value = 1, min = 1, width = "50%"),
-            textAreaInput(paste0("purchase_remark_input_", sku), "留言（可选）", placeholder = "输入留言...", width = "50%", rows = 2),
-            actionButton(paste0("create_request_purchase_", sku), "发出采购请求", class = "btn-primary", style = "margin-top: 10px; width: 50%;")
-          )
-        }
-      )
-    )
-  }
-  
-  # 检测美国售罄物品并弹窗创建采购请求的公共函数
+  # 抽取检测美国售罄物品并弹窗创建采购请求的公共函数
   check_us_stock_and_request_purchase <- function(order_items) {
     req(order_items, nrow(order_items) > 0)
     
@@ -1246,7 +1209,35 @@ server <- function(input, output, session) {
               style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
               lapply(zero_items, function(item) {
                 existing_request <- existing_requests %>% filter(SKU == item$SKU)
-                request_purchase(item$SKU, item$ItemName, item$ItemImagePath, item$Maker, existing_request)
+                request_exists <- nrow(existing_request) > 0
+                
+                div(
+                  style = "background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center;",
+                  tags$img(src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
+                           style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"),
+                  tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
+                  tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
+                  
+                  if (request_exists) {
+                    tagList(
+                      tags$div(
+                        style = "border: 2px solid #007BFF; border-radius: 8px; padding: 10px; background-color: #f0f8ff; margin: 0 auto 10px auto; width: 50%; text-align: center;",                        
+                        tags$p(tags$b("采购请求已存在："), style = "color: blue; margin: 5px 0;"),
+                        tags$p(paste0("当前请求状态：", existing_request$RequestType), style = "margin: 2px 0;"),
+                        tags$p(paste0("当前请求数量：", existing_request$Quantity), style = "margin: 2px 0;")
+                      ),
+                      numericInput(paste0("purchase_qty_", item$SKU), "追加数量", value = 1, min = 1, width = "50%"),
+                      textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "50%", rows = 2),
+                      actionButton(paste0("create_request_purchase_", item$SKU), "追加采购请求", class = "btn-primary", style = "margin-top: 10px; width: 50%;")
+                    )
+                  } else {
+                    tagList(
+                      numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "50%"),
+                      textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "50%", rows = 2),
+                      actionButton(paste0("create_request_purchase_", item$SKU), "发出采购请求", class = "btn-primary", style = "margin-top: 10px; width: 50%;")
+                    )
+                  }
+                )
               })
             )
           )
@@ -1263,8 +1254,6 @@ server <- function(input, output, session) {
       showNotification(paste("检查库存并创建采购请求时发生错误：", e$message), type = "error")
     })
   }
-  
-  #####
   
   # 页面切换时的聚焦
   observeEvent({
@@ -1809,6 +1798,8 @@ server <- function(input, output, session) {
     }
   })
   
+  zero_stock_items <- reactiveVal(list())  # 用于存储库存为零的物品
+
   # 美国售出发货按钮
   observeEvent(input$us_ship_order_btn, {
     req(new_order(), new_order_items())
@@ -3690,15 +3681,6 @@ server <- function(input, output, session) {
         maker = selected_item$Maker,
         domestic_stock = selected_item$DomesticQuantity
       ))
-      
-      # # 动态更新出库请求按钮
-      # output$query_outbound_request_btn <- renderUI({
-      #   if (selected_item$DomesticQuantity > 0) {
-      #     actionButton("query_outbound_request", "出库请求", class = "btn btn-success btn-sm", style = "width: 100%;")
-      #   } else {
-      #     NULL  # 不显示按钮
-      #   }
-      # })
     }
   })
   
@@ -3768,82 +3750,82 @@ server <- function(input, output, session) {
     removeModal()  # 关闭模态框
   })
   
-  # # 点击出库请求
-  # observeEvent(input$query_outbound_request, {
-  #   req(query_soldout_selected_item_details())
-  #   
-  #   details <- query_soldout_selected_item_details()
-  #   
-  #   showModal(modalDialog(
-  #     title = "创建出库请求",
-  #     
-  #     div(
-  #       style = "display: flex; flex-direction: row; align-items: center; gap: 20px; margin-bottom: 15px;",
-  #       
-  #       # 左侧：商品图片 + 详情
-  #       div(
-  #         style = "flex: 0 0 40%; text-align: center;",
-  #         tags$img(src = details$image, style = "width: 150px; height: auto; object-fit: contain; border-radius: 8px;"),
-  #         div(
-  #           tags$h4(details$name, style = "margin-top: 10px; color: #007BFF;"),
-  #           tags$p(paste("SKU:", details$sku), style = "margin: 0; font-weight: bold;"),
-  #           tags$p(paste("供应商:", details$maker), style = "margin: 0; color: #6c757d; font-size: 14px;"),
-  #           tags$p(
-  #             paste("国内库存:", details$domestic_stock),
-  #             style = paste("margin: 0;", ifelse(details$domestic_stock == 0, "color: #DC3545; font-weight: bold;", "color: #28A745;"))
-  #           )
-  #         )
-  #       ),
-  #       
-  #       # 右侧：出库数量 + 备注
-  #       div(
-  #         style = "flex: 0 0 50%; display: flex; flex-direction: column; gap: 10px;",
-  #         numericInput("query_outbound_qty", "出库数量", value = 1, min = 1, max = details$domestic_stock, width = "80%"),
-  #         textAreaInput("query_outbound_remark", "备注", "", width = "80%", height = "80px")
-  #       )
-  #     ),
-  #     
-  #     footer = tagList(
-  #       modalButton("取消"),
-  #       actionButton("query_confirm_outbound", "确认出库", class = "btn-success")
-  #     )
-  #   ))
-  # })
-  # 
-  # # 确认出库
-  # observeEvent(input$query_confirm_outbound, {
-  #   req(query_soldout_selected_item_details(), input$query_outbound_qty)
-  #   
-  #   details <- query_soldout_selected_item_details()
-  #   request_id <- uuid::UUIDgenerate()
-  #   
-  #   # 如果用户输入的出库数量大于国内库存，禁止提交
-  #   if (input$query_outbound_qty > details$domestic_stock) {
-  #     showNotification("出库数量不能大于国内库存数！", type = "error")
-  #     return()
-  #   }
-  #   
-  #   # 数据库操作：插入出库请求
-  #   dbExecute(con, "
-  #   INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
-  #   VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '出库')",
-  #             params = list(
-  #               request_id,
-  #               details$sku,
-  #               details$maker,
-  #               details$image,
-  #               details$name,
-  #               input$query_outbound_qty,
-  #               format_remark(input$query_outbound_remark, system_type)
-  #             )
-  #   )
-  #   
-  #   bind_buttons(request_id, requests_data(), input, output, session, con)
-  #   
-  #   showNotification("出库请求已创建", type = "message")
-  #   removeModal()  # 关闭模态框
-  # })
-  # 
+  # 点击出库请求
+  observeEvent(input$query_outbound_request, {
+    req(query_soldout_selected_item_details())
+    
+    details <- query_soldout_selected_item_details()
+    
+    showModal(modalDialog(
+      title = "创建出库请求",
+      
+      div(
+        style = "display: flex; flex-direction: row; align-items: center; gap: 20px; margin-bottom: 15px;",
+        
+        # 左侧：商品图片 + 详情
+        div(
+          style = "flex: 0 0 40%; text-align: center;",
+          tags$img(src = details$image, style = "width: 150px; height: auto; object-fit: contain; border-radius: 8px;"),
+          div(
+            tags$h4(details$name, style = "margin-top: 10px; color: #007BFF;"),
+            tags$p(paste("SKU:", details$sku), style = "margin: 0; font-weight: bold;"),
+            tags$p(paste("供应商:", details$maker), style = "margin: 0; color: #6c757d; font-size: 14px;"),
+            tags$p(
+              paste("国内库存:", details$domestic_stock),
+              style = paste("margin: 0;", ifelse(details$domestic_stock == 0, "color: #DC3545; font-weight: bold;", "color: #28A745;"))
+            )
+          )
+        ),
+        
+        # 右侧：出库数量 + 备注
+        div(
+          style = "flex: 0 0 50%; display: flex; flex-direction: column; gap: 10px;",
+          numericInput("query_outbound_qty", "出库数量", value = 1, min = 1, max = details$domestic_stock, width = "80%"),
+          textAreaInput("query_outbound_remark", "备注", "", width = "80%", height = "80px")
+        )
+      ),
+      
+      footer = tagList(
+        modalButton("取消"),
+        actionButton("query_confirm_outbound", "确认出库", class = "btn-success")
+      )
+    ))
+  })
+  
+  # 确认出库
+  observeEvent(input$query_confirm_outbound, {
+    req(query_soldout_selected_item_details(), input$query_outbound_qty)
+    
+    details <- query_soldout_selected_item_details()
+    request_id <- uuid::UUIDgenerate()
+    
+    # 如果用户输入的出库数量大于国内库存，禁止提交
+    if (input$query_outbound_qty > details$domestic_stock) {
+      showNotification("出库数量不能大于国内库存数！", type = "error")
+      return()
+    }
+    
+    # 数据库操作：插入出库请求
+    dbExecute(con, "
+    INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
+    VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '出库')",
+              params = list(
+                request_id,
+                details$sku,
+                details$maker,
+                details$image,
+                details$name,
+                input$query_outbound_qty,
+                format_remark(input$query_outbound_remark, system_type)
+              )
+    )
+    
+    bind_buttons(request_id, requests_data(), input, output, session, con)
+    
+    showNotification("出库请求已创建", type = "message")
+    removeModal()  # 关闭模态框
+  })
+  
   ###
   
   # 根据SKU产生图表
