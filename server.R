@@ -1195,7 +1195,7 @@ server <- function(input, output, session) {
         }
       }
       
-      showNotification(paste0("zero_items:", nrow(zero_items)))
+      showNotification(paste0("zero_items:", length(zero_items)))
       
       zero_stock_items(zero_items)  # 存储需要采购的物品
       
