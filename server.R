@@ -1599,20 +1599,21 @@ server <- function(input, output, session) {
   observeEvent(input$confirm_shipping_btn, {
     tryCatch({
       # 更新订单状态为“装箱”
-      update_order_status(
-        order_id = current_order_id(),
-        new_status = "装箱",
-        refresh_trigger = orders_refresh_trigger,
-        con = con
-      )
-
+      update_order_status(order_id = current_order_id(), new_status = "装箱", refresh_trigger = orders_refresh_trigger, con = con)
+      
+      # **获取当前订单下的所有物品**
+      order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
+      
+      # **调用公共方法检测美国库存并弹出采购请求**
+      check_us_stock_and_request_purchase(order_items)
+      
       # 关闭模态框
       removeModal()
     }, error = function(e) {
-      # 捕获错误并通知用户
       showNotification(paste("发生错误：", e$message), type = "error")
     })
   })
+  
   
   # 清空国内售出发货填写逻辑
   observeEvent(input$clear_shipping_bill_btn, {
