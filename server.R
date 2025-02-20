@@ -1333,8 +1333,8 @@ server <- function(input, output, session) {
       #   footer = NULL  # 不需要关闭按钮
       # ))
       # 
-      # updateTextInput(session, "shipping_bill_number", value = "")
-      # runjs("document.getElementById('shipping_bill_number').focus();")
+      updateTextInput(session, "shipping_bill_number", value = "")
+      runjs("document.getElementById('shipping_bill_number').focus();")
       # 
       # # 延迟 2 秒后自动关闭弹窗
       # shinyjs::delay(2000, removeModal())
