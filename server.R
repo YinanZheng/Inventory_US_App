@@ -1028,6 +1028,7 @@ server <- function(input, output, session) {
     inbound_quantity <- as.integer(input$inbound_quantity)
     if (is.na(inbound_quantity) || inbound_quantity <= 0) {
       showNotification("入库数量必须是一个正整数！", type = "error")
+      runjs("playInboundErrorSound()")  # 播放失败音效
       return()
     }
     
@@ -1257,7 +1258,8 @@ server <- function(input, output, session) {
         return(FALSE)
       }
     }, error = function(e) {
-      showNotification(paste("检查库存并创建采购请求时发生错误：", e$message), type = "error")
+      showNotification(paste("[Function]check_us_stock_and_request_purchase 发生错误：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放失败音效
     })
   }
   
@@ -1398,7 +1400,8 @@ server <- function(input, output, session) {
       updateTextInput(session, "shipping_bill_number", value = result$UsTrackingNumber[1])
       showNotification("运单号更新成功！", type = "message")
     } else {
-      showNotification("未找到相关订单，请检查输入！", type = "error")
+      showNotification("未找到相关订单，请检查输入！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
     }
     updateTextInput(session, "order_id_input", value = "")
   })
@@ -1459,6 +1462,7 @@ server <- function(input, output, session) {
           paste0("当前订单状态为 '", current_order$OrderStatus, "' ，操作可能受限！请核对后继续。"),
           type = "warning"
         )
+        runjs("playWarningSound()")  # 播放警告音效
       } else { #如果订单状态为备货
         # 如果订单内无物品
         if (nrow(current_items) == 0) {
@@ -1564,7 +1568,8 @@ server <- function(input, output, session) {
     
     # 如果未找到对应的 SKU
     if (nrow(matching_item) == 0) {
-      showNotification("未找到商品，请检查输入的商品是否存在于本订单！", type = "error")
+      showNotification("未找到商品，请检查输入的商品是否存在于本订单！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       updateTextInput(session, "sku_input", value = "")
       return()
     }
@@ -1601,6 +1606,7 @@ server <- function(input, output, session) {
       
     }, error = function(e) {
       showNotification(paste("更新状态时发生错误：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -1620,7 +1626,8 @@ server <- function(input, output, session) {
       if(!has_request) removeModal()
       
     }, error = function(e) {
-      showNotification(paste("发生错误：", e$message), type = "error")
+      showNotification(paste("确认装箱发生错误：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -1755,7 +1762,8 @@ server <- function(input, output, session) {
     # 校验 SKU 是否有效
     valid_sku <- stock_data() %>% filter(SKU == new_sku)
     if (nrow(valid_sku) == 0) {
-      showNotification("输入的 SKU 不存在或状态不为 '美国入库'！", type = "error")
+      showNotification("输入的 SKU 不存在或状态不为 '美国入库'！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       updateTextInput(session, "us_shipping_sku_input", value = "")
       return()
     }
@@ -1765,7 +1773,8 @@ server <- function(input, output, session) {
     if (!is.null(current_items)) {
       existing_count <- sum(current_items$SKU == new_sku)
       if (existing_count >= valid_sku$StockQuantity[1]) {
-        showNotification(paste0("输入的 SKU '", new_sku, "' 已达到库存上限！"), type = "error")
+        showNotification(paste0("输入的 SKU '", new_sku, "' 已达到库存上限！"), type = "warning")
+        runjs("playWarningSound()")  # 播放警告音效
         updateTextInput(session, "us_shipping_sku_input", value = "")
         return()
       }
@@ -1776,7 +1785,8 @@ server <- function(input, output, session) {
       filter(SKU == new_sku & Status == "美国入库" & !(UniqueID %in% current_items$UniqueID))
     
     if (nrow(available_items) == 0) {
-      showNotification("该 SKU 的库存已用尽！", type = "error")
+      showNotification("该 SKU 的库存已用尽！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       updateTextInput(session, "us_shipping_sku_input", value = "")
       return()
     }
@@ -1822,7 +1832,8 @@ server <- function(input, output, session) {
     items <- new_order_items()
     
     if (nrow(items) == 0) {
-      showNotification("没有物品需要发货！", type = "error")
+      showNotification("没有物品需要发货！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -1847,7 +1858,8 @@ server <- function(input, output, session) {
       
       showNotification(paste0("订单已成功发货！订单号：", order$OrderID, "，共发货 ", nrow(items), " 件。"), type = "message")
     }, error = function(e) {
-      showNotification(paste("发货失败：", e$message), type = "error")
+      showNotification(paste("美国售出发货失败：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
     
     # 延迟 2 秒清空输入框
@@ -1912,6 +1924,7 @@ server <- function(input, output, session) {
           
         }, error = function(e) {
           showNotification(paste("发出采购请求失败：", e$message), type = "error")
+          runjs("playErrorSound()")  # 播放错误音效
         })
       }, ignoreInit = TRUE)  # 忽略初始绑定时的触发
     })
@@ -1974,7 +1987,8 @@ server <- function(input, output, session) {
       slice(1)  # 取匹配的第一条
     
     if (nrow(return_item) == 0) {
-      showNotification("未找到可退货的物品！", type = "error")
+      showNotification("未找到可退货的物品！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       output$return_order_info <- renderUI({ NULL })
       output$return_item_info <- renderUI({ NULL })
       output$return_order_image <- renderUI({ NULL })
@@ -2055,6 +2069,7 @@ server <- function(input, output, session) {
       runjs("document.getElementById('return_sku_itemname').focus();")
     }, error = function(e) {
       showNotification(paste("退货失败:", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -2256,7 +2271,8 @@ server <- function(input, output, session) {
               order_id = NULL  # 清空订单号
             )
           } else {
-            showNotification(paste0("物品 ", item$UniqueID, " 无状态历史记录，无法恢复。"), type = "error")
+            showNotification(paste0("物品 ", item$UniqueID, " 无状态历史记录，无法恢复。"), type = "warning")
+            runjs("playWarningSound()")  # 播放警告音效
           }
         })
       }
@@ -2279,6 +2295,7 @@ server <- function(input, output, session) {
       output$associated_items_table <- renderDT({ NULL })
     }, error = function(e) {
       showNotification(paste("删除订单时发生错误：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -2290,7 +2307,8 @@ server <- function(input, output, session) {
       selected_order_id <- selected_order$OrderID
       
       if (is.null(selected_order_id) || length(selected_order_id) != 1) {
-        showNotification("请选择一个订单进行合并！", type = "error")
+        showNotification("请选择一个订单进行合并！", type = "warning")
+        runjs("playWarningSound()")  # 播放警告音效
         return()
       }
       
@@ -2303,7 +2321,8 @@ server <- function(input, output, session) {
       
       # 如果只找到 **1 个** 订单，且它本身就是主单（无 `@`），则不能合并
       if (nrow(possible_sub_orders) == 1 && !grepl("@", selected_order_id)) {
-        showNotification("当前订单未找到可合并的子单！", type = "error")
+        showNotification("当前订单未找到可合并的子单！", type = "warning")
+        runjs("playWarningSound()")  # 播放警告音效
         return()
       }
       
@@ -2314,7 +2333,8 @@ server <- function(input, output, session) {
       
       # 检查订单状态、运单号和平台是否满足合并条件
       if (!all(order_statuses == "备货") || length(tracking_numbers) > 1 || length(platforms) > 1) {
-        showNotification("子单的订单状态必须全部为 '备货'，运单号和平台必须一致才可合并！", type = "error")
+        showNotification("子单的订单状态必须全部为 '备货'，运单号和平台必须一致才可合并！", type = "warning")
+        runjs("playWarningSound()")  # 播放警告音效
         return()
       }
       
@@ -2372,6 +2392,7 @@ server <- function(input, output, session) {
       
     }, error = function(e) {
       showNotification(paste("合并订单时发生错误：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -2402,7 +2423,8 @@ server <- function(input, output, session) {
     
     # 如果运单号为空或缺失，显示提示信息
     if (is.null(tracking_number) || tracking_number == "") {
-      showNotification("未找到运单号，请检查", type = "error")
+      showNotification("未找到运单号，请检查", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()  # 终止后续操作
     }
     
@@ -2420,7 +2442,8 @@ server <- function(input, output, session) {
     
     # 如果运单号为空或缺失，显示提示信息
     if (is.null(tracking_number) || tracking_number == "") {
-      showNotification("未找到运单号，请检查", type = "error")
+      showNotification("未找到运单号，请检查", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()  # 终止后续操作
     }
     
@@ -2450,7 +2473,8 @@ server <- function(input, output, session) {
   observeEvent(input$update_image_btn, {
     selected_rows <- unique_items_table_manage_selected_row()
     if (length(selected_rows) != 1) {
-      showNotification("请确保只选中一行！", type = "error")
+      showNotification("请确保只选中一行！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -2459,14 +2483,16 @@ server <- function(input, output, session) {
     selected_sku <- selected_item$SKU
     
     if (is.null(selected_sku) || selected_sku == "") {
-      showNotification("无法获取所选行的 SKU，请检查！", type = "error")
+      showNotification("无法获取所选行的 SKU，请检查！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
     # 检查 SKU 是否存在于库存表
     existing_inventory_items <- inventory()
     if (!selected_sku %in% existing_inventory_items$SKU) {
-      showNotification("库存中无此 SKU 商品，无法更新图片！", type = "error")
+      showNotification("库存中无此 SKU 商品，无法更新图片！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -2499,10 +2525,12 @@ server <- function(input, output, session) {
       }, error = function(e) {
         # 数据库操作失败时提示错误
         showNotification("图片路径更新失败，请重试！", type = "error")
+        runjs("playErrorSound()")  # 播放错误音效
       })
     } else {
       # 未检测到有效图片数据
       showNotification("未检测到有效的图片数据，请上传或粘贴图片！", type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     }
     
     # 重置图片上传状态
@@ -2516,7 +2544,8 @@ server <- function(input, output, session) {
     
     # 验证是否有选中行
     if (is.null(selected_rows) || length(selected_rows) == 0) {
-      showNotification("请至少选中一行进行更新！", type = "error")
+      showNotification("请至少选中一行进行更新！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -2529,15 +2558,18 @@ server <- function(input, output, session) {
     new_purchase_date <- input$update_purchase_date
     
     if (is.null(new_product_cost) || new_product_cost < 0) {
-      showNotification("请输入有效的单价！", type = "error")
+      showNotification("请输入有效的单价！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     if (is.null(new_shipping_cost) || new_shipping_cost < 0) {
-      showNotification("请输入有效的国内运费！", type = "error")
+      showNotification("请输入有效的国内运费！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     if (is.null(new_purchase_date) || !lubridate::is.Date(as.Date(new_purchase_date))) {
-      showNotification("请输入有效的采购日期！", type = "error")
+      showNotification("请输入有效的采购日期！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -2560,6 +2592,7 @@ server <- function(input, output, session) {
       showNotification(paste0("成功更新了 ", nrow(selected_items), " 项物品的信息！"), type = "message")
     }, error = function(e) {
       showNotification(paste("更新失败：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -2585,10 +2618,12 @@ server <- function(input, output, session) {
         updateDateInput(session, "update_purchase_date", value = as.Date(selected_data$PurchaseTime))
         
       } else {
-        showNotification("选中的行无效或数据为空！", type = "error")
+        showNotification("选中的行无效或数据为空！", type = "warning")
+        runjs("playWarningSound()")  # 播放警告音效
       }
     } else {
       showNotification("未选中任何行！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
     }
   })
   
@@ -2610,7 +2645,8 @@ server <- function(input, output, session) {
     
     # 如果没有选中行，提示用户
     if (is.null(selected_rows) || length(selected_rows) == 0) {
-      showNotification("请先选择要删除的物品！", type = "error")
+      showNotification("请先选择要删除的物品！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -2624,7 +2660,8 @@ server <- function(input, output, session) {
     
     # 如果没有选中行，提示用户
     if (is.null(selected_rows) || length(selected_rows) == 0) {
-      showNotification("没有选中任何物品！", type = "error")
+      showNotification("没有选中任何物品！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -2661,6 +2698,7 @@ server <- function(input, output, session) {
     }, error = function(e) {
       dbRollback(con) # 回滚事务
       showNotification(paste("删除物品时发生错误：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
     
     # 关闭确认框
@@ -2686,7 +2724,8 @@ server <- function(input, output, session) {
     selected_rows <- unique_items_table_defect_selected_row()  # 获取选中行索引
     
     if (is.null(selected_rows) || length(selected_rows) == 0) {
-      showNotification("请先选择物品！", type = "error")
+      showNotification("请先选择物品！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -2697,7 +2736,8 @@ server <- function(input, output, session) {
       # 检查是否所有选中物品的状态符合要求（Defect == "无瑕" 或 Defect == "修复"）
       invalid_items <- selected_data[!selected_data$Defect %in% c("无瑕", "修复"), ]
       if (nrow(invalid_items) > 0) {
-        showNotification("只有‘无瑕’或‘修复’状态的物品可以登记为瑕疵品！", type = "error")
+        showNotification("只有‘无瑕’或‘修复’状态的物品可以登记为瑕疵品！", type = "warning")
+        runjs("playWarningSound()")  # 播放警告音效
         return()
       }
       
@@ -2723,6 +2763,7 @@ server <- function(input, output, session) {
       showNotification("所选物品已成功登记为瑕疵品！", type = "message")
     }, error = function(e) {
       showNotification(paste("登记失败：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -2731,7 +2772,8 @@ server <- function(input, output, session) {
     selected_rows <- unique_items_table_defect_selected_row()  # 获取选中行索引
     
     if (is.null(selected_rows) || length(selected_rows) == 0) {
-      showNotification("请先选择物品！", type = "error")
+      showNotification("请先选择物品！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -2742,7 +2784,8 @@ server <- function(input, output, session) {
       # 检查是否所有选中物品都满足条件（Defect == "瑕疵"）
       invalid_items <- selected_data[selected_data$Defect != "瑕疵", ]
       if (nrow(invalid_items) > 0) {
-        showNotification("只有‘瑕疵’状态的物品可以登记为修复品！", type = "error")
+        showNotification("只有‘瑕疵’状态的物品可以登记为修复品！", type = "warning")
+        runjs("playWarningSound()")  # 播放警告音效
         return()
       }
       
@@ -2768,6 +2811,7 @@ server <- function(input, output, session) {
       showNotification("所选物品已成功登记为修复品！", type = "message")
     }, error = function(e) {
       showNotification(paste("登记失败：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -2851,7 +2895,8 @@ server <- function(input, output, session) {
       
       shinyjs::enable("link_tracking_btn")  # 启用挂靠运单按钮
     }, error = function(e) {
-      showNotification(paste("操作失败：", e$message), type = "error")
+      showNotification(paste("登记国际运单操作失败：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -2905,6 +2950,7 @@ server <- function(input, output, session) {
         paste("查询失败：", e$message)
       })
       showNotification(paste("加载运单信息失败：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -2913,7 +2959,8 @@ server <- function(input, output, session) {
     tracking_number <- input$intl_tracking_number
     
     if (is.null(tracking_number) || tracking_number == "") {
-      showNotification("请输入运单号后再执行此操作！", type = "error")
+      showNotification("请输入运单号后再执行此操作！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -2942,6 +2989,7 @@ server <- function(input, output, session) {
       
       if (nrow(summary_info) == 0 || is.na(summary_info$TotalQuantity[1])) {
         showNotification("未找到与当前运单号相关的货物信息！", type = "warning")
+        runjs("playWarningSound()")  # 播放警告音效
         return()
       }
       
@@ -2992,7 +3040,8 @@ server <- function(input, output, session) {
         footer = modalButton("关闭")
       ))
     }, error = function(e) {
-      showNotification(paste("操作失败：", e$message), type = "error")
+      showNotification(paste("货值汇总操作失败：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -3001,7 +3050,8 @@ server <- function(input, output, session) {
     tracking_number <- input$intl_tracking_number
     
     if (is.null(tracking_number) || tracking_number == "") {
-      showNotification("请输入运单号后再执行此操作！", type = "error",  )
+      showNotification("请输入运单号后再执行此操作！", type = "warning")
+      runjs("playWarningSound()")  # 播放警告音效
       return()
     }
     
@@ -3015,6 +3065,7 @@ server <- function(input, output, session) {
       
       if (shipment_exists$count == 0) {
         showNotification("运单号不存在，无法删除！", type = "warning")
+        runjs("playWarningSound()")  # 播放警告音效
         return()
       }
       
@@ -3031,7 +3082,8 @@ server <- function(input, output, session) {
         )
       ))
     }, error = function(e) {
-      showNotification(paste("检查运单时发生错误：", e$message), type = "error")
+      showNotification(paste("删除运单发生错误：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -3069,7 +3121,8 @@ server <- function(input, output, session) {
     }, error = function(e) {
       # 捕获错误并提示用户，回滚事务
       dbRollback(con)
-      showNotification(paste("删除失败：", e$message), type = "error")
+      showNotification(paste("删除国际运单失败：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
     
     # 禁用挂靠按钮
@@ -3133,7 +3186,8 @@ server <- function(input, output, session) {
       # 捕获错误并提示
       shinyjs::disable("link_tracking_btn")  # 禁用按钮
       shinyjs::disable("unlink_tracking_btn")  # 禁用按钮
-      showNotification(paste("操作失败：", e$message), type = "error")
+      showNotification(paste("国际运单自动填写失败：", e$message), type = "error")
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -3165,10 +3219,12 @@ server <- function(input, output, session) {
           # 未找到符合条件的运单
           updateTextInput(session, "intl_link_tracking_number", value = "")
           showNotification("未找到状态为‘运单创建’的运单！", type = "warning")
+          runjs("playWarningSound()")  # 播放警告音效
         }
       }, error = function(e) {
         # 捕获错误并提示
         showNotification(paste("检查运单状态时发生错误：", e$message), type = "error")
+        runjs("playErrorSound()")  # 播放错误音效
       })
     }
   })
@@ -3218,6 +3274,7 @@ server <- function(input, output, session) {
       output$intl_link_display <- renderText({
         paste("查询运单信息失败：", e$message)
       })
+      runjs("playErrorSound()")  # 播放错误音效
     })
   })
   
@@ -3764,81 +3821,81 @@ server <- function(input, output, session) {
     removeModal()  # 关闭模态框
   })
   
-  # 点击出库请求
-  observeEvent(input$query_outbound_request, {
-    req(query_soldout_selected_item_details())
-    
-    details <- query_soldout_selected_item_details()
-    
-    showModal(modalDialog(
-      title = "创建出库请求",
-      
-      div(
-        style = "display: flex; flex-direction: row; align-items: center; gap: 20px; margin-bottom: 15px;",
-        
-        # 左侧：商品图片 + 详情
-        div(
-          style = "flex: 0 0 40%; text-align: center;",
-          tags$img(src = details$image, style = "width: 150px; height: auto; object-fit: contain; border-radius: 8px;"),
-          div(
-            tags$h4(details$name, style = "margin-top: 10px; color: #007BFF;"),
-            tags$p(paste("SKU:", details$sku), style = "margin: 0; font-weight: bold;"),
-            tags$p(paste("供应商:", details$maker), style = "margin: 0; color: #6c757d; font-size: 14px;"),
-            tags$p(
-              paste("国内库存:", details$domestic_stock),
-              style = paste("margin: 0;", ifelse(details$domestic_stock == 0, "color: #DC3545; font-weight: bold;", "color: #28A745;"))
-            )
-          )
-        ),
-        
-        # 右侧：出库数量 + 备注
-        div(
-          style = "flex: 0 0 50%; display: flex; flex-direction: column; gap: 10px;",
-          numericInput("query_outbound_qty", "出库数量", value = 1, min = 1, max = details$domestic_stock, width = "80%"),
-          textAreaInput("query_outbound_remark", "备注", "", width = "80%", height = "80px")
-        )
-      ),
-      
-      footer = tagList(
-        modalButton("取消"),
-        actionButton("query_confirm_outbound", "确认出库", class = "btn-success")
-      )
-    ))
-  })
-  
-  # 确认出库
-  observeEvent(input$query_confirm_outbound, {
-    req(query_soldout_selected_item_details(), input$query_outbound_qty)
-    
-    details <- query_soldout_selected_item_details()
-    request_id <- uuid::UUIDgenerate()
-    
-    # 如果用户输入的出库数量大于国内库存，禁止提交
-    if (input$query_outbound_qty > details$domestic_stock) {
-      showNotification("出库数量不能大于国内库存数！", type = "error")
-      return()
-    }
-    
-    # 数据库操作：插入出库请求
-    dbExecute(con, "
-    INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
-    VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '出库')",
-              params = list(
-                request_id,
-                details$sku,
-                details$maker,
-                details$image,
-                details$name,
-                input$query_outbound_qty,
-                format_remark(input$query_outbound_remark, system_type)
-              )
-    )
-    
-    bind_buttons(request_id, requests_data(), input, output, session, con)
-    
-    showNotification("出库请求已创建", type = "message")
-    removeModal()  # 关闭模态框
-  })
+  # # 点击出库请求
+  # observeEvent(input$query_outbound_request, {
+  #   req(query_soldout_selected_item_details())
+  #   
+  #   details <- query_soldout_selected_item_details()
+  #   
+  #   showModal(modalDialog(
+  #     title = "创建出库请求",
+  #     
+  #     div(
+  #       style = "display: flex; flex-direction: row; align-items: center; gap: 20px; margin-bottom: 15px;",
+  #       
+  #       # 左侧：商品图片 + 详情
+  #       div(
+  #         style = "flex: 0 0 40%; text-align: center;",
+  #         tags$img(src = details$image, style = "width: 150px; height: auto; object-fit: contain; border-radius: 8px;"),
+  #         div(
+  #           tags$h4(details$name, style = "margin-top: 10px; color: #007BFF;"),
+  #           tags$p(paste("SKU:", details$sku), style = "margin: 0; font-weight: bold;"),
+  #           tags$p(paste("供应商:", details$maker), style = "margin: 0; color: #6c757d; font-size: 14px;"),
+  #           tags$p(
+  #             paste("国内库存:", details$domestic_stock),
+  #             style = paste("margin: 0;", ifelse(details$domestic_stock == 0, "color: #DC3545; font-weight: bold;", "color: #28A745;"))
+  #           )
+  #         )
+  #       ),
+  #       
+  #       # 右侧：出库数量 + 备注
+  #       div(
+  #         style = "flex: 0 0 50%; display: flex; flex-direction: column; gap: 10px;",
+  #         numericInput("query_outbound_qty", "出库数量", value = 1, min = 1, max = details$domestic_stock, width = "80%"),
+  #         textAreaInput("query_outbound_remark", "备注", "", width = "80%", height = "80px")
+  #       )
+  #     ),
+  #     
+  #     footer = tagList(
+  #       modalButton("取消"),
+  #       actionButton("query_confirm_outbound", "确认出库", class = "btn-success")
+  #     )
+  #   ))
+  # })
+  # 
+  # # 确认出库
+  # observeEvent(input$query_confirm_outbound, {
+  #   req(query_soldout_selected_item_details(), input$query_outbound_qty)
+  #   
+  #   details <- query_soldout_selected_item_details()
+  #   request_id <- uuid::UUIDgenerate()
+  #   
+  #   # 如果用户输入的出库数量大于国内库存，禁止提交
+  #   if (input$query_outbound_qty > details$domestic_stock) {
+  #     showNotification("出库数量不能大于国内库存数！", type = "error")
+  #     return()
+  #   }
+  #   
+  #   # 数据库操作：插入出库请求
+  #   dbExecute(con, "
+  #   INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType)
+  #   VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '出库')",
+  #             params = list(
+  #               request_id,
+  #               details$sku,
+  #               details$maker,
+  #               details$image,
+  #               details$name,
+  #               input$query_outbound_qty,
+  #               format_remark(input$query_outbound_remark, system_type)
+  #             )
+  #   )
+  #   
+  #   bind_buttons(request_id, requests_data(), input, output, session, con)
+  #   
+  #   showNotification("出库请求已创建", type = "message")
+  #   removeModal()  # 关闭模态框
+  # })
   
   ###
   

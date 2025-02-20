@@ -293,6 +293,18 @@ ui <- navbarPage(
         audio.play();
       }
       
+      // 警告音效
+      function playWarningSound() {
+        var audio = new Audio('https://www.goldenbeanllc.com/sounds/warning.mp3');
+        audio.play();
+      }
+      
+      // 错误音效
+      function playErrorSound() {
+        var audio = new Audio('https://www.goldenbeanllc.com/sounds/error-8bit.mp3');
+        audio.play();
+      }
+      
       // 右键点击查询库存页面
       $(document).ready(function() {
         $('#filtered_inventory_table_query').on('contextmenu', 'tr', function(event) {
