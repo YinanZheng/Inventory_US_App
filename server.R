@@ -1194,9 +1194,7 @@ server <- function(input, output, session) {
           zero_items <- append(zero_items, list(result))
         }
       }
-      
-      showNotification(paste0("zero_items:", length(zero_items)))
-      
+    
       zero_stock_items(zero_items)  # 存储需要采购的物品
       
       # 查询 `requests` 表，获取已有采购请求
@@ -1328,18 +1326,19 @@ server <- function(input, output, session) {
     
     all_packed <- all(matching_orders()$OrderStatus == "装箱")
     if (all_packed) {
-      showModal(modalDialog(
-        title = "运单完成提示",
-        "当前运单号所对应的所有订单已完成装箱操作！",
-        easyClose = TRUE,
-        footer = NULL  # 不需要关闭按钮
-      ))
-      
-      updateTextInput(session, "shipping_bill_number", value = "")
-      runjs("document.getElementById('shipping_bill_number').focus();")
-      
-      # 延迟 2 秒后自动关闭弹窗
-      shinyjs::delay(2000, removeModal())
+      # showModal(modalDialog(
+      #   title = "运单完成提示",
+      #   "当前运单号所对应的所有订单已完成装箱操作！",
+      #   easyClose = TRUE,
+      #   footer = NULL  # 不需要关闭按钮
+      # ))
+      # 
+      # updateTextInput(session, "shipping_bill_number", value = "")
+      # runjs("document.getElementById('shipping_bill_number').focus();")
+      # 
+      # # 延迟 2 秒后自动关闭弹窗
+      # shinyjs::delay(2000, removeModal())
+      showNotification("当前运单号所对应的所有订单已完成装箱操作！", type = "message")
     }
   })
   
@@ -1610,8 +1609,6 @@ server <- function(input, output, session) {
       # **获取当前订单下的所有物品**
       order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
       
-      showNotification(nrow(order_items))
-    
       # **调用公共方法检测美国库存并弹出采购请求**
       check_us_stock_and_request_purchase(order_items)
       
