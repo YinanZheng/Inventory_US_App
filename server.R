@@ -1251,6 +1251,10 @@ server <- function(input, output, session) {
           easyClose = FALSE,
           footer = tagList(actionButton("complete_requests", "关闭", class = "btn-success"))
         ))
+        return(TRUE)
+      } else {
+        showNotification("所有物品库存充足，无需采购！", type = "message")
+        return(FALSE)
       }
     }, error = function(e) {
       showNotification(paste("检查库存并创建采购请求时发生错误：", e$message), type = "error")
@@ -1610,7 +1614,10 @@ server <- function(input, output, session) {
       order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
       
       # **调用公共方法检测美国库存并弹出采购请求**
-      check_us_stock_and_request_purchase(order_items)
+      has_request <- check_us_stock_and_request_purchase(order_items)
+      
+      # 如果库存充足没有发生采购请求，关闭弹窗
+      if(!has_request) removeModal()
       
     }, error = function(e) {
       showNotification(paste("发生错误：", e$message), type = "error")
