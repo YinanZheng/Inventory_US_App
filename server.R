@@ -1867,16 +1867,16 @@ server <- function(input, output, session) {
         
         tryCatch({
           # **查询是否已有请求**
-          existing_request <- dbGetQuery(con, "SELECT Quantity, Remarks FROM requests WHERE SKU = ? AND RequestType = '采购' AND RequestStatus = '待处理'", params = list(sku))
+          existing_request <- dbGetQuery(con, "SELECT Quantity, Remarks FROM requests WHERE SKU = ?", params = list(sku))
           
           if (nrow(existing_request) > 0) {
             # **如果已有请求，追加数量和备注**
             new_qty <- existing_request$Quantity[1] + qty
             new_remark <- ifelse(is.na(existing_request$Remarks[1]) || existing_request$Remarks[1] == "",
                                  formatted_remark,
-                                 paste(existing_request$Remarks[1], formatted_remark, sep = " | "))
+                                 paste(existing_request$Remarks[1], formatted_remark, sep = ";"))
             
-            dbExecute(con, "UPDATE requests SET Quantity = ?, Remarks = ? WHERE SKU = ? AND RequestType = '采购' AND RequestStatus = '待处理'",
+            dbExecute(con, "UPDATE requests SET Quantity = ?, Remarks = ? WHERE SKU = ?",
                       params = list(new_qty, new_remark, sku))
             
             showNotification(paste0("采购请求追加成功，SKU：", sku, "，总数量：", new_qty), type = "message")
