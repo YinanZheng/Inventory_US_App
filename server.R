@@ -1164,6 +1164,8 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  zero_stock_items <- reactiveVal(list())  # 用于存储库存为零的物品
+  
   # 抽取检测美国售罄物品并弹窗创建采购请求的公共函数
   check_us_stock_and_request_purchase <- function(order_items) {
     req(order_items, nrow(order_items) > 0)
@@ -1196,7 +1198,7 @@ server <- function(input, output, session) {
       zero_stock_items(zero_items)  # 存储需要采购的物品
       
       # 查询 `requests` 表，获取已有采购请求
-      request_query <- paste0("SELECT SKU, RequestType, Quantity FROM requests WHERE SKU IN (", sku_list_str, ") AND RequestStatus = '待处理'")
+      request_query <- paste0("SELECT SKU, RequestType, Quantity FROM requests WHERE SKU IN (", sku_list_str, ")")
       existing_requests <- dbGetQuery(con, request_query)
       
       # **弹出采购请求模态框**
@@ -1254,6 +1256,8 @@ server <- function(input, output, session) {
       showNotification(paste("检查库存并创建采购请求时发生错误：", e$message), type = "error")
     })
   }
+  
+  ###############################################
   
   # 页面切换时的聚焦
   observeEvent({
@@ -1798,8 +1802,6 @@ server <- function(input, output, session) {
     }
   })
   
-  zero_stock_items <- reactiveVal(list())  # 用于存储库存为零的物品
-
   # 美国售出发货按钮
   observeEvent(input$us_ship_order_btn, {
     req(new_order(), new_order_items())
