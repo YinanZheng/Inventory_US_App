@@ -1305,6 +1305,15 @@ server <- function(input, output, session) {
     }
   })
   
+  # 计算订单内物品数量
+  order_items_count <- reactive({
+    req(current_order_id())  # 确保订单 ID 存在
+    order_id <- current_order_id()
+    
+    # 查询 `unique_items_data()` 以统计该订单内的物品总数
+    sum(unique_items_data()$OrderID == order_id, na.rm = TRUE)
+  })
+  
   # 装载当前订单物品信息
   order_items <- reactive({
     # 如果当前订单 ID 为空，返回空数据框
@@ -1506,7 +1515,7 @@ server <- function(input, output, session) {
                 easyClose = FALSE,
                 div(
                   style = "padding: 10px; font-size: 16px;",
-                  paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描")
+                  paste0("订单 ", current_order_id(), " 的所有物品已完成入箱扫描，共 ", order_items_count(), " 件")
                 ),
                 footer = tagList(
                   actionButton("confirm_shipping_btn", "确认装箱", icon = icon("check"), class = "btn-primary")
