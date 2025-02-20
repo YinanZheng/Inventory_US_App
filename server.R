@@ -1195,6 +1195,8 @@ server <- function(input, output, session) {
         }
       }
       
+      showNotification(paste0("zero_items:", nrow(zero_items)))
+      
       zero_stock_items(zero_items)  # 存储需要采购的物品
       
       # 查询 `requests` 表，获取已有采购请求
