@@ -1164,6 +1164,97 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # 抽取检测美国售罄物品并弹窗创建采购请求的公共函数
+  check_us_stock_and_request_purchase <- function(order_items) {
+    req(order_items, nrow(order_items) > 0)
+    
+    tryCatch({
+      # 查询 SKU 最新库存情况（**仅统计美国库存**）
+      sku_list_str <- paste0("'", paste(unique(order_items$SKU), collapse = "','"), "'")
+      latest_unique_items <- dbGetQuery(con, paste0("
+      SELECT ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker,
+             SUM(CASE WHEN ui.Status = '美国入库' THEN 1 ELSE 0 END) AS UsStock
+      FROM unique_items AS ui
+      JOIN inventory AS inv ON ui.SKU = inv.SKU
+      WHERE ui.SKU IN (", sku_list_str, ")
+      GROUP BY ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker
+    "))
+      
+      # 检查库存，只记录 **美国库存为零** 的物品
+      zero_items <- list()
+      for (sku in unique(order_items$SKU)) {
+        result <- latest_unique_items %>%
+          filter(SKU == sku) %>%
+          mutate(UsStock = ifelse(is.na(UsStock), 0, UsStock)) %>%
+          select(SKU, ItemName, ItemImagePath, Maker, UsStock)
+        
+        if (result$UsStock == 0) {
+          zero_items <- append(zero_items, list(result))
+        }
+      }
+      
+      zero_stock_items(zero_items)  # 存储需要采购的物品
+      
+      # 查询 `requests` 表，获取已有采购请求
+      request_query <- paste0("SELECT SKU, RequestType, Quantity FROM requests WHERE SKU IN (", sku_list_str, ") AND RequestStatus = '待处理'")
+      existing_requests <- dbGetQuery(con, request_query)
+      
+      # **弹出采购请求模态框**
+      if (length(zero_items) > 0) {
+        modal_content <- tagList(
+          tags$div(
+            style = "padding: 10px; background-color: #ffe6e6; border-radius: 8px; margin-bottom: 20px;",
+            tags$h4("需要采购补货：", style = "color: red; margin-bottom: 15px;"),
+            tags$div(
+              style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
+              lapply(zero_items, function(item) {
+                existing_request <- existing_requests %>% filter(SKU == item$SKU)
+                request_exists <- nrow(existing_request) > 0
+                
+                div(
+                  style = "background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center;",
+                  tags$img(src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
+                           style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"),
+                  tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
+                  tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
+                  
+                  if (request_exists) {
+                    tagList(
+                      tags$div(
+                        style = "border: 2px solid #007BFF; border-radius: 8px; padding: 10px; background-color: #f0f8ff; margin: 0 auto 10px auto; width: 50%; text-align: center;",                        
+                        tags$p(tags$b("采购请求已存在："), style = "color: blue; margin: 5px 0;"),
+                        tags$p(paste0("当前请求状态：", existing_request$RequestType), style = "margin: 2px 0;"),
+                        tags$p(paste0("当前请求数量：", existing_request$Quantity), style = "margin: 2px 0;")
+                      ),
+                      numericInput(paste0("purchase_qty_", item$SKU), "追加数量", value = 1, min = 1, width = "50%"),
+                      textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "50%", rows = 2),
+                      actionButton(paste0("create_request_purchase_", item$SKU), "追加采购请求", class = "btn-primary", style = "margin-top: 10px; width: 50%;")
+                    )
+                  } else {
+                    tagList(
+                      numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "50%"),
+                      textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "50%", rows = 2),
+                      actionButton(paste0("create_request_purchase_", item$SKU), "发出采购请求", class = "btn-primary", style = "margin-top: 10px; width: 50%;")
+                    )
+                  }
+                )
+              })
+            )
+          )
+        )
+        
+        showModal(modalDialog(
+          title = "处理采购请求",
+          div(style = "max-height: 650px; overflow-y: auto;", modal_content),
+          easyClose = FALSE,
+          footer = tagList(actionButton("complete_requests", "关闭", class = "btn-success"))
+        ))
+      }
+    }, error = function(e) {
+      showNotification(paste("检查库存并创建采购请求时发生错误：", e$message), type = "error")
+    })
+  }
+  
   # 页面切换时的聚焦
   observeEvent({
     req(input$inventory_us, input$shipping_tabs) # 确保两个输入都有效
@@ -1707,8 +1798,7 @@ server <- function(input, output, session) {
   })
   
   zero_stock_items <- reactiveVal(list())  # 用于存储库存为零的物品
-  outbound_stock_items <- reactiveVal(list())
-  
+
   # 美国售出发货按钮
   observeEvent(input$us_ship_order_btn, {
     req(new_order(), new_order_items())
@@ -1737,101 +1827,8 @@ server <- function(input, output, session) {
         update_order_id(con = con, unique_id = items$UniqueID[i], order_id = order$OrderID)
       })
       
-      # 查询 SKU 最新库存情况（**仅统计美国库存**）
-      sku_list_str <- paste0("'", paste(unique(items$SKU), collapse = "','"), "'")
-      latest_unique_items <- dbGetQuery(con, paste0("
-      SELECT ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker,
-             SUM(CASE WHEN ui.Status = '美国入库' THEN 1 ELSE 0 END) AS UsStock
-      FROM unique_items AS ui
-      JOIN inventory AS inv ON ui.SKU = inv.SKU
-      WHERE ui.SKU IN (", sku_list_str, ")
-      GROUP BY ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker
-    "))
-      
-      # 检查库存，只记录 **美国库存为零** 的物品
-      zero_items <- list()
-      for (sku in unique(items$SKU)) {
-        result <- latest_unique_items %>%
-          filter(SKU == sku) %>%
-          mutate(UsStock = ifelse(is.na(UsStock), 0, UsStock)) %>%
-          select(SKU, ItemName, ItemImagePath, Maker, UsStock)
-        
-        if (result$UsStock == 0) {
-          zero_items <- append(zero_items, list(result))
-        }
-      }
-      
-      zero_stock_items(zero_items)  # 仅存储需要采购的物品
-      
-      # 查询这些 SKU 在 `requests` 表中的已有采购请求
-      request_query <- paste0("SELECT SKU, RequestType, Quantity FROM requests WHERE SKU IN (", sku_list_str, ") AND RequestStatus = '待处理'")
-      existing_requests <- dbGetQuery(con, request_query)
-      
-      # 结果展示
-      added_order <- orders() %>% filter(OrderID == order$OrderID)
-      renderOrderInfo(output, "order_info_card", added_order, clickable = FALSE)
-      
-      output$order_items_title <- renderUI({
-        tags$h4(HTML(paste0(as.character(icon("box")), " 订单号 ", order$OrderID, " 的物品")),
-                style = "color: #28A745; font-weight: bold; margin-bottom: 15px;")
-      })
-      
-      added_order_items <- unique_items_data() %>% filter(OrderID == order$OrderID)
-      renderOrderItems(output, "shipping_order_items_cards", added_order_items, con, deletable = FALSE)
-      
-      # **只弹出采购请求模态框**
-      if (length(zero_items) > 0) {
-        modal_content <- tagList(
-          tags$div(
-            style = "padding: 10px; background-color: #ffe6e6; border-radius: 8px; margin-bottom: 20px;",
-            tags$h4("需要采购补货：", style = "color: red; margin-bottom: 15px;"),
-            tags$div(
-              style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
-              lapply(zero_items, function(item) {
-                existing_request <- existing_requests %>% filter(SKU == item$SKU)
-                request_exists <- nrow(existing_request) > 0
-                
-                div(
-                  style = "background: white; box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center;",
-                  tags$img(src = ifelse(is.na(item$ItemImagePath), placeholder_150px_path, paste0(host_url, "/images/", basename(item$ItemImagePath))),
-                           style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"),
-                  tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
-                  tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
-                  
-                  if (request_exists) {
-                    # **如果已有请求，则显示当前采购请求信息，并允许追加数量**
-                    tagList(
-                      tags$div(
-                        style = "border: 2px solid #007BFF; border-radius: 8px; padding: 10px; background-color: #f0f8ff; margin: 0 auto 10px auto; width: 50%; text-align: center;",                        
-                        tags$p(tags$b("采购请求已存在："), style = "color: blue; margin: 5px 0;"),
-                        tags$p(paste0("当前请求状态：", existing_request$RequestType), style = "margin: 2px 0;"),
-                        tags$p(paste0("当前请求数量：", existing_request$Quantity), style = "margin: 2px 0;")
-                      ),
-                      numericInput(paste0("purchase_qty_", item$SKU), "追加数量", value = 1, min = 1, width = "50%"),
-                      textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "50%", rows = 2),
-                      actionButton(paste0("create_request_purchase_", item$SKU), "追加采购请求", class = "btn-primary", style = "margin-top: 10px; width: 50%;")
-                    )
-                  } else {
-                    # **如果没有已有请求，则显示“请求数量”和“发出采购请求”**
-                    tagList(
-                      numericInput(paste0("purchase_qty_", item$SKU), "请求数量", value = 1, min = 1, width = "50%"),
-                      textAreaInput(paste0("purchase_remark_input_", item$SKU), "留言（可选）", placeholder = "输入留言...", width = "50%", rows = 2),
-                      actionButton(paste0("create_request_purchase_", item$SKU), "发出采购请求", class = "btn-primary", style = "margin-top: 10px; width: 50%;")
-                    )
-                  }
-                )
-              })
-            )
-          )
-        )
-        
-        showModal(modalDialog(
-          title = "处理采购请求",
-          div(style = "max-height: 650px; overflow-y: auto;", modal_content),
-          easyClose = FALSE,
-          footer = tagList(actionButton("complete_requests", "关闭", class = "btn-success"))
-        ))
-      }
+      # **调用公共方法检测美国库存并弹出采购请求**
+      check_us_stock_and_request_purchase(items)
       
       showNotification(paste0("订单已成功发货！订单号：", order$OrderID, "，共发货 ", nrow(items), " 件。"), type = "message")
     }, error = function(e) {
