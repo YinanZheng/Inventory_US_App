@@ -142,36 +142,40 @@ server <- function(input, output, session) {
         unique_items.updated_at DESC
     ")
       
-      # **当 `unique_items` 变更时，自动更新 `inventory`**
-      dbExecute(con, "
-        INSERT INTO inventory (SKU, ProductCost, ShippingCost, Quantity, DomesticQuantity, TransitQuantity, UsQuantity, updated_at)
-        SELECT 
-          SKU,
-          ROUND(AVG(ProductCost), 2),
-          ROUND(AVG(DomesticShippingCost + IntlShippingCost), 2),
-          SUM(Status IN ('国内入库', '国内出库', '美国入库')),
-          SUM(Status = '国内入库'),
-          SUM(Status = '国内出库'),
-          SUM(Status = '美国入库'),
-          MAX(updated_at)
-        FROM unique_items
-        GROUP BY SKU
-        ON DUPLICATE KEY UPDATE
-          ProductCost = VALUES(ProductCost),
-          ShippingCost = VALUES(ShippingCost),
-          Quantity = VALUES(Quantity),
-          DomesticQuantity = VALUES(DomesticQuantity),
-          TransitQuantity = VALUES(TransitQuantity),
-          UsQuantity = VALUES(UsQuantity),
-          updated_at = VALUES(updated_at)
-      ")
-      
-      # **删除 `inventory` 中 SKU 在 `unique_items` 中不存在的物品**
-      dbExecute(con, "
-      DELETE FROM inventory 
-      WHERE SKU NOT IN (SELECT DISTINCT SKU FROM unique_items)
-    ")
-      
+      dbWithTransaction(con, {
+        # **当 `unique_items` 变更时，自动更新 `inventory`**
+        dbExecute(con, "
+          UPDATE inventory i
+          JOIN (
+            SELECT 
+              SKU,
+              AVG(ProductCost) AS AvgProductCost,
+              AVG(DomesticShippingCost + IntlShippingCost) AS AvgShippingCost,
+              SUM(Status IN ('国内入库', '国内出库', '美国入库')) AS TotalQuantity,
+              SUM(Status = '国内入库') AS DomesticQuantity,
+              SUM(Status = '国内出库') AS TransitQuantity,
+              SUM(Status = '美国入库') AS UsQuantity,
+              MAX(updated_at) AS LatestUpdateTime
+            FROM unique_items
+            GROUP BY SKU
+          ) u ON i.SKU = u.SKU
+          SET 
+            i.ProductCost = ROUND(u.AvgProductCost, 2),
+            i.ShippingCost = ROUND(u.AvgShippingCost, 2),
+            i.Quantity = u.TotalQuantity,
+            i.DomesticQuantity = u.DomesticQuantity,
+            i.TransitQuantity = u.TransitQuantity,
+            i.UsQuantity = u.UsQuantity,
+            i.updated_at = u.LatestUpdateTime
+        ")
+        
+        # 删除不存在的 SKU
+        dbExecute(con, "
+          DELETE i FROM inventory i
+          LEFT JOIN unique_items u ON i.SKU = u.SKU
+          WHERE u.SKU IS NULL
+        ")
+      })
       return(result)
     }
   )
