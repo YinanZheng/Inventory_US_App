@@ -458,7 +458,6 @@ server <- function(input, output, session) {
   })
   
   # 国际物流筛选
-  # 国际物流筛选
   filtered_unique_items_data_logistics <- reactive({
     req(unique_items_data())
     data <- unique_items_data()
@@ -675,42 +674,34 @@ server <- function(input, output, session) {
   # 缓存请求数据
   requests_data <- reactiveVal(data.frame())
   
-  # 定期检查采购请求数据库的最新数据
+  # 定期检查数据库更新
   poll_requests <- reactivePoll(
     intervalMillis = poll_interval,
     session = session,
     checkFunc = function() {
-      # 查询最新更新时间
       last_updated <- dbGetQuery(con, "SELECT MAX(UpdatedAt) AS last_updated FROM requests")$last_updated[1]
-      if (is.null(last_updated)) {
-        Sys.time()  # 如果无数据，返回当前时间
-      } else {
-        last_updated
-      }
+      if (is.null(last_updated)) Sys.time() else last_updated
     },
     valueFunc = function() {
-      result <- dbGetQuery(con, "SELECT * FROM requests")
-      if (nrow(result) == 0) { data.frame() } else { result }
+      dbGetQuery(con, "SELECT * FROM requests")
     }
   )
   
-  # 加载数据
+  # 初次加载数据
   observeEvent(poll_requests(), {
     requests <- poll_requests()
     requests_data(requests)
-  })
+    # 仅在数据变化时初始化渲染
+    refresh_board_incremental(requests, output)
+  }, priority = 10)
   
-  observe({
+  # 初始化时绑定所有按钮
+  observeEvent(requests_data(), {
     requests <- requests_data()
-    
-    refresh_board(requests, output)
-    
-    # 渲染留言内容并绑定按钮事件
     lapply(requests$RequestID, function(request_id) {
-      output[[paste0("remarks_", request_id)]] <- renderRemarks(request_id, requests)
-      bind_buttons(request_id, requests, input, output, session, con)  # 按 RequestID 动态绑定按钮
+      bind_buttons(request_id, requests_data, input, output, session, con)
     })
-  })
+  }, ignoreInit = FALSE, once = TRUE)
   
   # SKU 和物品名输入互斥逻辑
   observeEvent(input$search_sku, {
@@ -798,15 +789,6 @@ server <- function(input, output, session) {
     search_sku <- trimws(input$search_sku)
     search_name <- trimws(input$search_name)
     
-    # 根据当前页面的类型确定 RequestType
-    current_tab <- input$collaboration_tabs
-    request_type <- switch(
-      current_tab,
-      "采购请求" = "采购",
-      "出库请求" = "出库",
-      return()  # 不匹配任何已知分页时，直接退出
-    )
-    
     # 检索数据并插入到数据库
     filtered_data <- unique_items_data() %>%
       filter(
@@ -825,15 +807,16 @@ server <- function(input, output, session) {
         
         dbExecute(con, 
                   "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType) 
-         VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, ?)", 
+         VALUES (?, ?, ?, ?, ?, ?, '待处理', ?, '采购')", 
                   params = list(request_id, filtered_data$SKU, filtered_data$Maker, item_image_path, item_description, 
-                                input$request_quantity, format_remark(input$request_remark, system_type), request_type))
+                                input$request_quantity, format_remark(input$request_remark, system_type)))
         
-        bind_buttons(request_id, requests_data(), input, output, session, con)
+        bind_buttons(request_id, requests_data, input, output, session, con)
         
         updateTextInput(session, "search_sku", value = "")
         updateTextInput(session, "search_name", value = "")
         updateNumericInput(session, "request_quantity", value = 1)
+        updateTextAreaInput(session, "request_remark", value = "")
         
         showNotification("请求已成功创建", type = "message")
       } else if (nrow(filtered_data) > 1) {
@@ -875,33 +858,17 @@ server <- function(input, output, session) {
     # 将数据插入到数据库
     dbExecute(con, 
               "INSERT INTO requests (RequestID, SKU, Maker, ItemImagePath, ItemDescription, Quantity, RequestStatus, Remarks, RequestType) 
-             VALUES (?, ?, '待定', ?, ?, ?, '待处理', ?, '采购')", 
+             VALUES (?, ?, '待定', ?, ?, ?, '待处理', ?, '新品')", 
               params = list(request_id, "New-Request", custom_image_path, custom_description, custom_quantity, format_remark(input$custom_remark, system_type)))
     
-    bind_buttons(request_id, requests_data(), input, output, session, con) #绑定按钮逻辑
+    bind_buttons(request_id, requests_data, input, output, session, con)  
     
     # 清空输入字段
     updateTextInput(session, "custom_description", value = "")
     updateNumericInput(session, "custom_quantity", value = 1)
+    updateTextAreaInput(session, "custom_remark", value = "")
     image_requests$reset()
     showNotification("自定义请求已成功提交", type = "message")
-  })
-  
-  # 出库标签页要禁用新物品请求
-  observeEvent(input$collaboration_tabs, {
-    current_tab <- input$collaboration_tabs
-    
-    if (current_tab == "出库请求") {
-      # 禁用与新商品请求相关的控件
-      shinyjs::disable("custom_description")
-      shinyjs::disable("custom_quantity")
-      shinyjs::disable("submit_custom_request")
-    } else if (current_tab == "采购请求") {
-      # 启用与新商品请求相关的控件
-      shinyjs::enable("custom_description")
-      shinyjs::enable("custom_quantity")
-      shinyjs::enable("submit_custom_request")
-    }
   })
   
   # 点击请求图片看大图
@@ -917,6 +884,50 @@ server <- function(input, output, session) {
       footer = NULL
     ))
   })
+  
+  # 鼠标悬停请求图片显示库存分布
+  output$colab_inventory_status_chart <- renderPlotly({
+    req(input$hover_sku, input$hover_sku != "New-Request")  # 直接跳过 "New-Request"
+    
+    tryCatch({
+      data <- unique_items_data()
+      
+      inventory_status_data <- data %>%
+        filter(SKU == isolate(input$hover_sku)) %>%
+        group_by(Status) %>%
+        summarise(Count = n(), .groups = "drop")
+      
+      if (nrow(inventory_status_data) == 0) {
+        return(NULL)
+      }
+      
+      # 确保所有状态都存在，并填充 0
+      inventory_status_data <- data.frame(Status = status_levels) %>%
+        left_join(inventory_status_data, by = "Status") %>%
+        mutate(Count = replace_na(Count, 0))
+      
+      # 过滤掉数量为 0 的状态
+      inventory_status_data <- inventory_status_data %>% filter(Count > 0)
+      
+      # 重新匹配颜色：只取 **inventory_status_data$Status** 里有的颜色
+      matched_colors <- status_colors[match(inventory_status_data$Status, status_levels)]
+      
+      plot_ly(
+        data = inventory_status_data,
+        labels = ~Status,
+        values = ~Count,
+        type = "pie",
+        textinfo = "label+value",
+        marker = list(colors = matched_colors)
+      ) %>%
+        layout(showlegend = FALSE, margin = list(l = 5, r = 5, t = 5, b = 5))
+    }, error = function(e) {
+      showNotification("库存状态图表生成错误", type = "error")
+      return(NULL)
+    })
+  })
+  
+  outputOptions(output, "colab_inventory_status_chart", suspendWhenHidden = FALSE)
   
   
   

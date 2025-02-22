@@ -33,6 +33,13 @@ ui <- navbarPage(
              style = "font-size: 18px; font-weight: bold; color: #333; margin-top: 10px;")
     ),
     
+    # 库存状态浮动框 （协作页）
+    tags$div(
+      id = "inventory-status-popup",
+      style = "display: none; position: absolute; z-index: 9999; background: white; border: 1px solid #ccc; padding: 5px; box-shadow: 2px 2px 8px rgba(0,0,0,0.2); border-radius: 5px; min-width: 220px; min-height: 220px;",
+      plotlyOutput("colab_inventory_status_chart", width = "220px", height = "220px")
+    ),
+    
     tags$head(
       tags$link(rel = "icon", type = "image/x-icon", href = "https://www.goldenbeanllc.com/icons/favicon-96x96.png"),
       
@@ -203,12 +210,40 @@ ui <- navbarPage(
         $('#loading-screen').css('transition', 'opacity 1s ease-out');
       });
       
-      // 刷新物品表
+      // 导航栏右上角刷新物品表
       $(document).ready(function() {
         $('#refresh_global_items_btn').on('click', function() {
           Shiny.setInputValue('refresh_item_table', new Date().getTime(), {priority: 'event'});
         });
       });
+      
+      // 协作页鼠标悬停显示库存状态
+      let inventoryStatusTimeout;  // 用于存储定时器 ID
+      
+      function showInventoryStatus(event, sku) {
+        clearTimeout(inventoryStatusTimeout);
+      
+        // 更新 Shiny 变量，确保服务器端能接收到
+        Shiny.setInputValue('hover_sku', sku, {priority: 'event'});
+      
+        inventoryStatusTimeout = setTimeout(function () {
+          var popup = document.getElementById('inventory-status-popup');
+      
+          if (sku === 'New-Request') {
+            popup.style.display = 'none';
+          } else {
+            popup.style.display = 'block';
+            popup.style.position = 'absolute';
+            popup.style.left = (event.pageX + 20) + 'px';
+            popup.style.top = (event.pageY + 20) + 'px';
+          }
+        }, 1000);  // 1秒后执行
+      }
+      
+      function hideInventoryStatus() {
+        clearTimeout(inventoryStatusTimeout);
+        document.getElementById('inventory-status-popup').style.display = 'none';
+      }
       
       // 复制粘贴图片
       $(document).on('paste', '[id$=\"paste_area\"]', function(event) {
@@ -396,11 +431,17 @@ ui <- navbarPage(
             ), 
             uiOutput("done_paid_board")
           ),
-          
-          # 出库请求
           tabPanel(
-            title = "出库请求",
+            title = div(
+              tags$span(class = "arrow-icon", icon("arrow-right")),
+              "待出库",
+            ), 
             uiOutput("outbound_request_board")
+          ),
+          
+          tabPanel(
+            title = "新品请求",
+            uiOutput("new_product_board")
           )
         )
       )
