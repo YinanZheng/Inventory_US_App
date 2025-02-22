@@ -45,6 +45,9 @@ page_width <<- 4
 page_height <<- 2
 size_unit <<- "cm"
 
+status_levels <<- c("采购", "国内入库", "国内售出", "国内出库", "美国入库", "美国调货", "美国发货", "交易完毕")
+status_colors <<- c("#D3D3D3", "#C7E89B", "#9CA695", "#46A80D", "#6F52FF", "#529AFF", "#FAF0D4", "#F4C7FC")
+
 # 通用物品表显示列
 common_columns <<- list(
   SKU = "条形码",
