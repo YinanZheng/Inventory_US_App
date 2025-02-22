@@ -93,7 +93,7 @@ server <- function(input, output, session) {
   
   # 物品追踪表
   unique_items_data <- reactivePoll(
-    intervalMillis = poll_interval, 
+    intervalMillis = reactive({ if (session$userData$active) poll_interval else Inf }),    
     session = session,       # 绑定 Shiny session，确保只在活跃时运行
     
     # **检查是否需要更新**（返回最近更新时间）
