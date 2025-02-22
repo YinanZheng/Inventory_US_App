@@ -21,6 +21,10 @@ server <- function(input, output, session) {
   # Database
   con <- db_connection()
   
+  # 初始化 requests_data 和 unique_items_data
+  requests_data <- reactiveVal(dbGetQuery(con, "SELECT * FROM requests"))
+  unique_items_data <- reactiveVal(dbGetQuery(con, "SELECT * FROM unique_items"))
+  
   # ReactiveVal 存储 item_type_data 数据
   item_type_data <- reactiveVal()
   
@@ -673,9 +677,6 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  # 缓存请求数据
-  requests_data <- reactiveVal(data.frame())
-  
   # 定期检查数据库更新
   poll_requests <- reactivePoll(
     intervalMillis = poll_interval,
@@ -930,6 +931,54 @@ server <- function(input, output, session) {
   })
   
   outputOptions(output, "colab_inventory_status_chart", suspendWhenHidden = FALSE)
+  
+  # 自动转换 RequestType
+  observe({
+    invalidateLater(10000, session)
+    
+    dbWithTransaction(con, {
+      # "安排" -> "完成"
+      dbExecute(con, "
+      UPDATE requests r
+      JOIN (
+        SELECT SKU, COUNT(*) AS procure_count
+        FROM unique_items
+        WHERE Status = '采购'
+        GROUP BY SKU
+      ) u ON r.SKU = u.SKU
+      SET r.RequestType = '完成', r.UpdatedAt = NOW()
+      WHERE r.RequestType = '安排' AND u.procure_count >= r.Quantity
+    ")
+      
+      # "完成" -> "出库"
+      dbExecute(con, "
+      UPDATE requests r
+      JOIN (
+        SELECT SKU, COUNT(*) AS domestic_count
+        FROM unique_items
+        WHERE Status = '国内入库'
+        GROUP BY SKU
+      ) u ON r.SKU = u.SKU
+      SET r.RequestType = '出库', r.RequestStatus = '已完成', r.UpdatedAt = NOW()
+      WHERE r.RequestType = '完成' AND u.domestic_count >= r.Quantity
+    ")
+      
+      # "出库" -> 删除
+      dbExecute(con, "
+      DELETE r FROM requests r
+      JOIN (
+        SELECT SKU, COUNT(*) AS transit_count
+        FROM unique_items
+        WHERE Status = '国内出库'
+        GROUP BY SKU
+      ) u ON r.SKU = u.SKU
+      WHERE r.RequestType = '出库' AND u.transit_count >= r.Quantity
+    ")
+      
+      # 更新 requests_data
+      requests_data(dbGetQuery(con, "SELECT * FROM requests"))
+    })
+  })
   
   
   
