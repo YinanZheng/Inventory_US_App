@@ -453,7 +453,7 @@ ui <- navbarPage(
     div(class = "layout-container",
         div(class = "sticky-sidebar",
             itemFilterUI(id = "inbound_filter", border_color = "#28A745", text_color = "#28A745", 
-                         status_choices = c("所有状态" = "", "国内出库", "美国入库"), use_purchase_date = FALSE),
+                         status_choices = c("库存状态" = "", "国内出库", "美国入库"), use_purchase_date = FALSE),
             tags$hr(style = "margin: 5px 0; border: none;"),
             
             div(class = "card shadow-sm", style = "border: 1px solid #007BFF; border-radius: 8px; padding: 20px; background-color: #f9f9f9;",
