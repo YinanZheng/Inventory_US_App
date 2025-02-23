@@ -665,7 +665,7 @@ ui <- navbarPage(
             column(6, selectInput("filter_platform", "电商平台", choices = c("所有平台" = "", "Etsy", "Shopify", "TikTok", "其他"),
                                   selected = "", width = "100%")),
             column(6, selectInput("filter_order_status", "订单状态", 
-                                  choices = c("全部" = "", "备货", "预定", "调货", "装箱", "发出", "在途", "送达"),
+                                  choices = c("库存状态" = "", "备货", "预定", "调货", "装箱", "发出", "在途", "送达"),
                                   selected = "调货", width = "100%"))
           ),
           
