@@ -479,16 +479,6 @@ ui <- navbarPage(
                              style = "font-size: 16px; width: 100%; height: 42px;"),
                 
                 actionButton("toggle_view", label = "切换至：大图模式", icon = icon("exchange-alt"), class = "btn-warning", style = "width: 100%; margin-top: 10px")
-            ),
-            
-            tags$hr(style = "margin: 5px 0; border: none;"),
-            
-            div(class = "card", style = "padding: 15px; margin-bottom: 20px; border: 1px solid #007BFF; border-radius: 5px;",
-                tags$h4("条形码下载", style = "color: #007BFF; font-weight: bold;"),
-                div(style = "display: flex; justify-content: space-between; align-items: center;",
-                    actionButton("export_select_btn", "生成条形码", icon = icon("barcode"), class = "btn-info"),
-                    downloadButton("download_select_pdf", "下载条形码", class = "btn-primary")
-                )
             )
         ),
         
