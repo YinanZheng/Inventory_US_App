@@ -408,16 +408,17 @@ ui <- navbarPage(
         class = "main-panel",
         
         div(
-          style = "display: flex; align-items: center; gap: 5px; margin: 0; padding: 0; max-width: 300px;",  # 限制容器宽度
+          style = "display: flex; align-items: flex-end; gap: 5px; margin: 0; padding: 0; max-width: 300px;",  # 底部对齐
           div(
-            style = "max-width: 250px;",  # 限制筛选器最大宽度
+            style = "max-width: 250px;",
             uiOutput("supplier_filter")
           ),
           actionButton(
             inputId = "reset_supplier",
             label = NULL,
             icon = icon("refresh"),
-            class = "btn-info btn-sm"
+            class = "btn-info btn-sm",
+            style = "margin-bottom: 2px;"  # 微调按钮底部间距，与输入框底部对齐
           )
         ),
         
