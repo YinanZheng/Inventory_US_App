@@ -695,7 +695,7 @@ server <- function(input, output, session) {
     requests <- poll_requests()
     requests_data(requests)
     # 仅在数据变化时初始化渲染
-    refresh_board_incremental(requests, output)
+    refresh_board_incremental(requests, output, input)
   }, priority = 10)
   
   # 初始化时绑定所有按钮
@@ -706,9 +706,28 @@ server <- function(input, output, session) {
     })
   }, ignoreInit = FALSE, once = TRUE)
   
+  # 渲染供应商筛选器
   output$supplier_filter <- renderUI({
     suppliers <- c("全部", unique(requests_data()$Maker))
-    selectInput("selected_supplier", "筛选供应商:", choices = suppliers, selected = "全部")
+    selectizeInput(
+      inputId = "selected_supplier", 
+      label = "筛选供应商:", 
+      choices = suppliers, 
+      selected = "全部",
+      options = list(
+        placeholder = "搜索供应商...",
+        searchField = "value",
+        maxOptions = 1000,
+        create = FALSE,
+        persist = TRUE
+      )
+    )
+  })
+  
+  # 监听 selected_supplier 的变化并更新 UI
+  observeEvent(input$selected_supplier, {
+    requests <- requests_data()
+    refresh_board_incremental(requests, output, input)
   })
   
   # SKU 和物品名输入互斥逻辑
