@@ -706,6 +706,11 @@ server <- function(input, output, session) {
     })
   }, ignoreInit = FALSE, once = TRUE)
   
+  output$supplier_filter <- renderUI({
+    suppliers <- c("全部", unique(requests_data()$Maker))
+    selectInput("selected_supplier", "筛选供应商:", choices = suppliers, selected = "全部")
+  })
+  
   # SKU 和物品名输入互斥逻辑
   observeEvent(input$search_sku, {
     # 如果 SKU 搜索框有值，则清空物品名称搜索框

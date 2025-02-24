@@ -407,6 +407,8 @@ ui <- navbarPage(
       div(
         class = "main-panel",
         
+        uiOutput("supplier_filter"),
+        
         # 采购流程 tabset
         tabsetPanel(
           id = "collaboration_tabs",
