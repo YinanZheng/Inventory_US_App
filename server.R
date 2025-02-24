@@ -706,7 +706,7 @@ server <- function(input, output, session) {
       inputId = "selected_supplier",
       label = NULL,
       choices = c("", suppliers),
-      selected = NULL,
+      selected = "",
       options = list(
         placeholder = "筛选供应商...",
         searchField = "value",
