@@ -677,6 +677,24 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # 渲染供应商筛选器
+  output$supplier_filter <- renderUI({
+    suppliers <- c("全部", unique(requests_data()$Maker))
+    selectizeInput(
+      inputId = "selected_supplier", 
+      label = "筛选供应商:", 
+      choices = suppliers, 
+      selected = "全部",
+      options = list(
+        placeholder = "搜索供应商...",
+        searchField = "value",
+        maxOptions = 1000,
+        create = FALSE,
+        persist = TRUE
+      )
+    )
+  })
+  
   # 定期检查数据库更新
   poll_requests <- reactivePoll(
     intervalMillis = poll_interval,
@@ -705,24 +723,6 @@ server <- function(input, output, session) {
       bind_buttons(request_id, requests_data, input, output, session, con)
     })
   }, ignoreInit = FALSE, once = TRUE)
-  
-  # 渲染供应商筛选器
-  output$supplier_filter <- renderUI({
-    suppliers <- c("全部", unique(requests_data()$Maker))
-    selectizeInput(
-      inputId = "selected_supplier", 
-      label = "筛选供应商:", 
-      choices = suppliers, 
-      selected = "全部",
-      options = list(
-        placeholder = "搜索供应商...",
-        searchField = "value",
-        maxOptions = 1000,
-        create = FALSE,
-        persist = TRUE
-      )
-    )
-  })
   
   # 监听 selected_supplier 的变化并更新 UI
   observeEvent(input$selected_supplier, {
