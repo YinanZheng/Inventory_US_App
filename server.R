@@ -679,7 +679,7 @@ server <- function(input, output, session) {
   
   # 渲染供应商筛选器
   output$supplier_filter <- renderUI({
-    current_tab <- input$collaboration_tabs
+    current_value <- input$collaboration_tabs
     
     # 映射 tab value 到 RequestType
     tab_value_to_request_type <- list(
