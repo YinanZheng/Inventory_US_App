@@ -681,19 +681,17 @@ server <- function(input, output, session) {
   output$supplier_filter <- renderUI({
     current_tab <- input$collaboration_tabs
     
-    tab_title_to_request_type <- list(
-      "采购请求" = "采购",
-      "已安排" = "安排",
-      "已完成" = "完成",
-      "待出库" = "出库",
-      "新品请求" = "新品"
+    # 映射 tab value 到 RequestType
+    tab_value_to_request_type <- list(
+      "purchase" = "采购",
+      "arranged" = "安排",
+      "completed" = "完成",
+      "outbound" = "出库",
+      "new_product" = "新品"
     )
     
-    # 提取纯文本标题，移除 HTML 标签
-    clean_tab <- stri_replace_all_regex(current_tab, "<[^>]+>", "")  # 移除 HTML 标签
-    clean_tab <- stri_trim_both(stri_replace_all_regex(clean_tab, "\\s+", " "))  # 清理多余空格
-    
-    request_type <- tab_title_to_request_type[[current_tab]]
+    # 获取对应的 RequestType
+    request_type <- tab_value_to_request_type[[current_value]]
     
     if (is.null(request_type)) {
       request_type <- "采购"  # 默认值

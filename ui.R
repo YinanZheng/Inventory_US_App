@@ -428,10 +428,12 @@ ui <- navbarPage(
           
           # 采购流程链
           tabPanel(
+            value = "purchase",
             title = "采购请求",
             uiOutput("purchase_request_board")
           ),
           tabPanel(
+            value = "arranged",
             title = div(
               tags$span(class = "arrow-icon", icon("arrow-right")),
               "已安排",
@@ -439,6 +441,7 @@ ui <- navbarPage(
             uiOutput("provider_arranged_board")
           ),
           tabPanel(
+            value = "completed",
             title = div(
               tags$span(class = "arrow-icon", icon("arrow-right")),
               "已完成",
@@ -446,6 +449,7 @@ ui <- navbarPage(
             uiOutput("done_paid_board")
           ),
           tabPanel(
+            value = "outbound",
             title = div(
               tags$span(class = "arrow-icon", icon("arrow-right")),
               "待出库",
@@ -454,6 +458,7 @@ ui <- navbarPage(
           ),
           
           tabPanel(
+            value = "new_product",
             title = "新品请求",
             uiOutput("new_product_board")
           )
