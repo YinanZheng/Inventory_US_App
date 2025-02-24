@@ -408,12 +408,17 @@ ui <- navbarPage(
         class = "main-panel",
         
         div(
-          style = "display: flex; align-items: center; gap: 10px;",  # 水平排列，间距10px
+          style = "display: flex; align-items: center; gap: 5px;",  # Reduced gap to 5px for closeness
           div(
-            style = "flex-grow: 1;",  # 筛选框占据剩余空间
-            uiOutput("supplier_filter")  # 渲染筛选框
+            style = "flex-grow: 1;",  # Filter takes up remaining space
+            uiOutput("supplier_filter")  # Dynamic filter output
           ),
-          actionButton("reset_supplier", "重置", class = "btn-secondary")  # 重置按钮
+          actionButton(
+            inputId = "reset_supplier",
+            label = NULL,  # No text, icon-only
+            icon = icon("refresh"),  # Refresh icon
+            class = "btn-info btn-sm"  # Info style, small size
+          )
         ),
         
         # 采购流程 tabset

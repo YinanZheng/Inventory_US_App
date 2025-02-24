@@ -677,19 +677,32 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
+  # 定义 tab title 到 RequestType 的映射
+  tab_title_to_request_type <- list(
+    "采购请求" = "采购",
+    "已安排" = "安排",
+    "已完成" = "完成",
+    "待出库" = "出库",
+    "新品请求" = "新品"
+  )
+  
   # 渲染供应商筛选器
   output$supplier_filter <- renderUI({
-    # 获取供应商列表，排除“待定”
-    suppliers <- unique(requests_data()$Maker)
+    current_tab <- input$collaboration_tabs
+    request_type <- tab_title_to_request_type[[current_tab]]
+    if (is.null(request_type)) {
+      request_type <- "采购"  # 默认值
+    }
+    current_requests <- requests_data() %>% filter(RequestType == request_type)
+    suppliers <- unique(current_requests$Maker)
     suppliers <- suppliers[suppliers != "待定"]
-    
     selectizeInput(
-      inputId = "selected_supplier", 
-      label = NULL, 
-      choices = suppliers, 
-      selected = NULL,  # 默认不选中任何选项
+      inputId = "selected_supplier",
+      label = NULL,
+      choices = c("", suppliers),
+      selected = NULL,
       options = list(
-        placeholder = "筛选供应商...",  # 占位符提示
+        placeholder = "筛选供应商...",
         searchField = "value",
         maxOptions = 1000,
         create = FALSE,
@@ -700,7 +713,7 @@ server <- function(input, output, session) {
   
   # 监听重置按钮点击并重置筛选
   observeEvent(input$reset_supplier, {
-    updateSelectizeInput(session, "selected_supplier", selected = character(0))  # 重置为无选择
+    updateSelectizeInput(session, "selected_supplier", selected = "")  # 重置为无选择
   })
   
   # 定期检查数据库更新
