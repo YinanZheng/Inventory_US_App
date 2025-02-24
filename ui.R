@@ -418,7 +418,7 @@ ui <- navbarPage(
             label = NULL,
             icon = icon("refresh"),
             class = "btn-info btn-sm",
-            style = "margin-bottom: 2px;"  # 微调按钮底部间距，与输入框底部对齐
+            style = "margin-bottom: 14px; height: 34px;"
           )
         ),
         
