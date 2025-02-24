@@ -679,20 +679,36 @@ server <- function(input, output, session) {
   
   # 渲染供应商筛选器
   output$supplier_filter <- renderUI({
-    suppliers <- c("全部", unique(requests_data()$Maker))
+    # 获取唯一的供应商列表
+    unique_suppliers <- unique(requests_data()$Maker)
+    
+    # 将 "待定" 放在第一个位置（如果存在）
+    if ("待定" %in% unique_suppliers) {
+      unique_suppliers <- unique_suppliers[unique_suppliers != "待定"]
+      suppliers <- c("待定", unique_suppliers)
+    } else {
+      suppliers <- c("待定", unique_suppliers)
+    }
+    
+    # 渲染下拉菜单，不包含“全部”，使用占位符
     selectizeInput(
       inputId = "selected_supplier", 
-      label = "筛选供应商:", 
+      label = NULL, 
       choices = suppliers, 
-      selected = "全部",
+      selected = NULL,  # 默认不选中任何选项
       options = list(
-        placeholder = "搜索供应商...",
+        placeholder = "筛选供应商...",  # 设置占位符
         searchField = "value",
         maxOptions = 1000,
         create = FALSE,
         persist = TRUE
       )
     )
+  })
+  
+  # 监听重置按钮点击并重置筛选
+  observeEvent(input$reset_supplier, {
+    updateSelectizeInput(session, "selected_supplier", selected = character(0))  # 重置为无选择
   })
   
   # 定期检查数据库更新

@@ -407,7 +407,10 @@ ui <- navbarPage(
       div(
         class = "main-panel",
         
-        uiOutput("supplier_filter"),
+        fluidRow(
+          column(6, uiOutput("supplier_filter")),
+          column(2, actionButton("reset_supplier", "重置", class = "btn-secondary"))
+        ),
         
         # 采购流程 tabset
         tabsetPanel(
