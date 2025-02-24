@@ -708,11 +708,11 @@ server <- function(input, output, session) {
     }
   )
   
-  # 初次加载数据
   observeEvent(poll_requests(), {
     requests <- poll_requests()
     requests_data(requests)
-    # 仅在数据变化时初始化渲染
+    # 确保 input$selected_supplier 已定义
+    req(input$selected_supplier)
     refresh_board_incremental(requests, output, input)
   }, priority = 10)
   
@@ -724,9 +724,15 @@ server <- function(input, output, session) {
     })
   }, ignoreInit = FALSE, once = TRUE)
   
-  # 监听 selected_supplier 的变化并更新 UI
-  observeEvent(input$selected_supplier, {
+  # 使用 observe 监听 requests_data() 和 input$selected_supplier
+  observe({
+    # 确保 requests_data() 和 input$selected_supplier 都已准备好
+    req(requests_data(), input$selected_supplier)
+    
+    # 获取请求数据
     requests <- requests_data()
+    
+    # 刷新任务板
     refresh_board_incremental(requests, output, input)
   })
   
