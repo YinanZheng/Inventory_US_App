@@ -677,25 +677,28 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  # 定义 tab title 到 RequestType 的映射
-  tab_title_to_request_type <- list(
-    "采购请求" = "采购",
-    "已安排" = "安排",
-    "已完成" = "完成",
-    "待出库" = "出库",
-    "新品请求" = "新品"
-  )
-  
   # 渲染供应商筛选器
   output$supplier_filter <- renderUI({
     current_tab <- input$collaboration_tabs
+    
+    tab_title_to_request_type <- list(
+      "采购请求" = "采购",
+      "已安排" = "安排",
+      "已完成" = "完成",
+      "待出库" = "出库",
+      "新品请求" = "新品"
+    )
+    
     request_type <- tab_title_to_request_type[[current_tab]]
     if (is.null(request_type)) {
       request_type <- "采购"  # 默认值
     }
+    
+    req(requests_data())
+    
     current_requests <- requests_data() %>% filter(RequestType == request_type)
     suppliers <- unique(current_requests$Maker)
-    suppliers <- suppliers[suppliers != "待定"]
+    
     selectizeInput(
       inputId = "selected_supplier",
       label = NULL,

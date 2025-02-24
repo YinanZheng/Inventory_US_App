@@ -408,16 +408,16 @@ ui <- navbarPage(
         class = "main-panel",
         
         div(
-          style = "display: flex; align-items: center; gap: 5px;",  # Reduced gap to 5px for closeness
+          style = "display: flex; align-items: center; gap: 0; margin: 0; padding: 0; max-width: 300px;",  # 限制容器宽度
           div(
-            style = "flex-grow: 1;",  # Filter takes up remaining space
-            uiOutput("supplier_filter")  # Dynamic filter output
+            style = "max-width: 250px;",  # 限制筛选器最大宽度
+            uiOutput("supplier_filter")
           ),
           actionButton(
             inputId = "reset_supplier",
-            label = NULL,  # No text, icon-only
-            icon = icon("refresh"),  # Refresh icon
-            class = "btn-info btn-sm"  # Info style, small size
+            label = NULL,
+            icon = icon("refresh"),
+            class = "btn-info btn-sm"
           )
         ),
         
