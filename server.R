@@ -689,7 +689,12 @@ server <- function(input, output, session) {
       "新品请求" = "新品"
     )
     
+    # 提取纯文本标题，移除 HTML 标签
+    clean_tab <- stri_replace_all_regex(current_tab, "<[^>]+>", "")  # 移除 HTML 标签
+    clean_tab <- stri_trim_both(stri_replace_all_regex(clean_tab, "\\s+", " "))  # 清理多余空格
+    
     request_type <- tab_title_to_request_type[[current_tab]]
+    
     if (is.null(request_type)) {
       request_type <- "采购"  # 默认值
     }
