@@ -706,7 +706,7 @@ server <- function(input, output, session) {
       inputId = "selected_supplier",
       label = NULL,
       choices = c("", suppliers),
-      selected = character(0),
+      selected = "",
       options = list(
         placeholder = "筛选供应商...",
         searchField = "value",
@@ -719,7 +719,7 @@ server <- function(input, output, session) {
   
   # 监听重置按钮点击并重置筛选
   observeEvent(input$reset_supplier, {
-    updateSelectizeInput(session, "selected_supplier", selected = character(0))  # 重置为无选择
+    updateSelectizeInput(session, "selected_supplier", selected = "")  # 重置为无选择
   })
   
   # 定期检查数据库更新
