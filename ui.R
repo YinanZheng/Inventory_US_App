@@ -407,9 +407,13 @@ ui <- navbarPage(
       div(
         class = "main-panel",
         
-        fluidRow(
-          column(6, uiOutput("supplier_filter")),
-          column(2, actionButton("reset_supplier", "重置", class = "btn-secondary"))
+        div(
+          style = "display: flex; align-items: center; gap: 10px;",  # 水平排列，间距10px
+          div(
+            style = "flex-grow: 1;",  # 筛选框占据剩余空间
+            uiOutput("supplier_filter")  # 渲染筛选框
+          ),
+          actionButton("reset_supplier", "重置", class = "btn-secondary")  # 重置按钮
         ),
         
         # 采购流程 tabset

@@ -679,25 +679,17 @@ server <- function(input, output, session) {
   
   # 渲染供应商筛选器
   output$supplier_filter <- renderUI({
-    # 获取唯一的供应商列表
-    unique_suppliers <- unique(requests_data()$Maker)
+    # 获取供应商列表，排除“待定”
+    suppliers <- unique(requests_data()$Maker)
+    suppliers <- suppliers[suppliers != "待定"]
     
-    # 将 "待定" 放在第一个位置（如果存在）
-    if ("待定" %in% unique_suppliers) {
-      unique_suppliers <- unique_suppliers[unique_suppliers != "待定"]
-      suppliers <- c("待定", unique_suppliers)
-    } else {
-      suppliers <- c("待定", unique_suppliers)
-    }
-    
-    # 渲染下拉菜单，不包含“全部”，使用占位符
     selectizeInput(
       inputId = "selected_supplier", 
       label = NULL, 
       choices = suppliers, 
       selected = NULL,  # 默认不选中任何选项
       options = list(
-        placeholder = "筛选供应商...",  # 设置占位符
+        placeholder = "筛选供应商...",  # 占位符提示
         searchField = "value",
         maxOptions = 1000,
         create = FALSE,
