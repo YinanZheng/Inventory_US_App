@@ -1966,10 +1966,13 @@ server <- function(input, output, session) {
                 params = list(order$OrderID, order$UsTrackingNumber, order$CustomerName, order$CustomerNickname, order$Platform, order_image_path, order$OrderNotes, "装箱"))
       
       # 更新物品状态和订单号
-      lapply(seq_len(nrow(items)), function(i) {
-        update_status(con = con, unique_id = items$UniqueID[i], new_status = "美国发货", refresh_trigger = NULL)
-        update_order_id(con = con, unique_id = items$UniqueID[i], order_id = order$OrderID)
-      })
+      # lapply(seq_len(nrow(items)), function(i) {
+      #   update_status(con = con, unique_id = items$UniqueID[i], new_status = "美国发货", refresh_trigger = NULL)
+      #   update_order_id(con = con, unique_id = items$UniqueID[i], order_id = order$OrderID)
+      # })
+      # 更新物品状态和订单号
+      update_status(con = con, unique_ids = items$UniqueID, new_status = "美国发货", refresh_trigger = NULL)
+      update_order_id(con = con, unique_ids = items$UniqueID, order_id = order$OrderID)
       
       # **调用公共方法检测美国库存并弹出采购请求**
       check_us_stock_and_request_purchase(items)
