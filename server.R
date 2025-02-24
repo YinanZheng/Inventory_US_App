@@ -4665,7 +4665,7 @@ server <- function(input, output, session) {
     item_names <- c("", filtered_data %>% pull(ItemName) %>% unique())
     
     # 更新商品名称选项，默认选中空选项
-    updateSelectizeInput(session, "download_item_name", choices = item_names, selected = "")
+    updateSelectizeInput(session, "download_item_name", choices = item_names, selected = "", server = TRUE)
   })
   
   # 重置筛选逻辑
@@ -4680,7 +4680,7 @@ server <- function(input, output, session) {
     )
     
     # 重置商品名称筛选为空选项
-    updateSelectizeInput(session, "download_item_name", choices = "", selected = "")
+    updateSelectizeInput(session, "download_item_name", choices = "", selected = "", server = TRUE)
     updateDateRangeInput(session, "download_date_range", start = Sys.Date() - 365, end = Sys.Date() + 1)
   })
   
