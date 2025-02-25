@@ -478,7 +478,11 @@ ui <- navbarPage(
             
             div(class = "card shadow-sm", style = "border: 1px solid #007BFF; border-radius: 8px; padding: 20px; background-color: #f9f9f9;",
                 tags$h4("入库操作", style = "color: #007BFF; font-weight: bold; margin-bottom: 10px;"),
-                textInput("inbound_sku", label = NULL, placeholder = "请扫描或输入SKU", width = "100%"),
+                div(
+                  style = "display: flex; align-items: center; gap: 0px;",
+                  textInput("inbound_sku", label = NULL, placeholder = "请扫描或输入SKU", width = "100%"),
+                  actionButton("clear_inbound_sku", label = "", icon = icon("xmark", style = "color: #D32F2F;"), style = "padding: 0 5px; border: none; margin-bottom:14px; font-size: 18px; background-color: #F5F5F5; height: 45px; min-width: 34px;")
+                ),
                 checkboxInput("auto_inbound", "自动入库（瑕疵信息不会采用）", value = FALSE),
                 conditionalPanel(
                   condition = "input.auto_inbound == true",  # 只有 auto_inbound 被选中时才显示

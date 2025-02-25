@@ -1077,6 +1077,11 @@ server <- function(input, output, session) {
     makers_items_map = makers_items_map
   )
   
+  # SKU 清除
+  observeEvent(input$clear_inbound_sku, {
+    updateTextInput(session, "inbound_sku", value = "")
+  })
+  
   # 监听 SKU 输入
   observeEvent(input$inbound_sku, {
     req(input$inbound_sku)
@@ -1125,6 +1130,8 @@ server <- function(input, output, session) {
         }
       } else {
         runjs("playInboundErrorSound()")  # 播放失败音效
+        updateTextInput(session, "inbound_sku", value = "")
+        runjs("document.getElementById('inbound_sku').focus();")
         return()
       }
       
