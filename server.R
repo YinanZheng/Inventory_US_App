@@ -1169,16 +1169,10 @@ server <- function(input, output, session) {
         update_status_value = "美国入库",
         count_label = "待入库数", 
         count_field = "PendingQuantity", 
-        refresh_trigger = NULL,      
+        refresh_trigger = unique_items_data_refresh_trigger,      
         con,                  
         input, output, session
       )
-      
-      # 如果未找到对应的 UniqueID，停止后续操作
-      if (is.null(result)) {
-        showNotification(paste0("此SKU第 ", i, " 件物品不存在，已中止入库！"), type = "error")
-        break
-      }
       
       # 检查是否启用了瑕疵品选项
       defective_item <- input$defective_item
@@ -1191,7 +1185,7 @@ server <- function(input, output, session) {
             unique_id = unique_ID,
             note_content = defect_notes,
             status_label = "瑕疵",
-            refresh_trigger = NULL
+            refresh_trigger = unique_items_data_refresh_trigger
           )
           showNotification("瑕疵品备注已成功添加！", type = "message")
         }, error = function(e) {
