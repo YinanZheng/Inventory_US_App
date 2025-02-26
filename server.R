@@ -2258,14 +2258,14 @@ server <- function(input, output, session) {
           style = "color: #007BFF; font-weight: bold; margin: 0;"
         ),
         
-        # 右侧按钮（仅在订单状态为“预定”时显示）
+        # 右侧按钮
         if (order_status == "调货") {
           actionButton("complete_transfer", "已完成调货", class = "btn-success",
                        style = "margin-left: auto; font-size: 14px; padding: 5px 10px;")
         },
         
         if (selected_order$LabelStatus != "无") {
-          downloadButton("download_pdf_manage", label = "下载运单", class = "btn btn-primary", 
+          downloadButton("download_shipping_label_pdf_manage", label = "下载运单", class = "btn btn-primary", 
                          style = "height: 34px; font-size: 14px; padding: 5px 10px;")
         }
       )
