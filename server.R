@@ -2260,18 +2260,13 @@ server <- function(input, output, session) {
         
         # 右侧按钮（仅在订单状态为“预定”时显示）
         if (order_status == "调货") {
-          tagList(
-            actionButton(
-              inputId = "complete_transfer",
-              label = "已完成调货",
-              class = "btn-success",
-              style = "margin-left: auto; font-size: 14px; padding: 5px 10px;"
-            ),
-            downloadButton("download_shipping_label_pdf_manage", label = "下载运单", class = "btn btn-primary", 
-                           style = "height: 34px; margin-left: 10px; font-size: 14px; padding: 5px 10px;")
-          )
-        } else {
-          NULL
+          actionButton("complete_transfer", "已完成调货", class = "btn-success",
+                       style = "margin-left: auto; font-size: 14px; padding: 5px 10px;")
+        },
+        
+        if (selected_order$LabelStatus != "无") {
+          downloadButton("download_pdf_manage", label = "下载运单", class = "btn btn-primary", 
+                         style = "height: 34px; font-size: 14px; padding: 5px 10px;")
         }
       )
     })
