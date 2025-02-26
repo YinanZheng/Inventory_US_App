@@ -2288,8 +2288,11 @@ server <- function(input, output, session) {
         if (order_status == "调货") {
           actionButton("complete_transfer", "已完成调货", class = "btn-success",
                        style = "margin-left: auto; font-size: 14px; padding: 5px 10px;")
-          textInput("transfer_notes", "", placeholder = "添加备注（可选）",
-                    style = "margin-left: 5px; font-size: 14px; padding: 5px 10px; width: 200px;")
+        },
+        
+        if (order_status == "调货") {
+          tags$input(id = "transfer_notes", type = "text", placeholder = "添加备注（可选）",
+                     style = "margin-left: 5px; font-size: 14px; padding: 5px 10px; width: 200px;")
         },
         
         if (selected_order$LabelStatus != "无") {
