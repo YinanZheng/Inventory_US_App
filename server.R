@@ -2288,6 +2288,8 @@ server <- function(input, output, session) {
         if (order_status == "调货") {
           actionButton("complete_transfer", "已完成调货", class = "btn-success",
                        style = "margin-left: auto; font-size: 14px; padding: 5px 10px;")
+          textInput("transfer_notes", "", placeholder = "添加备注（可选）",
+                    style = "margin-left: 5px; font-size: 14px; padding: 5px 10px; width: 200px;")
         },
         
         if (selected_order$LabelStatus != "无") {
@@ -2309,9 +2311,12 @@ server <- function(input, output, session) {
     selected_order <- filtered_orders()[selected_row, ]
     order_id <- selected_order$OrderID
     existing_notes <- selected_order$OrderNotes %||% ""  # 若为空，则默认空字符串
-
+    new_notes_input <- input$transfer_notes %||% ""
+    
+    if (new_notes_input != "") new_notes_input <- paste0(" 圳备注：", new_notes_input)
+    
     # 在 R 中拼接备注内容
-    new_notes <- paste(existing_notes, sprintf("【调货完成 %s】", format(Sys.Date(), "%Y-%m-%d")))
+    new_notes <- paste(existing_notes, sprintf("【调货完成 %s】", format(Sys.Date(), "%Y-%m-%d")), new_notes_input)
     
     update_order_status(order_id = order_id, 
                         new_status = "备货", 
