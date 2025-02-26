@@ -677,8 +677,25 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  # 渲染供应商筛选器
+  # 渲染初始供应商筛选器（只定义一次）
   output$supplier_filter <- renderUI({
+    selectizeInput(
+      inputId = "selected_supplier",
+      label = NULL,
+      choices = NULL,  # 初始为空，动态更新
+      selected = NULL, # 初始无选择
+      options = list(
+        placeholder = "筛选供应商...",
+        searchField = "value",
+        maxOptions = 1000,
+        create = TRUE,
+        allowEmptyOption = TRUE
+      )
+    )
+  })
+  
+  # 动态更新筛选器选项
+  observe({
     current_value <- input$collaboration_tabs
     
     # 映射 tab value 到 RequestType
@@ -690,41 +707,42 @@ server <- function(input, output, session) {
       "new_product" = "新品"
     )
     
-    # 获取对应的 RequestType
-    request_type <- tab_value_to_request_type[[current_value]]
-    
-    if (is.null(request_type)) {
-      request_type <- "采购"  # 默认值
-    }
+    request_type <- tab_value_to_request_type[[current_value]] %||% "采购"  # 默认值
     
     req(requests_data())
     
     current_requests <- requests_data() %>% filter(RequestType == request_type)
     suppliers <- unique(current_requests$Maker)
     
-    selectizeInput(
+    # 获取当前选择
+    current_selection <- isolate(input$selected_supplier)
+    
+    # 更新选项，但避免不必要的重新选择
+    updateSelectizeInput(
+      session,
       inputId = "selected_supplier",
-      label = NULL,
       choices = c("全部供应商", suppliers),
-      selected = "全部供应商",
+      selected = if (is.null(current_selection) || !current_selection %in% c("全部供应商", suppliers)) NULL else current_selection,
       options = list(
         placeholder = "筛选供应商...",
-        searchField = "value",
-        maxOptions = 1000,
-        create = FALSE,
-        persist = TRUE
+        create = TRUE,
+        allowEmptyOption = TRUE
       )
     )
-  })
+  }, priority = 10)  # 提高优先级，确保先于其他观察者执行
   
-  # 监听重置按钮点击并重置筛选
+  # 重置按钮逻辑
   observeEvent(input$reset_supplier, {
-    updateSelectizeInput(session, "selected_supplier", selected = "全部供应商")  # 重置为无选择
-  })
+    updateSelectizeInput(
+      session,
+      "selected_supplier",
+      selected = "全部供应商"
+    )
+  }, priority = 0)  # 较低优先级，避免干扰选项更新
   
   # 定期检查数据库更新
   poll_requests <- reactivePoll(
-    intervalMillis = poll_interval,
+    intervalMillis = 20000,
     session = session,
     checkFunc = function() {
       last_updated <- dbGetQuery(con, "SELECT MAX(UpdatedAt) AS last_updated FROM requests")$last_updated[1]
@@ -735,8 +753,11 @@ server <- function(input, output, session) {
     }
   )
   
-  observeEvent(poll_requests(), {
-    requests <- poll_requests()
+  # 使用 debounce 限制轮询频率
+  poll_requests_debounced <- debounce(poll_requests, millis = 20000)
+  
+  observeEvent(poll_requests_debounced(), {
+    requests <- poll_requests_debounced()
     requests_data(requests)
     # 确保 input$selected_supplier 已定义
     req(input$selected_supplier)
@@ -799,7 +820,7 @@ server <- function(input, output, session) {
         (SKU == search_sku & search_sku != "") |  # SKU 精准匹配
           (grepl(search_name, ItemName, ignore.case = TRUE) & search_name != "")  # 名称模糊匹配
       ) %>%
-      group_by(SKU, ItemName, ItemImagePath) %>%
+      group_by(SKU, ItemName, Maker, ItemImagePath) %>%
       summarise(
         DomesticStock = sum(Status == "国内入库", na.rm = TRUE),  # 国内库存
         InTransitStock = sum(Status == "国内出库", na.rm = TRUE),  # 在途库存
@@ -811,7 +832,7 @@ server <- function(input, output, session) {
     if (nrow(result) > 0) {
       output$item_preview <- renderUI({
         div(
-          style = "max-height: 300px; overflow-y: auto; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;",
+          style = "max-height: 320px; overflow-y: auto; padding: 10px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;",
           lapply(1:nrow(result), function(i) {
             item <- result[i, ]
             img_path <- ifelse(
@@ -823,6 +844,7 @@ server <- function(input, output, session) {
               style = "margin-bottom: 15px; padding: 10px; border-bottom: 1px solid #ccc;",
               tags$img(src = img_path, height = "150px", style = "display: block; margin: auto;"),
               tags$h5(item$ItemName, style = "text-align: center; margin-top: 10px;"),
+              tags$h5(item$Maker, style = "text-align: center; margin-top: 10px;"),
               tags$h5(item$SKU, style = "text-align: center; margin-top: 10px;"),
               div(
                 style = "text-align: center; font-size: 12px;",
@@ -884,6 +906,8 @@ server <- function(input, output, session) {
       } else {
         showNotification("未找到匹配的物品，请检查搜索条件", type = "error")
       }
+      # 手动刷新
+      refresh_board_incremental(dbGetQuery(con, "SELECT * FROM requests"), output, input)
     }, error = function(e) {
       # 捕获错误并打印详细信息
       showNotification(e, type = "error")
@@ -929,6 +953,8 @@ server <- function(input, output, session) {
     updateTextAreaInput(session, "custom_remark", value = "")
     image_requests$reset()
     showNotification("自定义请求已成功提交", type = "message")
+    # 手动刷新
+    refresh_board_incremental(dbGetQuery(con, "SELECT * FROM requests"), output, input)
   })
   
   # 点击请求图片看大图
