@@ -14,7 +14,7 @@ ui <- navbarPage(
       "",
       icon = icon("sync"),
       class = "btn-success",
-      style = "position: absolute; top: 8px; right: 20px; z-index: 9999;"
+      style = "position: fixed; top: 8px; right: 20px; z-index: 9999;"
     ),
     
     # 加载动画界面
