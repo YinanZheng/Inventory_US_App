@@ -22,8 +22,8 @@ server <- function(input, output, session) {
   con <- db_connection()
   
   # 初始化 requests_data 和 unique_items_data
-  requests_data <- reactiveVal(dbGetQuery(con, "SELECT * FROM requests"))
-  unique_items_data <- reactiveVal(dbGetQuery(con, "SELECT * FROM unique_items"))
+  requests_data <- reactiveVal(NULL)
+  unique_items_data <- reactiveVal(NULL)
   
   # ReactiveVal 存储 item_type_data 数据
   item_type_data <- reactiveVal()
