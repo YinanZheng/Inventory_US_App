@@ -775,14 +775,9 @@ server <- function(input, output, session) {
   
   # 使用 observe 监听 requests_data() 和 input$selected_supplier
   observe({
-    # 确保 requests_data() 和 input$selected_supplier 都已准备好
     req(requests_data(), input$selected_supplier)
-    
-    # 获取请求数据
     requests <- requests_data()
-    
-    # 刷新任务板
-    refresh_board_incremental(requests, output, input)
+    refresh_board_incremental(requests, output, input, page_size = 10)  # 设置每页大小
   })
   
   # SKU 和物品名输入互斥逻辑
