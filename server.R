@@ -2292,8 +2292,8 @@ server <- function(input, output, session) {
         },
         
         if (order_status == "调货") {
-          tags$input(id = "transfer_notes", type = "text", placeholder = "添加备注（可选）",
-                     style = "margin-left: 5px; font-size: 14px; padding: 5px 10px; width: 200px;")
+          tags$input(id = "transfer_notes", type = "text", placeholder = "添加调货备注（可选）",
+                     style = "margin-left: 5px; margin-right: 5px; font-size: 14px; padding: 5px 10px; width: 200px;")
         },
         
         if (selected_order$LabelStatus != "无") {
