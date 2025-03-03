@@ -203,6 +203,18 @@ ui <- navbarPage(
       .arrow-icon {
         margin-right: 10px;
       }
+      
+      .note-card {
+        display: flex !important;
+        opacity: 1 !important;
+      }
+      .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 20px;
+        justify-content: center;
+      }
     ")),
       
       tags$script(HTML("
