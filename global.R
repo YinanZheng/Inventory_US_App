@@ -9,15 +9,13 @@ library(shiny.fluent)
 
 library(DBI)
 library(RMariaDB)
-library(dplyr)
-library(tidyr)
+library(tidyverse)
 library(DT)
 library(stringi)
 library(baRcodeR)
 library(plotly)
 library(networkD3)
 library(openxlsx)
-library(lubridate)
 library(future)
 
 # Source shared module R file
