@@ -230,33 +230,21 @@ ui <- navbarPage(
         });
       });
       
-      // 协作页鼠标悬停显示库存状态
-      let inventoryStatusTimeout;  // 用于存储定时器 ID
-      
-      function showInventoryStatus(event, sku) {
-        clearTimeout(inventoryStatusTimeout);
-      
-        // 更新 Shiny 变量，确保服务器端能接收到
-        Shiny.setInputValue('hover_sku', sku, {priority: 'event'});
-      
-        inventoryStatusTimeout = setTimeout(function () {
-          var popup = document.getElementById('inventory-status-popup');
-      
-          if (sku === 'New-Request') {
-            popup.style.display = 'none';
-          } else {
-            popup.style.display = 'block';
-            popup.style.position = 'absolute';
-            popup.style.left = (event.pageX + 20) + 'px';
-            popup.style.top = (event.pageY + 20) + 'px';
-          }
-        }, 1000);  // 1秒后执行
-      }
-      
-      function hideInventoryStatus() {
-        clearTimeout(inventoryStatusTimeout);
-        document.getElementById('inventory-status-popup').style.display = 'none';
-      }
+        // 库存状态浮窗显示逻辑
+            let inventoryStatusTimeout;
+            function showInventoryStatus(event,sku){
+              clearTimeout(inventoryStatusTimeout);
+              Shiny.setInputValue('hover_sku',sku,{priority:'event'});
+              inventoryStatusTimeout=setTimeout(function(){
+                var popup=document.getElementById('inventory-status-popup');
+                if(sku==='New-Request')popup.style.display='none';
+                else{popup.style.display='block';popup.style.left=(event.pageX+20)+'px';popup.style.top=(event.pageY+20)+'px';}
+              },1000);
+            }
+            function hideInventoryStatus(){
+              clearTimeout(inventoryStatusTimeout);
+              document.getElementById('inventory-status-popup').style.display='none';
+            }
       
       // 复制粘贴图片
       $(document).on('paste', '[id$=\"paste_area\"]', function(event) {
