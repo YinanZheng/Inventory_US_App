@@ -678,39 +678,18 @@ ui <- navbarPage(
       class = "layout-container",
       div(
         class = "sticky-sidebar",
-        div(
-          class = "card",
-          style = "margin-bottom: 5px; padding: 15px; border: 1px solid #28A745; border-radius: 8px;",
-          tags$h4("订单筛选", style = "color: #28A745; font-weight: bold;"),
-          textInput("filter_order_id", NULL, placeholder = "订单号", width = "100%"),
-          textInput("filter_tracking_id", NULL, placeholder = "运单号", width = "100%"),
-          fluidRow(
-            column(6, textInput("filter_customer_name", NULL, placeholder = "顾客姓名", width = "100%")),
-            column(6, textInput("filter_customer_netname", NULL, placeholder = "顾客网名", width = "100%"))
-          ),
-          fluidRow(
-            column(6, textInput("filter_sku", NULL, placeholder = "SKU", width = "100%")),
-            column(6, autocompleteInputUI("sold", NULL, placeholder = "商品名"))
-          ),
-          fluidRow(
-            column(12, textInput("filter_order_notes", NULL, placeholder = "订单备注", width = "100%")),
-          ),
-          fluidRow(
-            column(12, dateRangeInput("filter_order_date", "订单创建时间", start = Sys.Date() - 90, end = Sys.Date() + 1, format = "yyyy-mm-dd", width = "100%"))
-          ),
-          fluidRow(
-            column(6, selectInput("filter_platform", "电商平台", choices = c("所有平台" = "", "Etsy", "Shopify", "TikTok", "其他"),
-                                  selected = "", width = "100%")),
-            column(6, selectInput("filter_order_status", "订单状态", 
-                                  choices = c("库存状态" = "", "备货", "预定", "调货", "装箱", "发出", "在途", "送达"),
-                                  selected = "调货", width = "100%"))
-          ),
-          
-          fluidRow(
-            column(4, actionButton("delete_order_btn", "删除", class = "btn-danger", style = "width: 100%;")),
-            column(4, actionButton("reset_filter_btn", "清空", class = "btn-info", style = "width: 100%;")),
-            column(4, actionButton("refresh_orders", "刷新", class = "btn-secondary", style = "width: 100%;"))
-          )
+        div(class="card", style="margin-bottom:5px;padding:15px;border:1px solid #28A745;border-radius:8px;",
+            tags$h4("订单筛选", style="color:#28A745;font-weight:bold;"),
+            div(style="display:flex;align-items:center;gap:0px;",
+                textInput("filter_combined", label=NULL, placeholder="搜索订单信息", width="100%"),
+                actionButton("clear_filter_combined", label="", icon=icon("xmark", style="color:#D32F2F;"), style="padding:0 5px;border:none;margin-bottom:14px;font-size:18px;background-color:#F5F5F5;height:45px;min-width:34px;")
+            ),
+            fluidRow(column(6, selectInput("filter_platform", NULL, choices=c("电商平台"="", "Etsy", "Shopify", "TikTok", "其他"), selected="", width="100%")),
+                     column(6, selectInput("filter_order_status", NULL, choices=c("订单状态"="", "备货", "预定", "调货", "装箱", "发出", "在途", "送达", "取消"), selected="", width="100%"))),
+            fluidRow(column(12, dateRangeInput("filter_order_date", "订单创建时间", start=Sys.Date()-90, end=Sys.Date()+1, format="yyyy-mm-dd", width="100%"))),
+            fluidRow(column(4, actionButton("delete_order_btn", "删除", class="btn-danger", style="width:100%;")),
+                     column(4, actionButton("reset_filter_btn", "重置", class="btn-info", style="width:100%;")),
+                     column(4, actionButton("refresh_orders", "刷新", class="btn-secondary", style="width:100%;")))
         ),
         
         tags$hr(style = "margin: 5px 0; border: none;"),

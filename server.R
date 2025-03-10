@@ -246,87 +246,70 @@ server <- function(input, output, session) {
     data
   })
   
-  # 订单管理页订单过滤
-  debounced_item_name <- debounce(
-    reactive({ trimws(input[["sold-item_name"]]) }),  # 确保输入值是去除空格的
-    millis = 300  # 设置防抖时间为 300 毫秒（可根据需要调整）
+  # 订单管理页订单过滤 （万能搜素框）
+  debounced_filter_combined <- debounce(
+    reactive({ trimws(input$filter_combined) }),  # Trim whitespace from input
+    millis = 500  # Set debounce delay to 500 milliseconds
   )
   
   filtered_orders <- reactive({
-    req(orders())  # 确保订单数据存在
+    req(orders())  # Ensure order data exists
     
-    data <- orders()  # 获取所有订单数据
+    data <- orders()  # Get all order data
     
-    # 根据订单号筛选
-    if (!is.null(input$filter_order_id) && input$filter_order_id != "") {
-      data <- data %>% filter(grepl(trimws(input$filter_order_id), OrderID, ignore.case = TRUE))
+    # Combined filter logic with debouncing
+    search_term <- debounced_filter_combined()
+    if (!is.null(search_term) && length(search_term) > 0 && nzchar(search_term)) {
+      # Step 1: Filter main fields directly
+      main_filtered <- data %>% filter(
+        grepl(search_term, OrderID, ignore.case = TRUE) |
+          grepl(search_term, UsTrackingNumber, ignore.case = TRUE) |
+          grepl(search_term, CustomerName, ignore.case = TRUE) |
+          grepl(search_term, CustomerNetName, ignore.case = TRUE) |
+          grepl(search_term, OrderNotes, ignore.case = TRUE)
+      )
+      
+      # Step 2: Filter by SKU or ItemName using unique_items_data
+      req(unique_items_data())
+      sku_or_item_orders <- unique_items_data() %>%
+        filter(
+          grepl(search_term, SKU, ignore.case = TRUE) |
+            grepl(search_term, ItemName, ignore.case = TRUE)
+        ) %>%
+        pull(OrderID) %>%
+        unique()
+      
+      # Step 3: Combine results - orders matching either main fields or SKU/ItemName
+      data <- data %>% filter(
+        OrderID %in% sku_or_item_orders | 
+          OrderID %in% main_filtered$OrderID
+      )
     }
     
-    # 根据运单号筛选，处理前缀多余情况
-    if (!is.null(input$filter_tracking_id) && input$filter_tracking_id != "") {
-      data <- match_tracking_number(data, "UsTrackingNumber", input$filter_tracking_id)
-    }
-    
-    # 根据顾客姓名筛选
-    if (!is.null(input$filter_customer_name) && input$filter_customer_name != "") {
-      data <- data %>% filter(grepl(trimws(input$filter_customer_name), CustomerName, ignore.case = TRUE))
-    }
-    
-    # 根据顾客网名筛选
-    if (!is.null(input$filter_customer_netname) && input$filter_customer_netname != "") {
-      data <- data %>% filter(grepl(trimws(input$filter_customer_netname), CustomerNetName, ignore.case = TRUE))
-    }
-    
-    # 根据电商平台筛选
+    # Filter by platform
     if (!is.null(input$filter_platform) && input$filter_platform != "") {
       data <- data %>% filter(Platform == input$filter_platform)
     }
     
-    # 根据订单状态筛选
+    # Filter by order status
     if (!is.null(input$filter_order_status) && input$filter_order_status != "") {
       data <- data %>% filter(OrderStatus == input$filter_order_status)
     }
     
-    # 根据 SKU 或商品名筛选
-    req(unique_items_data())  # 确保 unique_items_data 数据存在
-    
-    # 筛选包含所输入 SKU 或商品名的订单
-    if (!is.null(input$filter_sku) && input$filter_sku != "") {
-      sku_orders <- unique_items_data() %>%
-        filter(SKU == trimws(input$filter_sku)) %>%
-        pull(OrderID) %>%  # 提取与 SKU 相关的订单号
-        unique()
-      
-      data <- data %>% filter(OrderID %in% sku_orders)
-    }
-    
-    item_name <- debounced_item_name()
-    if (!is.null(item_name) && length(item_name) > 0 && nzchar(item_name)) {
-      item_orders <- unique_items_data() %>%
-        filter(grepl(debounced_item_name(), ItemName, ignore.case = TRUE)) %>%
-        pull(OrderID) %>%  # 提取与商品名相关的订单号
-        unique()
-      data <- data %>% filter(OrderID %in% item_orders)
-    }
-    
-    # 根据创建时间筛选
+    # Filter by creation date
     if (!is.null(input$filter_order_date) && !is.null(input$filter_order_date[[1]]) && !is.null(input$filter_order_date[[2]])) {
       start_date <- input$filter_order_date[[1]]
       end_date <- input$filter_order_date[[2]]
       data <- data %>% filter(created_at >= start_date & created_at <= end_date)
     }
     
-    # 根据订单备注筛选
-    if (!is.null(input$filter_order_notes) && input$filter_order_notes != "") {
-      data <- data %>% filter(grepl(input$filter_order_notes, OrderNotes, ignore.case = TRUE))
-    }
-    
-    # 按录入时间倒序排列
+    # Sort by creation date in descending order
     data <- data %>% arrange(desc(created_at))
     
     data
   })
-  
+
+  # 已经到齐订单
   filtered_orders_arrived <- reactive({
     req(orders(), unique_items_data())  # 确保订单和物品数据存在
     
@@ -365,6 +348,7 @@ server <- function(input, output, session) {
     return(filtered_orders)
   })
   
+  # 物品没到齐订单
   filtered_orders_waiting <- reactive({
     req(orders(), unique_items_data())  # 确保订单和物品数据存在
     
@@ -409,15 +393,6 @@ server <- function(input, output, session) {
     
     return(filtered_orders)
   })
-  
-  # filtered_orders_relocation  <- reactive({
-  #   req(orders())  # 确保订单和物品数据存在
-  #   
-  #   # 筛选订单状态为“调货”的订单
-  #   filtered_orders <- orders() %>% filter(OrderStatus == "调货")
-  #   
-  #   return(filtered_orders)
-  # })
   
   # 物品管理页过滤
   filtered_unique_items_data_manage <- reactive({
@@ -2338,14 +2313,12 @@ server <- function(input, output, session) {
   observeEvent(input$reset_filter_btn, {
     tryCatch({
       # 重置所有输入框和选择框
-      updateTextInput(session, "filter_order_id", value = "")
-      updateTextInput(session, "filter_tracking_id", value = "")
-      updateTextInput(session, "filter_customer_name", value = "")
-      updateTextInput(session, "filter_customer_netname", value = "")
-      updateSelectInput(session, "filter_platform", selected = "")
-      updateSelectInput(session, "filter_order_status", selected = "")
-      updateTextInput(session, "filter_sku", value = "")
-      updateTextInput(session, "sold-item_name", value = "")
+      updateTextInput(session, "filter_combined", value = "")  # 重置合并的搜索框
+      updateSelectInput(session, "filter_platform", selected = "")  # 重置电商平台选择
+      updateSelectInput(session, "filter_order_status", selected = "")  # 重置订单状态选择
+      updateDateRangeInput(session, "filter_order_date", 
+                           start = Sys.Date() - 90, 
+                           end = Sys.Date() + 1)  # 重置日期范围到默认值
       
       # 显示成功通知
       showNotification("筛选条件已清空！", type = "message")
@@ -2599,7 +2572,10 @@ server <- function(input, output, session) {
     updateTextInput(session, "shipping_bill_number", value = tracking_number)
   })
   
-  
+  # order信息筛选清除
+  observeEvent(input$clear_filter_combined, {
+    updateTextInput(session, "filter_combined", value = "")
+  })
   
   ################################################################
   ##                                                            ##
