@@ -1282,6 +1282,7 @@ server <- function(input, output, session) {
                            style = "width: 150px; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"),
                   tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
                   tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
+                  tags$p(tags$b("供应商："), item$Maker, style = "margin: 5px 0;"),
                   
                   if (request_exists) {
                     tagList(
