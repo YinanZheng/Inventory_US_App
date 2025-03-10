@@ -27,7 +27,7 @@ lapply(files, function(f) {
 system_type <<- "us"
 
 # 定义轮询间隔（以毫秒为单位）
-poll_interval <<- 1000  # 每 1 秒检查一次
+poll_interval <<- 5000  # 每 5 秒检查一次
 
 # 主机URL
 host_url <<- "https://www.goldenbeanllc.com/"
