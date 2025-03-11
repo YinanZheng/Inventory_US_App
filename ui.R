@@ -379,7 +379,7 @@ ui <- navbarPage(
   ),
   
   tabPanel(
-    "协作", icon = icon("users"),
+    "协作", icon = icon("handshake"),
     div(
       class = "layout-container",
       
