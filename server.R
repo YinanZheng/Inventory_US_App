@@ -4693,7 +4693,6 @@ server <- function(input, output, session) {
   ##                                                            ##
   ################################################################
   
-  
   # 动态生成供应商筛选器
   output$download_maker_ui <- renderUI({
     makers <- unique_items_data() %>% pull(Maker) %>% unique()
@@ -4705,7 +4704,6 @@ server <- function(input, output, session) {
       placeholder = "搜索供应商..."
     )
   })
-  
   
   # 监听供应商选择变化并动态更新商品名称
   observe({
@@ -4743,7 +4741,6 @@ server <- function(input, output, session) {
     updateSelectizeInput(session, "download_item_name", choices = "", selected = "", server = TRUE)
     updateDateRangeInput(session, "download_date_range", start = Sys.Date() - 365, end = Sys.Date() + 1)
   })
-  
   
   # 下载物品汇总表为 Excel
   output$download_summary_xlsx <- downloadHandler(
