@@ -1227,31 +1227,47 @@ ui <- navbarPage(
     "查询", icon = icon("search"), 
     div(
       class = "layout-container",  # Flexbox 容器
-      div(
-        class = "sticky-sidebar",  # sticky 侧边栏
-        itemFilterUI(id = "query_filter", border_color = "#28A745", text_color = "#28A745", use_status = FALSE, use_purchase_date = FALSE),
-        
-        tags$hr(),
-        
-        div(
-          class = "card",
-          style = "margin-bottom: 20px; padding: 20px; border: 1px solid #007BFF; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
-          tags$h4("查询商品", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
-          textInput("query_sku", NULL, placeholder = "请扫描或输入SKU", width = "100%"),
-          actionButton("clear_query_sku_btn", "清空", icon = icon("eraser"), class = "btn btn-warning")
-        ),
-        div(
-          class = "card",
-          style = "margin-bottom: 20px; padding: 20px; border: 1px solid #DC3545; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
-          tags$h4("售罄物品", style = "color: #DC3545; font-weight: bold; margin-bottom: 15px;"),
-          radioButtons(
-            inputId = "query_stock_status",
-            label = NULL,  # 不显示默认标题，使用 h4 作为标题
-            choices = c("不过滤" = "none", "美国售罄, 国内有货" = "us", "国内售罄, 美国有货" = "domestic", "全库存售罄" = "all"),
-            selected = "none",  # 默认选择 “不过滤”
-            inline = FALSE
+      div(class = "sticky-sidebar",
+          conditionalPanel(
+            condition = "input.query_tabs == '商品状态'",
+            div(
+              itemFilterUI(id = "query_filter", border_color = "#28A745", text_color = "#28A745", use_status = FALSE, use_purchase_date = FALSE),
+              tags$hr(),
+              div(
+                class = "card",
+                style = "margin-bottom: 20px; padding: 20px; border: 1px solid #007BFF; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
+                tags$h4("查询商品", style = "color: #007BFF; font-weight: bold; margin-bottom: 15px;"),
+                textInput("query_sku", NULL, placeholder = "请扫描或输入SKU", width = "100%"),
+                actionButton("clear_query_sku_btn", "清空", icon = icon("eraser"), class = "btn btn-warning")
+              ),
+              div(
+                class = "card",
+                style = "margin-bottom: 20px; padding: 20px; border: 1px solid #DC3545; border-radius: 8px; box-shadow: 0px 4px 6px rgba(0,0,0,0.1);",
+                tags$h4("售罄物品", style = "color: #DC3545; font-weight: bold; margin-bottom: 15px;"),
+                radioButtons(
+                  inputId = "query_stock_status",
+                  label = NULL,
+                  choices = c("不过滤" = "none", "美国售罄, 国内有货" = "us", "国内售罄, 美国有货" = "domestic", "全库存售罄" = "all"),
+                  selected = "none",
+                  inline = FALSE
+                )
+              )
+            )
+          ),
+          
+          conditionalPanel(
+            condition = "input.query_tabs == '采购开销'",
+            div(
+              p("此处留空，未来扩展...", style = "color: #888; text-align: center; margin-top: 20px;")
+            )
+          ),
+          
+          conditionalPanel(
+            condition = "input.query_tabs == '库存总览'",
+            div(
+              p("此处留空，未来扩展...", style = "color: #888; text-align: center; margin-top: 20px;")
+            )
           )
-        )
       ),
       
       div(
