@@ -1522,7 +1522,7 @@ ui <- navbarPage(
           # 商品名称筛选
           selectizeInput(
             inputId = "download_item_name",
-            label = "商品名称:",
+            label = NULL,
             choices = NULL,          # 动态加载商品名称
             selected = NULL,         # 默认全选
             multiple = FALSE,        # 单选，适合精确匹配
@@ -1532,6 +1532,8 @@ ui <- navbarPage(
             ),
             width = "100%"
           ),
+          
+          textInput("download_sku", label = NULL, placeholder = "SKU", width = "100%"),
           
           # 采购日期筛选
           dateRangeInput(

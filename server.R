@@ -229,8 +229,10 @@ server <- function(input, output, session) {
       input = input,
       maker_input_id = "inbound_filter-maker",
       status_input_id = "inbound_filter-status",
-      item_name_input_id = "inbound_filter-name"    
-      )
+      item_name_input_id = "inbound_filter-name",
+      sku_input_id = "inbound_filter-sku",
+      purchase_date_range_id = "inbound_filter-purchase_date_range"
+    )
     
     # 统计 SKU, Status, Defect, 和 PurchaseTime 下的数量
     data <- data %>%
@@ -253,62 +255,72 @@ server <- function(input, output, session) {
   )
   
   filtered_orders <- reactive({
-    req(orders())  # Ensure order data exists
+    req(orders())  # 确保订单数据存在
     
-    data <- orders()  # Get all order data
+    data <- orders()  # 获取所有订单数据
     
-    # Combined filter logic with debouncing
+    # 组合搜索逻辑，使用防抖输入
     search_term <- debounced_filter_combined()
     if (!is.null(search_term) && length(search_term) > 0 && nzchar(search_term)) {
-      # Step 1: Filter main fields directly
-      main_filtered <- data %>% filter(
-        grepl(search_term, OrderID, ignore.case = TRUE) |
-          grepl(search_term, UsTrackingNumber, ignore.case = TRUE) |
-          grepl(search_term, CustomerName, ignore.case = TRUE) |
-          grepl(search_term, CustomerNetName, ignore.case = TRUE) |
-          grepl(search_term, OrderNotes, ignore.case = TRUE)
-      )
+      # 判断是否可能是运单号：仅包含数字且长度合理
+      cleaned_search_term <- gsub("[^0-9]", "", trimws(search_term))
+      is_tracking_like <- nchar(cleaned_search_term) >= 22 && cleaned_search_term == trimws(search_term)
       
-      # Step 2: Filter by SKU or ItemName using unique_items_data
-      req(unique_items_data())
-      sku_or_item_orders <- unique_items_data() %>%
-        filter(
-          grepl(search_term, SKU, ignore.case = TRUE) |
-            grepl(search_term, ItemName, ignore.case = TRUE)
-        ) %>%
-        pull(OrderID) %>%
-        unique()
-      
-      # Step 3: Combine results - orders matching either main fields or SKU/ItemName
-      data <- data %>% filter(
-        OrderID %in% sku_or_item_orders | 
-          OrderID %in% main_filtered$OrderID
-      )
+      if (is_tracking_like) {
+        # 特殊情况：按运单号匹配
+        data <- match_tracking_number(data, "UsTrackingNumber", search_term)
+      } else {
+        # 普通搜索逻辑
+        # Step 1: 直接过滤主要字段
+        main_filtered <- data %>% filter(
+          grepl(search_term, OrderID, ignore.case = TRUE) |
+            grepl(search_term, UsTrackingNumber, ignore.case = TRUE) |
+            grepl(search_term, CustomerName, ignore.case = TRUE) |
+            grepl(search_term, CustomerNetName, ignore.case = TRUE) |
+            grepl(search_term, OrderNotes, ignore.case = TRUE)
+        )
+        
+        # Step 2: 使用 unique_items_data 过滤 SKU 或 ItemName
+        req(unique_items_data())
+        sku_or_item_orders <- unique_items_data() %>%
+          filter(
+            grepl(search_term, SKU, ignore.case = TRUE) |
+              grepl(search_term, ItemName, ignore.case = TRUE)
+          ) %>%
+          pull(OrderID) %>%
+          unique()
+        
+        # Step 3: 合并结果 - 主字段或 SKU/ItemName 匹配的订单
+        data <- data %>% filter(
+          OrderID %in% sku_or_item_orders | 
+            OrderID %in% main_filtered$OrderID
+        )
+      }
     }
     
-    # Filter by platform
+    # 按平台过滤
     if (!is.null(input$filter_platform) && input$filter_platform != "") {
       data <- data %>% filter(Platform == input$filter_platform)
     }
     
-    # Filter by order status
+    # 按订单状态过滤
     if (!is.null(input$filter_order_status) && input$filter_order_status != "") {
       data <- data %>% filter(OrderStatus == input$filter_order_status)
     }
     
-    # Filter by creation date
+    # 按创建日期过滤
     if (!is.null(input$filter_order_date) && !is.null(input$filter_order_date[[1]]) && !is.null(input$filter_order_date[[2]])) {
       start_date <- input$filter_order_date[[1]]
       end_date <- input$filter_order_date[[2]]
       data <- data %>% filter(created_at >= start_date & created_at <= end_date)
     }
     
-    # Sort by creation date in descending order
+    # 按创建日期降序排序
     data <- data %>% arrange(desc(created_at))
     
     data
   })
-
+  
   # 已经到齐订单
   filtered_orders_arrived <- reactive({
     req(orders(), unique_items_data())  # 确保订单和物品数据存在
@@ -405,6 +417,8 @@ server <- function(input, output, session) {
       maker_input_id = "manage_filter-maker",
       status_input_id = "manage_filter-status",
       item_name_input_id = "manage_filter-name",
+      sku_input_id = "manage_filter-sku",
+      purchase_date_range_id = "manage_filter-purchase_date_range"
     )
     
     data
@@ -420,6 +434,7 @@ server <- function(input, output, session) {
       input = input,
       maker_input_id = "defect_filter-maker",
       item_name_input_id = "defect_filter-name",
+      sku_input_id = "defect_filter-sku",
       purchase_date_range_id = "defect_filter-purchase_date_range"
     )
     
@@ -453,6 +468,7 @@ server <- function(input, output, session) {
       maker_input_id = "logistic_filter-maker",
       status_input_id = "logistic_filter-status",
       item_name_input_id = "logistic_filter-name",
+      sku_input_id = "logistic_filter-sku",
       sold_date_range_id = "logistic_filter-sold_date_range",
       only_show_sold_id = "logistic_filter-only_show_sold",
       exit_date_range_id = "logistic_filter-exit_date_range",
@@ -515,6 +531,7 @@ server <- function(input, output, session) {
       input = input,
       maker_input_id = "download_maker",
       item_name_input_id = "download_item_name",
+      sku_input_id = "download_sku",
       purchase_date_range_id = "download_date_range"
     )
   })
@@ -4683,7 +4700,7 @@ server <- function(input, output, session) {
     
     createSearchableDropdown(
       input_id = "download_maker",
-      label = "选择供应商:",
+      label = NULL,
       data = makers,
       placeholder = "搜索供应商..."
     )
