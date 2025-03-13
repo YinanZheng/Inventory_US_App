@@ -2591,6 +2591,45 @@ server <- function(input, output, session) {
     updateTextInput(session, "filter_combined", value = "")
   })
   
+  # 状态更新逻辑
+  observeEvent(input$update_order_status_btn, {
+    req(selected_order_row())  # 确保用户选择了一行订单
+    req(input$update_order_status)  # 确保用户选择了新状态
+    
+    # 获取选中订单的行
+    selected_row <- selected_order_row()
+    selected_order <- filtered_orders()[selected_row, ]
+    order_id <- selected_order$OrderID
+    new_status <- input$update_order_status
+    updated_notes <- ifelse(trimws(input$update_order_notes) != "", input$update_order_notes, NULL)
+    
+    # 调用 update_order_status 函数
+    update_order_status(
+      order_id = order_id, 
+      new_status = new_status, 
+      updated_notes = updated_notes, 
+      refresh_trigger = orders_refresh_trigger, 
+      con = con
+    )
+    
+    # 清空备注输入框
+    updateTextAreaInput(session, "update_order_notes", value = "")
+  })
+  
+  observe({
+    req(selected_order_row())  # 确保有选中的订单
+    
+    selected_row <- selected_order_row()
+    selected_order <- filtered_orders()[selected_row, ]
+    
+    # 更新 UI 中的状态选择框
+    updateSelectInput(session, "update_order_status", selected = selected_order$OrderStatus)
+    
+    # 预填充备注
+    updateTextAreaInput(session, "update_order_notes", value = selected_order$OrderNotes %||% "")
+  })
+  
+  
   ################################################################
   ##                                                            ##
   ## 物品管理分页                                               ##
