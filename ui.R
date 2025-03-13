@@ -103,7 +103,7 @@ ui <- navbarPage(
       /* 鼠标悬停导航项时的颜色 */
       .navbar-nav > li > a:hover {
         color: #FFD700 !important;           /* 悬停文字颜色 */
-        background-color: #4b0363 !important;/* 悬停背景颜色 */
+        background-color: #290436 !important;/* 悬停背景颜色 */
       }
       
       .nav-pills > li.active > a {
