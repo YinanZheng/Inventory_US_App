@@ -1260,7 +1260,6 @@ server <- function(input, output, session) {
         WHERE ui.SKU IN (", sku_list_str, ")
         GROUP BY ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker
       "))
-    })
       
       # 检查库存，只记录 **美国库存为零** 的物品
       zero_items <- list()
