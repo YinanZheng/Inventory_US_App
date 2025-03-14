@@ -1253,34 +1253,31 @@ server <- function(input, output, session) {
       sku_list_str <- paste0("'", paste(unique(order_items$SKU), collapse = "','"), "'")
       
       latest_unique_items <- dbGetQuery(con, paste0("
-      SELECT ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker,
-             SUM(CASE WHEN ui.Status = '美国入库' THEN 1 ELSE 0 END) AS UsStock,
-             ROUND(AVG(ui.ProductCost), 2) AS AvgCost
-      FROM unique_items AS ui
-      JOIN inventory AS inv ON ui.SKU = inv.SKU
-      WHERE ui.SKU IN (", sku_list_str, ")
-      GROUP BY ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker
-    "))
+        SELECT ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker,
+               SUM(CASE WHEN ui.Status = '美国入库' THEN 1 ELSE 0 END) AS UsStock,
+               ROUND(AVG(ui.ProductCost), 2) AS AvgCost
+        FROM unique_items AS ui
+        JOIN inventory AS inv ON ui.SKU = inv.SKU
+        WHERE ui.SKU IN (", sku_list_str, ")
+        GROUP BY ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker
+        "))
       
-      # 处理 `NA` 值，确保 `UsStock` 不为空
-      latest_unique_items$UsStock[is.na(latest_unique_items$UsStock)] <- 0
+      latest_unique_items$UsStock[is.na(latest_unique_items$UsStock)] <- 0  # 处理 NA
       
-      # 只保留 `UsStock` 为 0 的物品
-      zero_items <- latest_unique_items %>% filter(UsStock == 0)
+      zero_items <- latest_unique_items %>% filter(UsStock == 0)  # 筛选美国库存为 0 的物品
       
-      # 如果 `zero_items` 为空，则直接返回
       if (nrow(zero_items) == 0) {
         showNotification("所有物品库存充足，无需采购！", type = "message")
         return(FALSE)
       }
       
-      zero_stock_items(zero_items)  # 存储需要采购的物品
+      # **确保 zero_items 是 list**
+      zero_stock_items(split(zero_items, seq(nrow(zero_items))))  # 转换为 list 并存入 reactiveVal
       
-      # 查询已有采购请求
       existing_requests <- dbGetQuery(con, paste0("
-      SELECT SKU, RequestType, Quantity FROM requests 
-      WHERE SKU IN (", sku_list_str, ")
-    "))
+        SELECT SKU, RequestType, Quantity FROM requests 
+        WHERE SKU IN (", sku_list_str, ")
+        "))
       
       # **弹出采购请求模态框**
       modal_content <- tagList(
@@ -1289,8 +1286,7 @@ server <- function(input, output, session) {
           tags$h4("需要采购补货：", style = "color: red; margin-bottom: 15px;"),
           tags$div(
             style = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;",
-            lapply(seq_len(nrow(zero_items)), function(i) {
-              item <- zero_items[i, ]
+            lapply(zero_stock_items(), function(item) {  # 遍历 list 而非 data.frame
               existing_request <- existing_requests %>% filter(SKU == item$SKU)
               request_exists <- nrow(existing_request) > 0
               
@@ -1338,7 +1334,7 @@ server <- function(input, output, session) {
       return(TRUE)
     }, error = function(e) {
       showNotification(paste("[Function]check_us_stock_and_request_purchase 发生错误：", e$message), type = "error")
-      runjs("playErrorSound()")  # 播放失败音效
+      runjs("playErrorSound()")  
     })
   }
   
