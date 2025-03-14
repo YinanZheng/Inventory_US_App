@@ -1300,7 +1300,7 @@ server <- function(input, output, session) {
                   tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
                   tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
                   tags$p(tags$b("供应商："), item$Maker, style = "margin: 5px 0;"),
-                  tags$p(tags$b("平均成本："), sprintf("￥%.2f", as.numeric(item$AveCost)), style = "margin: 5px 0;"),
+                  tags$p(tags$b("平均成本："), sprintf("￥%.2f", as.numeric(item$AvgCost)), style = "margin: 5px 0;"),
                   
                   if (request_exists) {
                     tagList(
