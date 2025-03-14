@@ -2601,7 +2601,12 @@ server <- function(input, output, session) {
     selected_order <- filtered_orders()[selected_row, ]
     order_id <- selected_order$OrderID
     new_status <- input$update_order_status
-    updated_notes <- ifelse(trimws(input$update_order_notes) != "", input$update_order_notes, NULL)
+    
+    # 处理备注输入，防止 NULL 赋值错误
+    updated_notes <- NULL
+    if (!is.null(input$update_order_notes) && trimws(input$update_order_notes) != "") {
+      updated_notes <- input$update_order_notes
+    }
     
     # 调用 update_order_status 函数
     update_order_status(
