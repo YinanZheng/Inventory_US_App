@@ -701,7 +701,7 @@ ui <- navbarPage(
         
         div(
           class = "card", 
-          style = "margin-bottom:5px;padding:15px;border:1px solid #007BFF;border-radius:8px;",
+          style = "margin-top:5px;margin-bottom:5px;padding:15px;border:1px solid #007BFF;border-radius:8px;",
           tags$h4("更新订单状态", style="color:#007BFF;font-weight:bold;"),
           
           # 订单状态选择框
