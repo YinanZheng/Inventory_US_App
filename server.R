@@ -766,7 +766,7 @@ server <- function(input, output, session) {
   observe({
     req(requests_data(), input$selected_supplier)
     requests <- requests_data()
-    refresh_board_incremental(requests, output, input, page_size = 10)  # 设置每页大小
+    refresh_board_incremental(requests, output, input, page_size = 30)  # 设置每页大小
   })
   
   # SKU 和物品名输入互斥逻辑
