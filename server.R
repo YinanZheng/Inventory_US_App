@@ -1274,6 +1274,8 @@ server <- function(input, output, session) {
         return(FALSE)
       }
       
+      zero_stock_items(zero_items)  # 存储需要采购的物品
+      
       # 查询已有采购请求
       existing_requests <- dbGetQuery(con, paste0("
       SELECT SKU, RequestType, Quantity FROM requests 
