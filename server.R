@@ -309,7 +309,7 @@ server <- function(input, output, session) {
     }
     
     # 按创建日期过滤
-    if (!is.null(input$filter_order_date) && !is.null(input$filter_order_date[[1]]) && !is.null(input$filter_order_date[[2]])) {
+    if (!is.null(input$filter_order_date) && length(input$filter_order_date) >= 2) {
       start_date <- input$filter_order_date[[1]]
       end_date <- input$filter_order_date[[2]]
       data <- data %>% filter(created_at >= start_date & created_at <= end_date)

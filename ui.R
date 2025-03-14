@@ -686,7 +686,7 @@ ui <- navbarPage(
             ),
             fluidRow(column(6, selectInput("filter_platform", NULL, choices=c("电商平台"="", "Etsy", "Shopify", "TikTok", "其他"), selected="", width="100%")),
                      column(6, selectInput("filter_order_status", NULL, choices=c("订单状态"="", "备货", "预定", "调货", "装箱", "发出", "在途", "送达", "取消"), selected="", width="100%"))),
-            fluidRow(column(12, dateRangeInput("filter_order_date", "订单创建时间", start=Sys.Date()-90, end=Sys.Date()+1, format="yyyy-mm-dd", width="100%"))),
+            fluidRow(column(12, airDatepickerInput("filter_order_date", "订单创建时间", range=TRUE, value=c(Sys.Date()-90, Sys.Date()+1), dateFormat="yyyy-MM-dd", width="100%", position="bottom left"))),
             fluidRow(column(4, actionButton("delete_order_btn", "删除", class="btn-danger", style="width:100%;")),
                      column(4, actionButton("reset_filter_btn", "重置", class="btn-info", style="width:100%;")),
                      column(4, actionButton("refresh_orders", "刷新", class="btn-secondary", style="width:100%;")))
