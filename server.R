@@ -1249,16 +1249,18 @@ server <- function(input, output, session) {
     req(order_items, nrow(order_items) > 0)
     
     tryCatch({
-      # 查询 SKU 最新库存情况（**仅统计美国库存**）
+      # 查询 SKU 最新库存情况（**仅统计美国库存**）并计算物品平均成本
       sku_list_str <- paste0("'", paste(unique(order_items$SKU), collapse = "','"), "'")
       latest_unique_items <- dbGetQuery(con, paste0("
-      SELECT ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker,
-             SUM(CASE WHEN ui.Status = '美国入库' THEN 1 ELSE 0 END) AS UsStock
-      FROM unique_items AS ui
-      JOIN inventory AS inv ON ui.SKU = inv.SKU
-      WHERE ui.SKU IN (", sku_list_str, ")
-      GROUP BY ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker
-    "))
+        SELECT ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker,
+               SUM(CASE WHEN ui.Status = '美国入库' THEN 1 ELSE 0 END) AS UsStock,
+               ROUND(AVG(ui.ProductCost), 2) AS AvgCost
+        FROM unique_items AS ui
+        JOIN inventory AS inv ON ui.SKU = inv.SKU
+        WHERE ui.SKU IN (", sku_list_str, ")
+        GROUP BY ui.SKU, inv.ItemName, inv.ItemImagePath, inv.Maker
+      "))
+    })
       
       # 检查库存，只记录 **美国库存为零** 的物品
       zero_items <- list()
@@ -1266,7 +1268,7 @@ server <- function(input, output, session) {
         result <- latest_unique_items %>%
           filter(SKU == sku) %>%
           mutate(UsStock = ifelse(is.na(UsStock), 0, UsStock)) %>%
-          select(SKU, ItemName, ItemImagePath, Maker, UsStock)
+          select(SKU, ItemName, ItemImagePath, Maker, UsStock, AvgCost)
         
         if (result$UsStock == 0) {
           zero_items <- append(zero_items, list(result))
@@ -1298,6 +1300,7 @@ server <- function(input, output, session) {
                   tags$p(tags$b("物品名："), item$ItemName, style = "margin: 5px 0;"),
                   tags$p(tags$b("SKU："), item$SKU, style = "margin: 5px 0;"),
                   tags$p(tags$b("供应商："), item$Maker, style = "margin: 5px 0;"),
+                  tags$p(tags$b("平均成本："), sprintf("￥%.2f", as.numeric(item$AveCost)), style = "margin: 5px 0;"),
                   
                   if (request_exists) {
                     tagList(
