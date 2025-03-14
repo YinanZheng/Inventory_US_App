@@ -230,7 +230,7 @@ server <- function(input, output, session) {
       maker_input_id = "inbound_filter-maker",
       status_input_id = "inbound_filter-status",
       item_name_input_id = "inbound_filter-name",
-      sku_input_id = "inbound_filter-sku",
+      other_input_id = "inbound_filter-other",
       purchase_date_range_id = "inbound_filter-purchase_date_range"
     )
     
@@ -417,7 +417,7 @@ server <- function(input, output, session) {
       maker_input_id = "manage_filter-maker",
       status_input_id = "manage_filter-status",
       item_name_input_id = "manage_filter-name",
-      sku_input_id = "manage_filter-sku",
+      other_input_id = "manage_filter-other",
       purchase_date_range_id = "manage_filter-purchase_date_range"
     )
     
@@ -434,7 +434,7 @@ server <- function(input, output, session) {
       input = input,
       maker_input_id = "defect_filter-maker",
       item_name_input_id = "defect_filter-name",
-      sku_input_id = "defect_filter-sku",
+      other_input_id = "defect_filter-other",
       purchase_date_range_id = "defect_filter-purchase_date_range"
     )
     
@@ -468,7 +468,7 @@ server <- function(input, output, session) {
       maker_input_id = "logistic_filter-maker",
       status_input_id = "logistic_filter-status",
       item_name_input_id = "logistic_filter-name",
-      sku_input_id = "logistic_filter-sku",
+      other_input_id = "logistic_filter-other",
       sold_date_range_id = "logistic_filter-sold_date_range",
       only_show_sold_id = "logistic_filter-only_show_sold",
       exit_date_range_id = "logistic_filter-exit_date_range",
@@ -504,7 +504,7 @@ server <- function(input, output, session) {
       input = input,
       maker_input_id = "query_filter-maker",
       item_name_input_id = "query_filter-name",
-      sku_input_id = "query_filter-sku"
+      other_input_id = "query_filter-sku"
     )
     
     # 根据售罄筛选
@@ -529,7 +529,7 @@ server <- function(input, output, session) {
       input = input,
       maker_input_id = "download_maker",
       item_name_input_id = "download_item_name",
-      sku_input_id = "download_sku",
+      other_input_id = "download_sku",
       purchase_date_range_id = "download_date_range"
     )
   })
