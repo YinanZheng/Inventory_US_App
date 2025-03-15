@@ -552,6 +552,7 @@ server <- function(input, output, session) {
   selected_order_row <- callModule(orderTableServer, "orders_table_module",
                                    column_mapping = orders_table_columns,
                                    data = filtered_orders,  # 数据源
+                                   user_timezone = input$user_timezone,
                                    selection = "single" # 单选模式
   )
   
