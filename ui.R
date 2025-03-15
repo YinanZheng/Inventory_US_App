@@ -679,7 +679,7 @@ ui <- navbarPage(
       div(
         class = "sticky-sidebar",
         conditionalPanel(
-          condition = "input.order_management_tabs.includes('订单查询')",
+          condition = "input.order_management_tabs && input.order_management_tabs.toString().indexOf('订单查询') !== -1",
           div(
             div(class="card", style="margin-bottom:5px;padding:15px;border:1px solid #28A745;border-radius:8px;",
                 tags$h4("订单筛选", style="color:#28A745;font-weight:bold;"),
