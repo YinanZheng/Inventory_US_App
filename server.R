@@ -580,22 +580,17 @@ server <- function(input, output, session) {
                                                   column_mapping = orders_table_columns,
                                                   options = modifyList(table_default_options, list(scrollY = "650px")),
                                                   data = filtered_orders_arrived,  # 数据源
+                                                  user_timezone = input$user_timezone,
                                                   selection = "single" # 单选模式
   )
   
   selected_orders_table_waiting_row <- callModule(orderTableServer, "orders_table_waiting",
                                                   column_mapping = orders_table_columns,
                                                   options = modifyList(table_default_options, list(scrollY = "650px")),
-                                                  data = filtered_orders_waiting,  # 数据源
+                                                  data = filtered_orders_waiting,  # 数据源                                   
+                                                  user_timezone = input$user_timezone,
                                                   selection = "single" # 单选模式
   )
-  
-  # selected_orders_table_relocation_row <- callModule(orderTableServer, "orders_relocation",
-  #                                                 column_mapping = orders_table_columns,
-  #                                                 options = modifyList(table_default_options, list(scrollY = "650px")),
-  #                                                 data = filtered_orders_relocation,  # 数据源
-  #                                                 selection = "single" # 单选模式
-  # )
   
   # 物品管理分页物品表
   unique_items_table_manage_selected_row <- callModule(uniqueItemsTableServer, "unique_items_table_manage",
