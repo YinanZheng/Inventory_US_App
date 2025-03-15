@@ -2233,13 +2233,7 @@ server <- function(input, output, session) {
     order_status <- input$filter_order_status
     new_tab_title <- ifelse(is.null(order_status) || order_status == "", "订单查询", paste0("订单查询（", order_status, "）"))
     
-    # 更新 tabsetPanel，使选中的 tab 与动态标题匹配
-    updateTabsetPanel(session, "order_management_tabs", selected = new_tab_title)
-    
-    # 让前端的 input 变量与动态标题保持一致，确保 conditionalPanel 能正确匹配
-    runjs(sprintf("Shiny.setInputValue('order_management_tabs', '%s', {priority: 'event'});", new_tab_title))
-    
-    # 更新 UI 输出
+    # 只更新 UI 显示的标题，不改变 Tab ID
     output$dynamic_order_tab_title <- renderText({ new_tab_title })
   })
   

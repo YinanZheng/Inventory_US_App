@@ -679,7 +679,7 @@ ui <- navbarPage(
       div(
         class = "sticky-sidebar",
         conditionalPanel(
-          condition = "input.order_management_tabs && input.order_management_tabs.toString().indexOf('订单查询') !== -1",
+          condition = "input.order_management_tabs === 'order_query_tab'",  # 直接匹配固定 ID
           div(
             div(class="card", style="margin-bottom:5px;padding:15px;border:1px solid #28A745;border-radius:8px;",
                 tags$h4("订单筛选", style="color:#28A745;font-weight:bold;"),
@@ -726,7 +726,8 @@ ui <- navbarPage(
             )
           ),
           tabPanel(
-            textOutput("dynamic_order_tab_title"),  # 这里是动态标题
+            title = textOutput("dynamic_order_tab_title"),  # 只是标题，不影响匹配
+            value = "order_query_tab",  # **固定 ID，确保 `conditionalPanel` 识别**
             div(
               class = "card",
               style = "height: 460px; padding: 5px; border: 1px solid #ccc; border-radius: 8px;",
@@ -739,6 +740,7 @@ ui <- navbarPage(
               uiOutput("order_items_cards")
             )
           )
+          
         )
       )
     )
