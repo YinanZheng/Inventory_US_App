@@ -1373,6 +1373,7 @@ server <- function(input, output, session) {
   
   # 当前订单ID
   current_order_id <- reactiveVal()
+  to_be_confirmed_order_id <- reactiveVal()
   
   # 装载匹配运单号的订单
   matching_orders <- reactive({
@@ -1393,6 +1394,7 @@ server <- function(input, output, session) {
     if (nrow(matching_orders()) > 0) {
       # 设置第一个订单的 OrderID 为当前订单 ID
       current_order_id(matching_orders()$OrderID[1])
+      to_be_confirmed_order_id(matching_orders()$OrderID[1])
     }
   })
   
@@ -1547,6 +1549,7 @@ server <- function(input, output, session) {
     
     # 获取选中的订单 ID
     current_order_id(input$selected_order_id)
+    to_be_confirmed_order_id(input$selected_order_id)
     
     # 更新高亮样式
     runjs(sprintf("
@@ -1761,10 +1764,10 @@ server <- function(input, output, session) {
   observeEvent(input$confirm_shipping_btn, {
     tryCatch({
       # 更新订单状态为“装箱”
-      update_order_status(order_id = current_order_id(), new_status = "装箱", refresh_trigger = orders_refresh_trigger, con = con)
+      update_order_status(order_id = to_be_confirmed_order_id(), new_status = "装箱", refresh_trigger = orders_refresh_trigger, con = con)
       
       # **获取当前订单下的所有物品**
-      order_items <- unique_items_data() %>% filter(OrderID == current_order_id())
+      order_items <- unique_items_data() %>% filter(OrderID == to_be_confirmed_order_id())
       
       # **调用公共方法检测美国库存并弹出采购请求**
       has_request <- check_us_stock_and_request_purchase(order_items)
@@ -1776,6 +1779,7 @@ server <- function(input, output, session) {
       showNotification(paste("确认装箱发生错误：", e$message), type = "error")
       runjs("playErrorSound()")  # 播放错误音效
     })
+    to_be_confirmed_order_id(NULL)
   })
   
   
