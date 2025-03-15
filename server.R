@@ -58,6 +58,26 @@ server <- function(input, output, session) {
   
   ####################################################################################################################################
   
+  observeEvent(input$user_timezone, {
+    req(input$user_timezone)  # 确保 input$user_timezone 已经获取
+    
+    # 服务器 UTC 时间
+    utc_time <- Sys.time()
+    
+    # 转换 UTC 时间到用户本地时间
+    user_time <- format(as.POSIXct(utc_time, tz = "UTC"), tz = input$user_timezone, usetz = TRUE)
+    
+    time_info <- HTML(paste0(
+      "📌 <b>服务器 UTC 时间:</b><br> ", format(utc_time, "%Y-%m-%d %H:%M:%S UTC"), "<br><br>",
+      "🌎 <b>你的时区:</b><br> ", input$user_timezone, "<br><br>",
+      "⏰ <b>本地时间:</b><br> ", user_time
+    ))
+    
+    showNotification(time_info, type = "message", duration = 10)
+  })
+  
+  ####################################################################################################################################
+  
   # 应用启动时加载数据: item_type_data
   observe({
     tryCatch({
