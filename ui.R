@@ -8,6 +8,15 @@ ui <- navbarPage(
   header = tagList(
     shinyjs::useShinyjs(),  # 启用 shinyjs
     
+    # 页面加载时自动获取用户时区，并传递给 Shiny
+    tags$script("
+      $(document).on('shiny:connected', function() {
+        var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        Shiny.setInputValue('user_timezone', tz, {priority: 'event'});
+        console.log('时区已发送: ' + tz);  // 调试输出到浏览器控制台
+      });
+    "),
+    
     # 物品表刷新（联动刷新库存表与订单表）
     actionButton(
       "refresh_global_items_btn",
