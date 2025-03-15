@@ -709,7 +709,7 @@ ui <- navbarPage(
               textAreaInput("update_order_notes", "备注 (可选):", placeholder="请输入备注...", width="100%"),
               actionButton("update_order_status_btn", "更新状态", class="btn-primary", style="width:100%;"))
         )
-      )
+      ),
       
       div(
         class = "resizable-divider",
