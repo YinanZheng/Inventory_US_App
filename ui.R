@@ -684,25 +684,24 @@ ui <- navbarPage(
             div(class="card", style="margin-bottom:5px;padding:15px;border:1px solid #28A745;border-radius:8px;",
                 tags$h4("订单筛选", style="color:#28A745;font-weight:bold;"),
                 div(style="display:flex;align-items:center;gap:0px;",
-                    textInput("filter_combined", NULL, placeholder="搜索订单信息", width="100%"),
-                    actionButton("clear_filter_combined", "", icon=icon("xmark", style="color:#D32F2F;"), 
-                                 style="padding:0 5px;border:none;margin-bottom:14px;font-size:18px;background:#F5F5F5;height:45px;min-width:34px;")),
-                fluidRow(
-                  column(6, selectInput("filter_platform", NULL, choices=c("电商平台"="", "Etsy", "Shopify", "TikTok", "其他"), width="100%")),
-                  column(6, selectInput("filter_order_status", NULL, choices=c("订单状态"="", "备货", "预定", "调货", "装箱", "发出", "在途", "送达", "取消"), width="100%"))
+                    textInput("filter_combined", label=NULL, placeholder="搜索订单信息", width="100%"),
+                    actionButton("clear_filter_combined", label="", icon=icon("xmark", style="color:#D32F2F;"), style="padding:0 5px;border:none;margin-bottom:14px;font-size:18px;background-color:#F5F5F5;height:45px;min-width:34px;")
                 ),
-                fluidRow(column(12, airDatepickerInput("filter_order_date", "订单创建时间", range=TRUE, 
-                                                       value=c(Sys.Date()-90, Sys.Date()+1), dateFormat="yyyy-MM-dd", width="100%", position="bottom left"))),
-                fluidRow(
-                  column(4, actionButton("delete_order_btn", "删除", class="btn-danger", style="width:100%;")),
-                  column(4, actionButton("reset_filter_btn", "重置", class="btn-info", style="width:100%;")),
-                  column(4, actionButton("refresh_orders", "刷新", class="btn-secondary", style="width:100%;"))
-                )
+                fluidRow(column(6, selectInput("filter_platform", NULL, choices=c("电商平台"="", "Etsy", "Shopify", "TikTok", "其他"), selected="", width="100%")),
+                         column(6, selectInput("filter_order_status", NULL, choices=c("订单状态"="", "备货", "预定", "调货", "装箱", "发出", "在途", "送达", "取消"), selected="", width="100%"))),
+                fluidRow(column(12, airDatepickerInput("filter_order_date", "订单创建时间", range=TRUE, value=c(Sys.Date()-90, Sys.Date()+1), dateFormat="yyyy-MM-dd", width="100%", position="bottom left"))),
+                fluidRow(column(4, actionButton("delete_order_btn", "删除", class="btn-danger", style="width:100%;")),
+                         column(4, actionButton("reset_filter_btn", "重置", class="btn-info", style="width:100%;")),
+                         column(4, actionButton("refresh_orders", "刷新", class="btn-secondary", style="width:100%;")))
             ),
             
-            tags$hr(style="margin:5px 0;border:none;"),
-            div(style="margin-top:5px;display:flex;justify-content:center;", 
-                actionButton("merge_order_btn", "合并订单", icon=icon("object-group"), class="btn-primary", style="font-size:16px;width:100%;height:42px;")),
+            tags$hr(style = "margin: 5px 0; border: none;"),
+            
+            div(
+              style = "margin-top: 5px; display: flex; justify-content: center;", 
+              actionButton("merge_order_btn", "合并订单", icon = icon("object-group"), class = "btn-primary", style = "font-size: 16px; width: 100%; height: 42px;")
+            ),
+            
             div(class="card", style="margin-top:10px;padding:15px;border:1px solid #007BFF;border-radius:8px;",
                 tags$h4("更新订单状态", style="color:#007BFF;font-weight:bold;"),
                 selectInput("update_order_status", NULL, choices=c("选择新状态"="", "备货", "预定", "调货", "装箱", "发出", "在途", "送达", "取消"), width="100%"),
