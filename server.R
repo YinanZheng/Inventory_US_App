@@ -2230,15 +2230,16 @@ server <- function(input, output, session) {
   
   # 根据订单种类筛选的“订单查询”动态分页标题
   observe({
-    output$dynamic_order_tab_title <- renderText({
-      order_status <- input$filter_order_status
-      if (is.null(order_status) || order_status == "") {
-        return("订单查询")  # 默认标题
-      } else {
-        return(paste0("订单查询（", order_status, "）"))  # 动态更新标题
-      }
-    })
+    order_status <- input$filter_order_status
+    new_tab_title <- ifelse(is.null(order_status) || order_status == "", "订单查询", paste0("订单查询（", order_status, "）"))
+    
+    # 让 order_management_tabs 的值匹配动态标题
+    updateTabsetPanel(session, "order_management_tabs", selected = new_tab_title)
+    
+    # 让前端的 input 变量与动态标题保持一致
+    runjs(sprintf("Shiny.setInputValue('order_management_tabs', '%s', {priority: 'event'});", new_tab_title))
   })
+  
   
   # 监听订单选择事件
   observeEvent(selected_order_row(), {
